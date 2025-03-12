@@ -15,8 +15,16 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: "postgres",
-    logging: true, // Set to true to see SQL queries in console
+    logging: false, // Set to true to see SQL queries in console
   }
 );
+
+sequelize.authenticate()
+  .then(() => {
+    console.log("Kết nối thành công đến PostgreSQL!");
+  })
+  .catch((error) => {
+    console.error("Lỗi kết nối đến PostgreSQL:", error);
+  });
 
 module.exports = sequelize;
