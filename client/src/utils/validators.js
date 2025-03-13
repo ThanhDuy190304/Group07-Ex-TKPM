@@ -1,12 +1,12 @@
 export function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return "Email không hợp lệ. Vui lòng nhập đúng định dạng (ví dụ: example@mail.com).";
+    if (!emailRegex.test(email)) return "Email không hợp lệ. Vui lòng nhập đúng định dạng (ví dụ: example@gmail.com).";
     return null; // null nghĩa là không có lỗi
 }
 
 export function validatePhone(phone) {
-    const phoneRegex = /^(0[1-9][0-9]{8})$/; // Số điện thoại Việt Nam dạng 0xxxxxxxxx
-    if (!phoneRegex.test(phone)) return "Số điện thoại không hợp lệ. Vui lòng nhập số 10 chữ số và bắt đầu bằng 0.";
+    const phoneRegex = /^[0-9]{10}$/; // Chỉ cần đúng 10 chữ số
+    if (!phoneRegex.test(phone)) return "Số điện thoại không hợp lệ. Vui lòng nhập đúng 10 chữ số.";
     return null;
 }
 
