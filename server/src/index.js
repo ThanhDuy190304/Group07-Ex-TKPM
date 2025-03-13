@@ -15,9 +15,9 @@ sequelize
   .then(async () => {
     console.log("Database synced");
     // Seed initial data
-    const Faculty = require("./model/faculty");
-    const Course = require("./model/course");
-    const Program = require("./model/program");
+    const Faculty = require("./faculty/facultyModel");
+    const Course = require("./course/courseModel");
+    const Program = require("./program/programModel");
 
     await Faculty.create({ short_name: "LAW", name: "Luật" });
     await Faculty.create({ short_name: "ENCO", name: "Tiếng Anh thương mại" });

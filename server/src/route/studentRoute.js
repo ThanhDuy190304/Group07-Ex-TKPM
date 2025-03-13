@@ -1,11 +1,12 @@
 const express = require("express");
 const { body, query, validationResult } = require("express-validator");
-const sequelize = require("sequelize");
 const router = express.Router();
-const Student = require("../model/student");
-const Faculty = require("../model/faculty");
-const Course = require("../model/course");
-const Program = require("../model/program");
+const sequelize = require("sequelize");
+const studentController = require("../student/studentController");
+const Faculty = require("../faculty/facultyController");
+const Course = require("../course/courseController");
+const Program = require("../program/programController");
+
 
 // Validation middleware
 const studentValidationRules = [
@@ -38,114 +39,119 @@ const validate = (req, res, next) => {
   next();
 };
 
-// 1. Add a new student
-router.post("/", studentValidationRules, validate, async (req, res) => {
-  try {
-    const { studentId, facultyId, courseId, programId } = req.body;
+router.get("/",studentController.getAllStudents);
+router.get("/:studentID", studentController.getStudentById);
+router.post("/", studentValidationRules, validate, studentController.createStudent);
+router.put("/:studentID", studentValidationRules, validate, studentController.updateStudent);
+router.delete("/:studentID", studentController.deleteStudent);
+router.get("/search", [query("q").notEmpty()], validate, studentController.searchStudents);
 
-    // Check if studentId already exists
-    const existingStudent = await Student.findByPk(studentId);
-    if (existingStudent)
-      return res.status(400).json({ error: "Student ID already exists" });
 
-    // Validate referenced entities
-    const faculty = await Faculty.findByPk(facultyId);
-    const course = await Course.findByPk(courseId);
-    const program = await Program.findByPk(programId);
-    if (!faculty) return res.status(400).json({ error: "Faculty not found" });
-    if (!course) return res.status(400).json({ error: "Course not found" });
-    if (!program) return res.status(400).json({ error: "Program not found" });
+// // 1. Add a new student
+// router.post("/", studentValidationRules, validate, async (req, res) => {
+//   try {
+//     const {facultyId, courseId, programId } = req.body;
 
-    const student = await Student.create(req.body);
-    res.status(201).json(student);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+//     // Validate referenced entities
+//     const faculty = await Faculty.findByPk(facultyId);
+//     const course = await Course.findByPk(courseId);
+//     const program = await Program.findByPk(programId);
+//     if (!faculty) return res.status(400).json({ error: "Faculty not found" });
+//     if (!course) return res.status(400).json({ error: "Course not found" });
+//     if (!program) return res.status(400).json({ error: "Program not found" });
 
-// Get all students (with faculty, course, and program details)
-router.get("/", async (req, res) => {
-  try {
-    const students = await Student.findAll({
-      include: [
-        { model: Faculty, attributes: ["facultyId", "name"] },
-        { model: Course, attributes: ["courseId", "startYear"] },
-        { model: Program, attributes: ["programId", "name"] },
-      ],
-    });
-    res.status(200).json(students);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+//     const student = await Student.create(req.body);
+//     res.status(201).json(student);
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// });
 
-// 4. Search students by fullName or studentId
-router.get(
-  "/search",
-  [query("q").notEmpty().withMessage("Search query is required")],
-  validate,
-  async (req, res) => {
-    try {
-      const { q } = req.query;
-      const students = await Student.findAll({
-        where: {
-          [sequelize.Op.or]: [
-            { studentId: { [sequelize.Op.like]: `%${q}%` } },
-            { fullName: { [sequelize.Op.like]: `%${q}%` } },
-          ],
-        },
-        include: [
-          { model: Faculty, attributes: ["facultyId", "name"] },
-          {
-            model: Course,
-            attributes: ["courseId", "startYear"],
-          },
-          { model: Program, attributes: ["programId", "name"] },
-        ],
-      });
-      res.status(200).json(students);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-);
+// // Get all students (with faculty, course, and program details)
+// router.get("/", async (req, res) => {
+//   try {
+//     const students = await Student.findAll({
+//       include: [
+//         { model: Faculty, attributes: ["facultyId", "name"] },
+//         { model: Course, attributes: ["courseId", "startYear"] },
+//         { model: Program, attributes: ["programId", "name"] },
+//       ],
+//     });
+//     res.status(200).json(students);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
-// 3. Update a student by MSSV
-router.put(
-  "/:studentId",
-  studentValidationRules,
-  validate,
-  async (req, res) => {
-    try {
-      const student = await Student.findByPk(req.params.studentId);
-      if (!student) return res.status(404).json({ error: "Student not found" });
+// // 4. Search students by fullName or studentId
+// router.get(
+//   "/search",
+//   [query("q").notEmpty().withMessage("Search query is required")],
+//   validate,
+//   async (req, res) => {
+//     try {
+//       const { q } = req.query;
+//       const students = await Student.findAll({
+//         where: {
+//           [sequelize.Op.or]: [
+//             { studentId: { [sequelize.Op.like]: `%${q}%` } },
+//             { fullName: { [sequelize.Op.like]: `%${q}%` } },
+//           ],
+//         },
+//         include: [
+//           { model: Faculty, attributes: ["facultyId", "name"] },
+//           {
+//             model: Course,
+//             attributes: ["courseId", "startYear"],
+//           },
+//           { model: Program, attributes: ["programId", "name"] },
+//         ],
+//       });
+//       res.status(200).json(students);
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   }
+// );
 
-      const { facultyId, courseId, programId } = req.body;
-      const faculty = await Faculty.findByPk(facultyId);
-      const course = await Course.findByPk(courseId);
-      const program = await Program.findByPk(programId);
-      if (!faculty) return res.status(400).json({ error: "Faculty not found" });
-      if (!course) return res.status(400).json({ error: "Course not found" });
-      if (!program) return res.status(400).json({ error: "Program not found" });
+// // 3. Update a student by MSSV
+// router.put(
+//   "/:studentId",
+//   studentValidationRules,
+//   validate,
+//   async (req, res) => {
+//     try {
+//       const student = await Student.findByPk(req.params.studentId);
+//       if (!student) return res.status(404).json({ error: "Student not found" });
 
-      await student.update(req.body);
-      res.status(200).json(student);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  }
-);
+//       const { facultyId, courseId, programId } = req.body;
+//       const faculty = await Faculty.findByPk(facultyId);
+//       const course = await Course.findByPk(courseId);
+//       const program = await Program.findByPk(programId);
+//       if (!faculty) return res.status(400).json({ error: "Faculty not found" });
+//       if (!course) return res.status(400).json({ error: "Course not found" });
+//       if (!program) return res.status(400).json({ error: "Program not found" });
 
-// 2. Delete a student by MSSV
-router.delete("/:studentId", async (req, res) => {
-  try {
-    const student = await Student.findByPk(req.params.studentId);
-    if (!student) return res.status(404).json({ error: "Student not found" });
-    await student.destroy();
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+//       await student.update(req.body);
+//       res.status(200).json(student);
+//     } catch (error) {
+//       res.status(400).json({ error: error.message });
+//     }
+//   }
+// );
+
+// // 2. Delete a student by MSSV
+// router.delete("/:studentId", async (req, res) => {
+//   try {
+//     const student = await Student.findByPk(req.params.studentId);
+//     if (!student) return res.status(404).json({ error: "Student not found" });
+//     await student.destroy();
+//     res.status(204).send();
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 module.exports = router;
+
+
