@@ -1,0 +1,23 @@
+.
+├── .env
+├── .env.default
+├── .gitignore
+├── README.md
+├── directory_tree.txt
+├── package-lock.json
+├── package.json
+└── src
+    ├── config
+    │   └── database.js
+    ├── controller
+    ├── index.js
+    ├── model
+    │   ├── course.js
+    │   ├── faculty.js
+    │   ├── program.js
+    │   └── student.js
+    ├── route
+    │   └── studentRoute.js
+    └── service
+
+6 directories, 14 files
