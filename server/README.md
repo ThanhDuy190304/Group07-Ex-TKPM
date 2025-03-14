@@ -67,22 +67,45 @@ The application includes the following API routes:
 ## Project Structure
 
 ```
-├── .env                  # Environment variables (create from .env.default)
-├── .env.default          # Default environment variables template
-├── src/                  # Source files
-│   ├── config/           # Configuration files
-│   │   └── database.js   # Database connection setup
-│   ├── controller/       # API controllers
-│   ├── model/            # Database models
-│   │   ├── course.js     # Course model
-│   │   ├── faculty.js    # Faculty model
-│   │   ├── program.js    # Program model
-│   │   └── student.js    # Student model
-│   ├── route/            # API routes
-│   │   └── studentRoute.js  # Student routes
-│   ├── service/          # Business logic services
-│   └── index.js          # Application entry point
-└── package.json          # Dependencies and scripts
+.
+├── .env                                     # Environment variables (create from .env.default)
+├── .env.default                             # Default environment variables template
+├── .gitignore                
+├── README.md
+├── directory_tree.txt
+├── package-lock.json
+├── package.json                             # Dependencies and scripts
+└── src                                      # Source files
+    ├── config                               # Configuration files
+    │   └── database.js                      # Database connection setup
+    ├── modules
+    │   ├── course                           # Course folder
+    │   │   ├── courseController.js          # Course controller
+    │   │   ├── courseModel.js               # Course model
+    │   │   └── courseService.js             # Course service
+    │   ├── faculty                          # Faculty folder
+    │   │   ├── facultyController.js         # Faculty controller
+    │   │   ├── facultyModel.js              # Faculty model
+    │   │   └── facultyService.js            # Faculty service
+    │   ├── program                          # Program folder
+    │   │   ├── programController.js         # Program controller
+    │   │   ├── programModel.js              # Program model
+    │   │   └── programService.js            # Program service
+    │   └── student                          # Student folder
+    │       ├── studentController.js         # Student controller
+    │       ├── studentModel.js              # Student model
+    │       └── studentService.js            # Student service
+    ├── route                                # Routes
+    │   ├── courseRoute.js                   # Course Route
+    │   ├── facultyRoute.js                  # Faculty Route
+    │   ├── programRoute.js                  # Program Route
+    │   ├── studentRoute.js                  # Student Route
+    │   └── studentRoutes.js                 
+    │        
+    └── index.js                             # Application entry point
+
+8 directories, 26 files
+
 ```
 
 ## Available Models
