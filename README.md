@@ -80,42 +80,42 @@ Cài đặt Node.js
 Mở cửa sổ Terminal
 
 1. **Cài đặt và Chạy client**
-    # Di chuyển vào thư mục client
+    ### Di chuyển vào thư mục client
     ```bash
     cd client
     ```
-    # Cài đặt dependencies
+    ### Cài đặt dependencies
     ```bash
     npm install
     ```
-    # Build project (tạo thư mục "dist")
+    ### Build project (tạo thư mục "dist")
     ```bash
     npm run build
     ```
-    # Chạy preview
+    ### Chạy preview
     ```bash
     npm run preview
     ```
 2. **Cài đặt và chạy server**
 
-    # Di chuyển vào thư mục server
+    ### Di chuyển vào thư mục server
     ```bash
     cd server
     ```
-    # Cấu hình .env
+    ### Cấu hình .env
     ```bash
     cp .env.default .env
     ```
     Sau đó, chỉnh sửa tệp .env với thông tin đăng nhập PostgreSQL và các chi tiết cấu hình khác.
-    # Cài đặt dependencies
+    ### Cài đặt dependencies
     ```bash
     npm install
     ```
-    # Chạy server start
+    ### Chạy server start
     ```bash
     npm run start
     ```
-### Phiên bản 
+## Phiên bản 
 ```bash
 v1.0
 ```
