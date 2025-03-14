@@ -1,0 +1,35 @@
+.
+├── .env
+├── .gitignore
+├── eslint.config.js
+├── vite.config.js
+├── index.html
+├── README.md
+├── directory_tree.txt
+├── package-lock.json
+├── package.json
+├── public
+│   └── vite.svg
+└── src
+    ├── api
+    │   ├── useCourses.js
+    │   ├── useFalcuties.js
+    │   ├── usePrograms.js
+    │   └── useStudents.js
+    ├── assets
+    │   └── react.svg
+    ├── components
+    │   └── sidebar.jsx
+    ├── pages
+    │   └── student.jsx
+    ├── utils
+    │   ├── axios.js
+    │   ├── ErrorContext.jsx
+    │   └── validators.js
+    │        
+    ├── App.css
+    ├── App.jsx
+    ├── index.css
+    └── main.jsx
+
+7 directories, 24 files
