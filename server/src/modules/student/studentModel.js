@@ -67,7 +67,6 @@ Program.hasMany(Student, { foreignKey: "programId" });
 // 🛠 Hook để tạo studentId dựa trên courseId
 Student.beforeCreate(async (student, options) => {
     try {
-        console.log("Running beforeCreate hook...");
         if (!student.courseId) {
             throw new Error("courseId is required to generate studentId");
         }

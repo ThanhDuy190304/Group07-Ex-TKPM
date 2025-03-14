@@ -75,57 +75,47 @@ project-root
 17 directories, 50 files
 ```
 
-## Hướng dẫn cài đặt chạy chương trình
+## Hướng dẫn cài đặt và chạy chương trình
+    Cài đặt Node.js
+    Mở cửa sổ Terminal
 
-Mở cửa sổ Terminal
+    1. **Cài đặt và Chạy client**
+        # Di chuyển vào thư mục client
+        ```bash
+        cd client
+        ```
+        # Cài đặt dependencies
+        ```bash
+        npm install
+        ```
+        # Build project (tạo thư mục "dist")
+        ```bash
+        npm run build
+        ```
+        # Chạy preview
+        ```bash
+        npm run preview
+        ```
+    2. **Cài đặt và chạy server**
 
-1. **Cài đặt và Chạy client**
-- Xuất phát từ thư mục ngoài cùng, nếu chưa thì gõ lệnh: 
+        # Di chuyển vào thư mục server
+        ```bash
+        cd server
+        ```
+        # Cấu hình .env
+        ```bash
+        cp .env.default .env
+        ```
+        Sau đó, chỉnh sửa tệp .env với thông tin đăng nhập PostgreSQL và các chi tiết cấu hình khác.
+        # Cài đặt dependencies
+        ```bash
+        npm install
+        ```
+        # Chạy server start
+        ```bash
+        npm run start
+        ```
+### Phiên bản 
 ```bash
-cd ..
-```
-- Vào thư mục client:
-```bash
-cd client
-```
-
-2. **Cài đặt các phụ thuộc**:
-Trước khi chạy project, bạn cần cài đặt các phụ thuộc. Để cài đặt, mở terminal và chạy lệnh sau:
-
-```bash
-npm install
-```
-Sau khi cài đặt xong, bạn có thể chạy project bằng lệnh:
-```bash
-npm run dev
-```
-
-3. **Cài đặt và chạy server**
-- Xuất phát từ thư mục ngoài cùng, nếu chưa thì gõ lệnh: 
-```bash
-cd ..
-```
-- Vào thư mục client:
-```bash
-cd server
-```
-
-4. **Cài đặt các phụ thuộc**
-Trước khi chạy project, bạn cần cài đặt các phụ thuộc. Để cài đặt, mở terminal và chạy lệnh sau:
-
-```bash
-npm install
-```
-Sau khi cài đặt xong, bạn có thể chạy project bằng lệnh:
-```bash
-npm start
-```
-hoặc 
-```bash
-npm run dev
-```
-
-### phiên bản 
-```
 v1.0
 ```
