@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/sidebar";
 import Student from "./pages/student";
+import Academic from "./pages/academic";
 import { ErrorProvider } from "./utils/ErrorContext";
 
 function App() {
@@ -12,6 +13,8 @@ function App() {
           <ErrorProvider>
             <Routes>
               <Route path="/" element={<Student />} />
+              <Route path="/student" element={<Student />} />
+              <Route path="/academic" element={<Academic />} />
             </Routes>
           </ErrorProvider>
         </div>

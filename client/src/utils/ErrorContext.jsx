@@ -7,7 +7,7 @@ const ErrorContext = createContext();
 //Component ToastMessage (Hiển thị lỗi)
 function ToastMessage({ message }) {
     return (
-        <div className="fixed bottom-4 right-4 bg-white text-black border border-red-500 p-2 rounded-md flex items-center gap-2 shadow-md">
+        <div className="fixed bottom-4 right-4 bg-white text-black border border-red-500 p-2 rounded-md flex items-center gap-2 shadow-md z-[9999]">
             <ExclamationCircleIcon className="w-6 h-6 text-red-500" />
             <span>{message}</span>
         </div>
