@@ -3,7 +3,7 @@ const Program = require("./programModel");
 async function getAllPrograms() {
     try {
         const programs = await Program.findAll({
-            attributes: ["programId"], // Chỉ lấy programId
+            attributes: ["programId", "name"], // Chỉ lấy programId
         });
         return programs;
     } catch (error) {

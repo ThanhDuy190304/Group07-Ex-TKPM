@@ -20,7 +20,21 @@ export function validateBirthdate(birthdate) {
     const currentDate = new Date();
     // Kiểm tra xem ngày sinh có lớn hơn ngày hiện tại không
     if (birthDateObj > currentDate) {
-        return "Ngày sinh không hợp lệ. Ngày sinh phải nhỏ hơn hoặc bằng ngày hiện tại.";
+        return "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh phải nhỏ hơn hoặc bằng ngày hiện tại.";
     }
     return null;
+}
+
+export function validateNotEmptyFields(object) {
+    for (const key in object) {
+        if (
+            object[key] === null ||
+            object[key] === undefined ||
+            (typeof object[key] === "string" && object[key].trim() === "") ||
+            (Array.isArray(object[key]) && object[key].length === 0)
+        ) {
+            return `Vui lòng không để trống bất kỳ trường nào.`;
+        }
+    }
+    return null; // Không có lỗi
 }

@@ -2,7 +2,7 @@ import { useState, useReducer, useRef, useEffect, useCallback, memo } from "reac
 import {
     MagnifyingGlassIcon, ListBulletIcon, TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
-    ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon
+    ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon
 } from "@heroicons/react/24/outline";
 import Select from 'react-select'
 import { getStudents, putStudent, deleteStudent, postStudent } from "../api/useStudents";
@@ -277,10 +277,9 @@ const CreateAStudent_Button = ({ faculties, courses, programs }) => {
     };
     return (
         <>
-            <button onClick={openModal} className="px-4 py-2 bg-green-800 hover:bg-green-900 text-white rounded-md cursor-pointer">
+            <button onClick={openModal} className="px-4 py-2 bg-green-800 hover:bg-green-900 text-white rounded-md cursor-pointer w-40 mt-4">
                 Thêm 1 sinh viên
             </button>
-
             {isOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/50">
                     <div className="bg-white border-6 border-double border-green-800 p-6 rounded-lg shadow-lg">
@@ -408,6 +407,36 @@ async function editStudent(studentId, updateData) {
     return true;
 }
 
+function StudentInf({ student, onClose, facultyMap }) {
+    return (
+        <div className="relative p-4 min-w-80 bg-white rounded-md shadow-md">
+            <XMarkIcon
+                onClick={onClose}
+                className="absolute top-2 right-2 w-5 h-5 text-gray-500 hover:text-red-500 cursor-pointer"
+            />
+            <h2 className="text-lg font-bold mb-2">Thông tin sinh viên</h2>
+            <div className="grid grid-cols-2 gap-4">
+                <div><span className="font-bold">MSSV:</span> <span className="break-words">{student.studentId}</span></div>
+                <div><span className="font-bold">Họ tên:</span> <span className="break-words">{student.fullName}</span></div>
+                <div><span className="font-bold">Ngày sinh:</span> <span className="break-words">{student.dateOfBirth}</span></div>
+                <div><span className="font-bold">Giới tính:</span> <span className="break-words">{student.gender}</span></div>
+                <div className="col-span-2"><span className="font-bold">SĐT:</span> <span className="break-words">{student.phoneNumber}</span></div>
+                <div className="col-span-2"><span className="font-bold">Địa chỉ:</span> <span className="break-words">{student.address}</span></div>
+                <div className="col-span-2"><span className="font-bold">Email:</span> <span className="break-words">{student.email}</span></div>
+                <div><span className="font-bold">Khoa:</span> <span className="break-words">{facultyMap[student.facultyId]?.name || "Không xác định"}</span></div>
+                <div><span className="font-bold">Khóa:</span> <span className="break-words">{student.courseId}</span></div>
+                <div><span className="font-bold">Chương trình:</span> <span className="break-words">{student.programId}</span></div>
+                <div><span className="font-bold">Trạng thái:</span> <span className="break-words">{student.status}</span></div>
+            </div>
+
+
+        </div >
+    );
+}
+
+
+
+
 /**
  * Component hiển thị danh sách sinh viên
  * @param {Object} props - Các props truyền vào component
@@ -418,17 +447,13 @@ async function editStudent(studentId, updateData) {
  */
 function StudentList({ students, setStudents, faculties, courses, programs }) {
     const { showError } = useError();
+    const [showStudentInf, setShowStudentInf] = useState(false);
     const columns = [
         { key: "studentId", label: studentFields.studentId, width: "w-16" },
         { key: "fullName", label: studentFields.fullName, width: "w-24" },
-        { key: "dateOfBirth", label: studentFields.dateOfBirth, width: "w-28" },
-        { key: "gender", label: studentFields.gender, width: "w-20" },
         { key: "facultyId", label: studentFields.facultyId, width: "w-36" },
         { key: "courseId", label: studentFields.courseId, width: "w-12" },
         { key: "programId", label: studentFields.programId, width: "w-24" },
-        { key: "address", label: studentFields.address, width: "w-40" },
-        { key: "email", label: studentFields.email, width: "w-40" },
-        { key: "phoneNumber", label: studentFields.phoneNumber, width: "w-28" },
         { key: "status", label: studentFields.status, width: "w-24" },
         { key: "action", label: "", width: "w-20" },
     ];
@@ -493,163 +518,132 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
     students = lodash.orderBy(students, ["studentId"], ["asc"]);
     const facultyMap = lodash.keyBy(faculties, "facultyId");
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full table-fixed bg-white border border-gray-300">
-                <thead className="bg-gray-200 text-xs font-bold">
-                    <tr>
-                        {columns.map((col) => (
-                            <th key={col.key} className={`${col.width} box-border px-2 py-2 text-left whitespace-pre-line`}>
-                                {col.label}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {students.map((student, index) => (
-                        <tr key={index} className="bg-white hover:bg-gray-100 text-xs">
+        <div className="flex gap-4">
+            <div className={`overflow-x-auto ${showStudentInf ? "w-3/5" : "w-full"}`}>
+                <table className="w-full table-fixed bg-white border border-gray-300">
+                    <thead className="bg-gray-200 text-xs font-bold">
+                        <tr>
                             {columns.map((col) => (
-                                <td
-                                    key={col.key}
-                                    className={`px-2 py-2 text-left whitespace-pre-line ${col.width} box-border`}
-                                >
-                                    {col.key === "action" ? (
-                                        <div className="flex gap-2">
-                                            {checkEditingRow === null ? (
-                                                <PencilSquareIcon
-                                                    onClick={() => startEdit(student)}
-                                                    className="w-5 h-5 text-blue-500 cursor-pointer"
-                                                />
-                                            ) : checkEditingRow === student.studentId ? (
-                                                <CheckIcon
-                                                    onClick={() => saveEdit()}
-                                                    className="w-5 h-5 text-green-500 cursor-pointer"
-                                                />
-                                            ) : (
-                                                <div>
-                                                    <PencilSquareIcon
-                                                        id="edit-icon"
-                                                        className="w-5 h-5 text-gray-400 cursor-not-allowed focus:outline-none"
-                                                    />
-                                                    <Tooltip className="" anchorSelect="#edit-icon" content="Vui lòng hoàn thành chỉnh sửa trước" />
-                                                </div>
-                                            )}
-                                            <TrashIcon onClick={() => handleDeleteStudent(student.studentId)} className="w-5 h-5 text-red-500 cursor-pointer" />
-                                        </div>
-                                    ) : checkEditingRow === student.studentId ? (
-                                        col.key === "gender" ? (
-                                            // Chọn giới tính
-                                            <select
-                                                value={editStudentState[col.key] || ""}
-                                                onChange={(e) => handleEditChange(col.key, e.target.value)}
-                                                className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
-                                            >
-                                                {GENDERS.map((gender) => (
-                                                    <option key={gender} value={gender}>
-                                                        {gender}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : col.key === "dateOfBirth" ? (
-                                            // Chọn ngày sinh
-                                            <input
-                                                type="date"
-                                                value={editStudentState[col.key] || ""}
-                                                onChange={(e) => handleEditChange(col.key, e.target.value)}
-                                                className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
-                                            />
-                                        ) : col.key === "facultyId" ? (
-                                            // Chọn Khoa
-                                            <select
-                                                value={editStudentState[col.key] || ""}
-                                                onChange={(e) => handleEditChange(col.key, e.target.value)}
-                                                className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
-                                            >
-                                                {faculties.map((faculty) => (
-                                                    <option key={faculty.facultyId} value={faculty.facultyId}>
-                                                        {faculty.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : col.key === "programId" ? (
-                                            // Chọn Chương trình học
-                                            <select
-                                                value={editStudentState[col.key] || ""}
-                                                onChange={(e) => handleEditChange(col.key, e.target.value)}
-                                                className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
-                                            >
-                                                {programs.map((program) => (
-                                                    <option key={program.programId} value={program.programId}>
-                                                        {program.programId}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : col.key === "courseId" ? (
-                                            // Chọn Khóa học
-                                            <select
-                                                value={editStudentState[col.key] || ""}
-                                                onChange={(e) => handleEditChange(col.key, e.target.value)}
-                                                className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
-                                            >
-                                                {courses.map((course) => (
-                                                    <option key={course.courseId} value={course.courseId}>
-                                                        {course.courseId}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : col.key === "status" ? (
-                                            // Chọn tình trạng sinh viên
-                                            <select
-                                                value={editStudentState[col.key] || ""}
-                                                onChange={(e) => handleEditChange(col.key, e.target.value)}
-                                                className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
-                                            >
-                                                {STUDENT_STATUSES.map((status) => (
-                                                    <option key={status} value={status}>
-                                                        {status}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            // Các trường khác vẫn dùng input bình thường
-                                            <input
-                                                type="text"
-                                                value={editStudentState[col.key] || ""}
-                                                onChange={(e) => handleEditChange(col.key, e.target.value)}
-                                                className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
-                                                readOnly={col.key === "studentId"}
-                                            />
-                                        )
-                                    ) : col.key === "facultyId" ? (
-                                        // Hiển thị facultyName thay vì facultyId
-                                        facultyMap[student.facultyId]?.name || "Không xác định"
-                                    ) : col.key === "email" ? (
-                                        // Hiển thị email với tooltip
-                                        <span
-                                            data-tooltip-id={`email-tooltip-${student.studentId}`}
-                                            data-tooltip-content={student[col.key]}
-                                            className="cursor-pointer truncate block" /* truncate để cắt bớt nội dung */
-                                        >
-                                            {student[col.key]}
-                                        </span>
-                                    ) : (
-                                        student[col.key]
-                                    )}
-                                </td>
+                                <th key={col.key} className={`${col.width} box-border px-2 py-2 text-left whitespace-pre-line`}>
+                                    {col.label}
+                                </th>
                             ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            {/* Render tooltip cho email */}
-            <Tooltip id="email-tooltip" />
-            {students.map((student) => (
-                <Tooltip
-                    key={student.studentId}
-                    id={`email-tooltip-${student.studentId}`}
-                    content={student.email}
-                />
-            ))}
+                    </thead>
+                    <tbody>
+                        {students.map((student, index) => (
+                            <tr key={index} className="bg-white hover:bg-gray-100 text-xs cursor-pointer"
+                                onClick={() => setShowStudentInf(student)}>
+                                {columns.map((col) => (
+                                    <td
+                                        key={col.key}
+                                        className={`px-2 py-2 text-left whitespace-pre-line ${col.width} box-border`}
+                                    >
+                                        {col.key === "action" ? (
+                                            <div className="flex gap-2">
+                                                {checkEditingRow === null ? (
+                                                    <PencilSquareIcon
+                                                        onClick={() => startEdit(student)}
+                                                        className="w-5 h-5 text-blue-500 cursor-pointer"
+                                                    />
+                                                ) : checkEditingRow === student.studentId ? (
+                                                    <CheckIcon
+                                                        onClick={() => saveEdit()}
+                                                        className="w-5 h-5 text-green-500 cursor-pointer"
+                                                    />
+                                                ) : (
+                                                    <div>
+                                                        <PencilSquareIcon
+                                                            id="edit-icon"
+                                                            className="w-5 h-5 text-gray-400 cursor-not-allowed focus:outline-none"
+                                                        />
+                                                        <Tooltip className="" anchorSelect="#edit-icon" content="Vui lòng hoàn thành chỉnh sửa trước" />
+                                                    </div>
+                                                )}
+                                                <TrashIcon onClick={() => handleDeleteStudent(student.studentId)} className="w-5 h-5 text-red-500 cursor-pointer" />
+                                            </div>
+                                        ) : checkEditingRow === student.studentId ? (
+                                            col.key === "facultyId" ? (
+                                                // Chọn Khoa
+                                                <select
+                                                    value={editStudentState[col.key] || ""}
+                                                    onChange={(e) => handleEditChange(col.key, e.target.value)}
+                                                    className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
+                                                >
+                                                    {faculties.map((faculty) => (
+                                                        <option key={faculty.facultyId} value={faculty.facultyId}>
+                                                            {faculty.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : col.key === "programId" ? (
+                                                // Chọn Chương trình học
+                                                <select
+                                                    value={editStudentState[col.key] || ""}
+                                                    onChange={(e) => handleEditChange(col.key, e.target.value)}
+                                                    className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
+                                                >
+                                                    {programs.map((program) => (
+                                                        <option key={program.programId} value={program.programId}>
+                                                            {program.programId}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : col.key === "courseId" ? (
+                                                // Chọn Khóa học
+                                                <select
+                                                    value={editStudentState[col.key] || ""}
+                                                    onChange={(e) => handleEditChange(col.key, e.target.value)}
+                                                    className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
+                                                >
+                                                    {courses.map((course) => (
+                                                        <option key={course.courseId} value={course.courseId}>
+                                                            {course.courseId}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : col.key === "status" ? (
+                                                // Chọn tình trạng sinh viên
+                                                <select
+                                                    value={editStudentState[col.key] || ""}
+                                                    onChange={(e) => handleEditChange(col.key, e.target.value)}
+                                                    className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
+                                                >
+                                                    {STUDENT_STATUSES.map((status) => (
+                                                        <option key={status} value={status}>
+                                                            {status}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                // Các trường khác vẫn dùng input bình thường
+                                                <input
+                                                    type="text"
+                                                    value={editStudentState[col.key] || ""}
+                                                    onChange={(e) => handleEditChange(col.key, e.target.value)}
+                                                    className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
+                                                    readOnly={col.key === "studentId" || col.key === "fullName"}
+                                                />
+                                            )
+                                        ) : col.key === "facultyId" ? (
+                                            // Hiển thị facultyName thay vì facultyId
+                                            facultyMap[student.facultyId]?.name || "Không xác định"
+                                        ) : (
+                                            student[col.key]
+                                        )}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {/* Hiển thị StudentInf nếu có sinh viên được chọn */}
+            {showStudentInf && (
+                <div className="w-2/5 border border-gray-300 p-4 bg-white rounded-md">
+                    <StudentInf student={showStudentInf} onClose={() => setShowStudentInf(false)} facultyMap={facultyMap} />
+                </div>
+            )}
         </div>
     );
 }
@@ -714,13 +708,12 @@ function Student() {
     return (
         <div className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
-
+            <CreateAStudent_Button
+                faculties={faculties}
+                courses={courses}
+                programs={programs} />
             <div className="flex flex-row mt-4 justify-between">
                 <Search setSearchQuery={setSearchQuery} />
-                <CreateAStudent_Button
-                    faculties={faculties}
-                    courses={courses}
-                    programs={programs} />
             </div>
 
             <div className="mt-6">

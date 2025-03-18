@@ -3,7 +3,7 @@ const Faculty = require("./facultyModel");
 async function getAllFaculties() {
     try {
         const faculties = await Faculty.findAll({
-            attributes: ["facultyId", "name"], // Chỉ lấy facultyId và name
+            attributes: ["facultyId", "name", "short_name"], // Chỉ lấy facultyId và name
         });
         return faculties;
     } catch (error) {
