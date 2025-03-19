@@ -3,6 +3,8 @@ const Faculty = require("../faculty/facultyModel");
 const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
+const { get } = require("../../route/studentRoute");
+const { Op } = require("sequelize");
 
 async function deleteStudent(studentId) {
   try {
@@ -147,6 +149,77 @@ async function getStudentsByPageLimit(page = 1, limit = 10) {
   }
 }
 
+async function getStudents({ query = "", page = 1, limit = 10 }) {
+  const whereCondition = query
+    ? {
+        [Op.or]: [
+          { studentId: query }, // Exact match for studentId
+          { fullName: { [Op.like]: `%${query}%` } }, // Partial match for fullName
+        ],
+      }
+    : {}; // No filter, fetch all students
+
+  const { rows: students, count: total } = await Student.findAndCountAll({
+    where: whereCondition,
+    offset: (page - 1) * limit,
+    limit: limit,
+    attributes: { exclude: ["createdAt", "updatedAt"] },
+    include: [
+      {
+        model: NIDCard,
+        attributes: [
+          "id",
+          "placeOfIssue",
+          "dateOfIssue",
+          "expiryOfIssue",
+          "chip",
+        ],
+      },
+      {
+        model: OIDCard,
+        attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue"],
+      },
+      {
+        model: Passport,
+        attributes: [
+          "id",
+          "dateOfIssue",
+          "placeOfIssue",
+          "expiryOfIssue",
+          "country",
+          "note",
+        ],
+      },
+    ],
+    order: [["fullName", "ASC"]],
+  });
+
+  const modifiedStudents = students.map((student) => {
+    const identityTypes = [
+      { type: "NIDCard", key: "NIDCard" },
+      { type: "OIDCard", key: "OIDCard" },
+      { type: "Passport", key: "Passport" },
+    ];
+
+    const identityDocument =
+      identityTypes
+        .map(
+          ({ type, key }) =>
+            student[key] && { type, ...student[key].get({ plain: true }) }
+        )
+        .find(Boolean) || null;
+
+    const studentData = student.get({ plain: true });
+    ["NIDCard", "OIDCard", "Passport"].forEach(
+      (key) => delete studentData[key]
+    );
+
+    return { ...studentData, identityDocument };
+  });
+
+  return { students: modifiedStudents, total, page, limit };
+}
+
 module.exports = {
   deleteStudent,
   createStudent,
@@ -154,4 +227,5 @@ module.exports = {
   getStudentsByName,
   updateStudent,
   getStudentsByPageLimit,
+  getStudents,
 };
