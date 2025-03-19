@@ -55,38 +55,58 @@ async function seedStudents() {
     }
 }
 
-//Khởi tạo database
+// Khởi tạo database
 sequelize
-    .sync({ force: true })
+    .sync()
     .then(async () => {
         console.log("✅ Database synced");
 
-        await Faculty.bulkCreate([
-            { short_name: "LAW", name: "Luật" },
-            { short_name: "ENCO", name: "Tiếng Anh thương mại" },
-            { short_name: "JPN", name: "Tiếng Nhật" },
-            { short_name: "FRA", name: "Tiếng Pháp" },
-        ]);
+        // Kiểm tra nếu bảng Faculty chưa có dữ liệu thì mới thêm
+        const facultyCount = await Faculty.count();
+        if (facultyCount === 0) {
+            await Faculty.bulkCreate([
+                { short_name: "LAW", name: "Luật" },
+                { short_name: "ENCO", name: "Tiếng Anh thương mại" },
+                { short_name: "JPN", name: "Tiếng Nhật" },
+                { short_name: "FRA", name: "Tiếng Pháp" },
+            ]);
+        }
 
-        await Course.bulkCreate([
-            { courseId: "K2020", startYear: 2020 },
-            { courseId: "K2021", startYear: 2021 },
-            { courseId: "K2022", startYear: 2022 },
-            { courseId: "K2023", startYear: 2023 },
-        ]);
+        // Kiểm tra nếu bảng Course chưa có dữ liệu thì mới thêm
+        const courseCount = await Course.count();
+        if (courseCount === 0) {
+            await Course.bulkCreate([
+                { courseId: "K2020", startYear: 2020 },
+                { courseId: "K2021", startYear: 2021 },
+                { courseId: "K2022", startYear: 2022 },
+                { courseId: "K2023", startYear: 2023 },
+            ]);
+        }
 
-        await Program.bulkCreate([
-            { programId: "CQ", name: "Chính quy" },
-            { programId: "TT", name: "Tiên tiến" },
-            { programId: "CLC", name: "Chất lượng cao" },
-        ]);
+        // Kiểm tra nếu bảng Program chưa có dữ liệu thì mới thêm
+        const programCount = await Program.count();
+        if (programCount === 0) {
+            await Program.bulkCreate([
+                { programId: "CQ", name: "Chính quy" },
+                { programId: "TT", name: "Tiên tiến" },
+                { programId: "CLC", name: "Chất lượng cao" },
+            ]);
+        }
 
         console.log("✅ Database seeded");
 
-        // Gọi seedStudents() sau khi database đã sync xong
-        await seedStudents();
+        // Kiểm tra nếu bảng Student chưa có dữ liệu thì mới seed
+        const studentCount = await Student.count();
+        if (studentCount === 0) {
+            console.log("🔄 Seeding students...");
+            await seedStudents();
+        } else {
+            console.log("✅ Students already exist, skipping seeding.");
+        }
+
         app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
     })
     .catch((err) => console.error("❌ Unable to sync database:", err));
+
 
 // app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
