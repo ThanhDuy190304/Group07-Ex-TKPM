@@ -11,5 +11,27 @@ async function getAllFaculties() {
         throw new Error("Error server");
     }
 }
+async function createFaculty(newFaculty) {
+    try {
+        const faculty = await Faculty.create(newFaculty);
+        return faculty;
+    } catch (error) {
+        console.error("Error in facultyService.createFaculty:", error.message);
+        throw new Error("Error server");
+    }
+}
+async function updateFaculty(facultyId, updatedData) {
+    try {
+        const faculty = await Faculty.findOne({ where: { facultyId } });
+        if (!faculty) {
+            return null;
+        }
+        await faculty.update(updatedData);
+        return faculty;
+    } catch (error) {
+        console.error("Error in facultyService.updateFaculty:", error.message);
+        throw new Error("Error server");
+    }
+}
 
-module.exports = { getAllFaculties };
+module.exports = { getAllFaculties, createFaculty, updateFaculty };

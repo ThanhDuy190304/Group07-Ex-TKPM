@@ -5,8 +5,12 @@ const Program = sequelize.define(
   "Program",
   {
     programId: {
-      type: DataTypes.STRING, // e.g., "CQ"
+      type: DataTypes.INTEGER,
       primaryKey: true,
+      autoIncrement: true,
+    },
+    short_name: {
+      type: DataTypes.STRING, // e.g., "CQ"
       allowNull: false,
     },
     name: {

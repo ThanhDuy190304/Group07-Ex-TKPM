@@ -38,6 +38,14 @@ import lodash from "lodash";
  * @property {string} name - Tên khoa
  */
 
+/**
+ * @typedef {Object} Program
+ * @property {number} programId - Mã chương trình
+ * @property {string} name - Tên chương trình
+ * @property {string} short_name - Tên viết tắt
+ */
+
+
 const studentFields = {
     studentId: "MSSV",
     fullName: "Họ tên",
@@ -312,7 +320,7 @@ const CreateAStudent_Button = ({ faculties, courses, programs }) => {
                                 <option value="" className="disabled hidden">Chọn chương trình học</option>
                                 {programs.map(program => (
                                     <option key={program.programId} value={program.programId}>
-                                        {program.programId}
+                                        {program.name}
                                     </option>
                                 ))}
                             </select>                            <div className="flex flex-col gap-2">
@@ -517,6 +525,8 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
 
     students = lodash.orderBy(students, ["studentId"], ["asc"]);
     const facultyMap = lodash.keyBy(faculties, "facultyId");
+    const programMap = lodash.keyBy(programs, "programId");
+    console.log(programMap);
     return (
         <div className="flex gap-4">
             <div className={`overflow-x-auto ${showStudentInf ? "w-3/5" : "w-full"}`}>
@@ -560,7 +570,20 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                                         <Tooltip className="" anchorSelect="#edit-icon" content="Vui lòng hoàn thành chỉnh sửa trước" />
                                                     </div>
                                                 )}
-                                                <TrashIcon onClick={() => handleDeleteStudent(student.studentId)} className="w-5 h-5 text-red-500 cursor-pointer" />
+                                                {checkEditingRow === null ? (
+                                                    <TrashIcon
+                                                        onClick={() => handleDeleteStudent(student.studentId)}
+                                                        className="w-5 h-5 text-red-500 cursor-pointer"
+                                                    />
+                                                ) : (
+                                                    <div>
+                                                        <TrashIcon
+                                                            id="delete-icon"
+                                                            className="w-5 h-5 text-gray-400 cursor-not-allowed"
+                                                        />
+                                                        <Tooltip anchorSelect="#delete-icon" content="Vui lòng hoàn thành chỉnh sửa trước" />
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : checkEditingRow === student.studentId ? (
                                             col.key === "facultyId" ? (
@@ -585,7 +608,7 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                                 >
                                                     {programs.map((program) => (
                                                         <option key={program.programId} value={program.programId}>
-                                                            {program.programId}
+                                                            {program.short_name}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -628,6 +651,8 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                         ) : col.key === "facultyId" ? (
                                             // Hiển thị facultyName thay vì facultyId
                                             facultyMap[student.facultyId]?.name || "Không xác định"
+                                        ) : col.key == "programId" ? (
+                                            programMap[student.programId]?.short_name || "Không xác định"
                                         ) : (
                                             student[col.key]
                                         )}
@@ -678,7 +703,6 @@ function Student() {
         };
         fetchData();
     }, []);
-
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -701,10 +725,6 @@ function Student() {
     const handlePageChange = useCallback((newPage) => {
         setCurrentPage(newPage);
     }, []);
-    console.log(faculties);
-    console.log(courses);
-    console.log(programs);
-
     return (
         <div className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
