@@ -8,6 +8,9 @@ const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
 const Nationality = require("../nationality/nationalityModel");
+const PermanentAddress = require("../address/permanentAddressModel");
+const MailAddress = require("../address/mailAddressModel");
+const TemporaryResidenceAddress = require("../address/temporaryResidenceAddressModel");
 
 const Student = sequelize.define(
   "Student",
@@ -27,10 +30,6 @@ const Student = sequelize.define(
     gender: {
       type: DataTypes.ENUM("Nam", "Nữ", "Khác"), // Giới tính
       allowNull: false,
-    },
-    address: {
-      type: DataTypes.TEXT, // Địa chỉ
-      allowNull: true,
     },
     email: {
       type: DataTypes.STRING, // Email
@@ -65,6 +64,9 @@ Student.belongsTo(Faculty, { foreignKey: "facultyId" });
 Student.belongsTo(Course, { foreignKey: "courseId" });
 Student.belongsTo(Program, { foreignKey: "programId" });
 Student.belongsTo(Nationality, { foreignKey: "nationalId" });
+Student.belongsTo(PermanentAddress, {foreignKey: "permanentAddressId"});
+Student.belongsTo(TemporaryResidenceAddress, {foreignKey: "temporaryResidenceAddressId"});
+Student.belongsTo(MailAddress, {foreignKey: "mailAddress"});
 
 Student.hasOne(OIDCard, { foreignKey: "studentId" });
 Student.hasOne(NIDCard, { foreignKey: "studentId" });
@@ -75,9 +77,16 @@ Course.hasMany(Student, { foreignKey: "courseId" });
 Program.hasMany(Student, { foreignKey: "programId" });
 Nationality.hasMany(Student, { foreignKey: "nationalId" });
 
+PermanentAddress.hasOne(Student, {foreignKey: "permanentAddressId"});
+TemporaryResidenceAddress.hasOne(Student, {foreignKey: "temporaryResidenceAddressId"});
+MailAddress.belongsTo(Student, {foreignKey: "mailAddress"});
+
 Passport.belongsTo(Student, { foreignKey: "studentId" });
 NIDCard.belongsTo(Student, { foreignKey: "studentId" });
 OIDCard.belongsTo(Student, { foreignKey: "studentId" });
+
+
+
 // 🛠 Hook để tạo studentId dựa trên courseId
 Student.beforeCreate(async (student, options) => {
   try {
