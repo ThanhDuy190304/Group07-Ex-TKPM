@@ -56,34 +56,34 @@ async function seedStudents() {
 }
 // Khởi tạo database
 sequelize
-    .sync({ force: true }) // Luôn xóa & tạo lại database khi chạy server
+    .sync({ force: false }) // Luôn xóa & tạo lại database khi chạy server
     .then(async () => {
         console.log("✅ Database synced");
 
-        await Faculty.bulkCreate([
-            { short_name: "LAW", name: "Luật" },
-            { short_name: "ENCO", name: "Tiếng Anh thương mại" },
-            { short_name: "JPN", name: "Tiếng Nhật" },
-            { short_name: "FRA", name: "Tiếng Pháp" },
-        ]);
+        // await Faculty.bulkCreate([
+        //     { short_name: "LAW", name: "Luật" },
+        //     { short_name: "ENCO", name: "Tiếng Anh thương mại" },
+        //     { short_name: "JPN", name: "Tiếng Nhật" },
+        //     { short_name: "FRA", name: "Tiếng Pháp" },
+        // ]);
 
-        await Course.bulkCreate([
-            { courseId: "K2020", startYear: 2020 },
-            { courseId: "K2021", startYear: 2021 },
-            { courseId: "K2022", startYear: 2022 },
-            { courseId: "K2023", startYear: 2023 },
-        ]);
+        // await Course.bulkCreate([
+        //     { courseId: "K2020", startYear: 2020 },
+        //     { courseId: "K2021", startYear: 2021 },
+        //     { courseId: "K2022", startYear: 2022 },
+        //     { courseId: "K2023", startYear: 2023 },
+        // ]);
 
-        await Program.bulkCreate([
-            { short_name: "CQ", name: "Chính quy" },
-            { short_name: "TT", name: "Tiên tiến" },
-            { short_name: "CLC", name: "Chất lượng cao" },
-        ]);
+        // await Program.bulkCreate([
+        //     { short_name: "CQ", name: "Chính quy" },
+        //     { short_name: "TT", name: "Tiên tiến" },
+        //     { short_name: "CLC", name: "Chất lượng cao" },
+        // ]);
 
-        console.log("✅ Database seeded");
+        // console.log("✅ Database seeded");
 
-        console.log("🔄 Seeding students...");
-        await seedStudents();
+        // console.log("🔄 Seeding students...");
+        // await seedStudents();
 
         app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
     })

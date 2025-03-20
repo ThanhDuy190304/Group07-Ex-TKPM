@@ -149,7 +149,10 @@ async function getStudentsByFaculty(facultyName, page = 1, limit = 10) {
     });
     return { students, total };
   } catch (error) {
-    console.error("Error in StudentService.getStudentsByFaculty:", error.message);
+    console.error(
+      "Error in StudentService.getStudentsByFaculty:",
+      error.message
+    );
     throw new Error("Error Server");
   }
 }
@@ -175,75 +178,78 @@ async function getStudentsByPageLimit(page = 1, limit = 10) {
   }
 }
 
-async function getStudents({ query = "", page = 1, limit = 10 }) {
-  const whereCondition = query
-    ? {
-      [Op.or]: [
-        { studentId: query }, // Exact match for studentId
-        { fullName: { [Op.like]: `%${query}%` } }, // Partial match for fullName
+async function getStudents({ course, faculty, program, page = 1, limit = 10 }) {
+  try {
+    const whereClause = {};
+    if (course) whereClause.courseId = course;
+    if (faculty) whereClause.facultyId = faculty;
+    if (program) whereClause.programId = program;
+
+    const students = await Student.findAndCountAll({
+      where: whereClause,
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+      include: [
+        {
+          model: NIDCard,
+          attributes: [
+            "id",
+            "placeOfIssue",
+            "dateOfIssue",
+            "expiryOfIssue",
+            "chip",
+          ],
+        },
+        {
+          model: OIDCard,
+          attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue"],
+        },
+        {
+          model: Passport,
+          attributes: [
+            "id",
+            "dateOfIssue",
+            "placeOfIssue",
+            "expiryOfIssue",
+            "country",
+            "note",
+          ],
+        },
       ],
-    }
-    : {}; // No filter, fetch all students
+      offset: (page - 1) * limit,
+      limit: parseInt(limit),
+    });
 
-  const { rows: students, count: total } = await Student.findAndCountAll({
-    where: whereCondition,
-    offset: (page - 1) * limit,
-    limit: limit,
-    attributes: { exclude: ["createdAt", "updatedAt"] },
-    include: [
-      {
-        model: NIDCard,
-        attributes: [
-          "id",
-          "placeOfIssue",
-          "dateOfIssue",
-          "expiryOfIssue",
-          "chip",
-        ],
-      },
-      {
-        model: OIDCard,
-        attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue"],
-      },
-      {
-        model: Passport,
-        attributes: [
-          "id",
-          "dateOfIssue",
-          "placeOfIssue",
-          "expiryOfIssue",
-          "country",
-          "note",
-        ],
-      },
-    ],
-    order: [["fullName", "ASC"]],
-  });
+    const formattedStudents = students.rows.map((student) => {
+      const identityTypes = [
+        { type: "NIDCard", key: "NIDCard" },
+        { type: "OIDCard", key: "OIDCard" },
+        { type: "Passport", key: "Passport" },
+      ];
 
-  const modifiedStudents = students.map((student) => {
-    const identityTypes = [
-      { type: "NIDCard", key: "NIDCard" },
-      { type: "OIDCard", key: "OIDCard" },
-      { type: "Passport", key: "Passport" },
-    ];
+      const identityDocument =
+        identityTypes
+          .map(
+            ({ type, key }) =>
+              student[key] && { type, ...student[key].get({ plain: true }) }
+          )
+          .find(Boolean) || null;
 
-    const identityDocument =
-      identityTypes
-        .map(
-          ({ type, key }) =>
-            student[key] && { type, ...student[key].get({ plain: true }) }
-        )
-        .find(Boolean) || null;
+      const studentData = student.get({ plain: true });
+      ["NIDCard", "OIDCard", "Passport"].forEach(
+        (key) => delete studentData[key]
+      );
 
-    const studentData = student.get({ plain: true });
-    ["NIDCard", "OIDCard", "Passport"].forEach(
-      (key) => delete studentData[key]
+      return Object.assign(studentData, { identityDocument });
+    });
+
+    return { students: formattedStudents, total: students.count };
+  } catch (error) {
+    console.error(
+      "Error in studentService.getFilteredStudents:",
+      error.message
     );
-
-    return { ...studentData, identityDocument };
-  });
-
-  return { students: modifiedStudents, total, page, limit };
+    throw new Error("Error server");
+  }
 }
 
 async function getStatuses() {
@@ -255,6 +261,75 @@ async function getStatuses() {
   }
 }
 
+async function searchStudents(studentId, fullname, page = 1, limit = 10) {
+  try {
+    const students = await Student.findAndCountAll({
+      where: {
+        [Op.or]: [
+          { studentId: { [Op.like]: `%${studentId}%` } },
+          { fullName: { [Op.like]: `%${fullname}%` } },
+        ],
+      },
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+      include: [
+        {
+          model: NIDCard,
+          attributes: [
+            "id",
+            "placeOfIssue",
+            "dateOfIssue",
+            "expiryOfIssue",
+            "chip",
+          ],
+        },
+        {
+          model: OIDCard,
+          attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue"],
+        },
+        {
+          model: Passport,
+          attributes: [
+            "id",
+            "dateOfIssue",
+            "placeOfIssue",
+            "expiryOfIssue",
+            "country",
+            "note",
+          ],
+        },
+      ],
+      offset: (page - 1) * limit,
+      limit: parseInt(limit),
+    });
+    const formattedStudents = students.rows.map((student) => {
+      const identityTypes = [
+        { type: "NIDCard", key: "NIDCard" },
+        { type: "OIDCard", key: "OIDCard" },
+        { type: "Passport", key: "Passport" },
+      ];
+
+      const identityDocument =
+        identityTypes
+          .map(
+            ({ type, key }) =>
+              student[key] && { type, ...student[key].get({ plain: true }) }
+          )
+          .find(Boolean) || null;
+
+      const studentData = student.get({ plain: true });
+      ["NIDCard", "OIDCard", "Passport"].forEach(
+        (key) => delete studentData[key]
+      );
+
+      return Object.assign(studentData, { identityDocument });
+    });
+
+    return { students: formattedStudents, total: students.count };
+  } catch (error) {
+    console.error("Error in studentService.searchStudents:", error.message);
+    throw new Error("Error server");
+  }
+}
 
 module.exports = {
   deleteStudent,
@@ -266,4 +341,5 @@ module.exports = {
   getStudentsByPageLimit,
   getStudents,
   getStatuses,
+  searchStudents,
 };
