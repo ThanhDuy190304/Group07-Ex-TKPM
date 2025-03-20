@@ -18,9 +18,7 @@ const StudentValidationRules = [
   body("phoneNumber")
     .matches(/^[0-9]{10}$/)
     .withMessage("Phone number must be 10 digits"),
-  body("status")
-    .isIn(["Đang học", "Đã tốt nghiệp", "Đã thôi học", "Tạm dừng học"])
-    .withMessage("Invalid status"),
+  body("statusId").notEmpty().withMessage("Status ID is required"),
 ];
 
 async function deleteStudent(req, res) {
@@ -134,10 +132,30 @@ async function importStudents(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
-module.exports = {
-  deleteStudent,
-  postStudent,
-  putStudent,
-  getStudents, getStatuses,
-  importStudents,
-};
+
+async function putStatus(req, res) {
+  try {
+    const statusId = req.params.statusId;
+    const updatedData = req.body;
+    const result = await StudentService.updateStatus(statusId, updatedData);
+    if (!result) {
+      return res.status(404).json({ message: "Trạng thái không hợp lệ!" });
+    }
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Error in putStatus:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+async function postStatus(req, res) {
+  try {
+    const result = await StudentService.createStatus(req.body);
+    return res.status(201).json(result);
+  } catch (error) {
+    console.error("Error in postStatus:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+module.exports = { deleteStudent, postStudent, putStudent, getStudents, getStatuses, putStatus, postStatus, importStudents };

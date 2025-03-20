@@ -11,6 +11,7 @@ const Nationality = require("../nationality/nationalityModel");
 const PermanentAddress = require("../address/permanentAddressModel");
 const MailAddress = require("../address/mailAddressModel");
 const TemporaryResidenceAddress = require("../address/temporaryResidenceAddressModel");
+const StudentStatus = require("./studentStatusModel");
 
 const Student = sequelize.define(
   "Student",
@@ -42,16 +43,6 @@ const Student = sequelize.define(
       allowNull: false,
       validate: { is: /^[0-9]{10}$/ },
     },
-    status: {
-      type: DataTypes.ENUM(
-        "Đang học",
-        "Đã tốt nghiệp",
-        "Đã thôi học",
-        "Tạm dừng học"
-      ), // Tình trạng sinh viên
-      allowNull: false,
-      defaultValue: "Đang học",
-    },
   },
   {
     timestamps: true,
@@ -64,9 +55,9 @@ Student.belongsTo(Faculty, { foreignKey: "facultyId" });
 Student.belongsTo(Course, { foreignKey: "courseId" });
 Student.belongsTo(Program, { foreignKey: "programId" });
 Student.belongsTo(Nationality, { foreignKey: "nationalId" });
-Student.belongsTo(PermanentAddress, {foreignKey: "permanentAddressId"});
-Student.belongsTo(TemporaryResidenceAddress, {foreignKey: "temporaryResidenceAddressId"});
-Student.belongsTo(MailAddress, {foreignKey: "mailAddress"});
+Student.belongsTo(PermanentAddress, { foreignKey: "permanentAddressId" });
+Student.belongsTo(TemporaryResidenceAddress, { foreignKey: "temporaryResidenceAddressId" });
+Student.belongsTo(MailAddress, { foreignKey: "mailAddress" });
 
 Student.hasOne(OIDCard, { foreignKey: "studentId" });
 Student.hasOne(NIDCard, { foreignKey: "studentId" });
@@ -77,15 +68,16 @@ Course.hasMany(Student, { foreignKey: "courseId" });
 Program.hasMany(Student, { foreignKey: "programId" });
 Nationality.hasMany(Student, { foreignKey: "nationalId" });
 
-PermanentAddress.hasOne(Student, {foreignKey: "permanentAddressId"});
-TemporaryResidenceAddress.hasOne(Student, {foreignKey: "temporaryResidenceAddressId"});
-MailAddress.belongsTo(Student, {foreignKey: "mailAddress"});
+PermanentAddress.hasOne(Student, { foreignKey: "permanentAddressId" });
+TemporaryResidenceAddress.hasOne(Student, { foreignKey: "temporaryResidenceAddressId" });
+MailAddress.belongsTo(Student, { foreignKey: "mailAddress" });
 
 Passport.belongsTo(Student, { foreignKey: "studentId" });
 NIDCard.belongsTo(Student, { foreignKey: "studentId" });
 OIDCard.belongsTo(Student, { foreignKey: "studentId" });
 
-
+Student.belongsTo(StudentStatus, { foreignKey: "statusId" });
+StudentStatus.hasMany(Student, { foreignKey: "statusId" });
 
 // 🛠 Hook để tạo studentId dựa trên courseId
 Student.beforeCreate(async (student, options) => {
