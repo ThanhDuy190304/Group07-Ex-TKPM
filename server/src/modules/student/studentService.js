@@ -133,22 +133,22 @@ async function getStudentsByName(fullName, page = 1, limit = 10) {
   }
 }
 
-async function getStudentsByFaculty(facultyName, page = 1, limit = 10){
-  try{
-    const offset = (page-1)*limit;
-    const {count: total, rows: students} = await Student.findAndCountAll({
+async function getStudentsByFaculty(facultyName, page = 1, limit = 10) {
+  try {
+    const offset = (page - 1) * limit;
+    const { count: total, rows: students } = await Student.findAndCountAll({
       where: {},
       include: {
         model: Faculty,
-        where: {facultyName},
+        where: { facultyName },
         attributes: { exclude: ["createdAt", "updatedAt"] },
       },
       attributes: { exclude: ["createdAt", "updatedAt"] },
       limit: parseInt(limit),
       offset: parseInt(offset),
     });
-    return {students, total};
-  } catch(error){
+    return { students, total };
+  } catch (error) {
     console.error("Error in StudentService.getStudentsByFaculty:", error.message);
     throw new Error("Error Server");
   }
@@ -178,11 +178,11 @@ async function getStudentsByPageLimit(page = 1, limit = 10) {
 async function getStudents({ query = "", page = 1, limit = 10 }) {
   const whereCondition = query
     ? {
-        [Op.or]: [
-          { studentId: query }, // Exact match for studentId
-          { fullName: { [Op.like]: `%${query}%` } }, // Partial match for fullName
-        ],
-      }
+      [Op.or]: [
+        { studentId: query }, // Exact match for studentId
+        { fullName: { [Op.like]: `%${query}%` } }, // Partial match for fullName
+      ],
+    }
     : {}; // No filter, fetch all students
 
   const { rows: students, count: total } = await Student.findAndCountAll({
@@ -246,6 +246,16 @@ async function getStudents({ query = "", page = 1, limit = 10 }) {
   return { students: modifiedStudents, total, page, limit };
 }
 
+async function getStatuses() {
+  try {
+    return Student.getAttributes().status.type.values;
+  } catch (error) {
+    console.error("Error in StudentService.getStatuses:", error.message);
+    throw new Error("Error Server");
+  }
+}
+
+
 module.exports = {
   deleteStudent,
   createStudent,
@@ -255,4 +265,5 @@ module.exports = {
   updateStudent,
   getStudentsByPageLimit,
   getStudents,
+  getStatuses,
 };

@@ -111,5 +111,15 @@ async function getStudents(req, res) {
   }
 }
 
+async function getStatuses(req, res) {
+  try {
+    const statuses = await StudentService.getStatuses();
+    return res.status(200).json(statuses);
+  } catch (error) {
+    console.error("Error in getStatuses:", error);
+    return res.status(500).json({ error: "Internal server error" });
 
-module.exports = { deleteStudent, postStudent, putStudent, getStudents };
+  }
+}
+
+module.exports = { deleteStudent, postStudent, putStudent, getStudents, getStatuses };

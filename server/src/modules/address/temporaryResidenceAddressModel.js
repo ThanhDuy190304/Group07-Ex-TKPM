@@ -25,6 +25,10 @@ const TemporaryResidenceAddress = sequelize.define(
         city_province: {
             type: DataTypes.TEXT,
             allowNull: false,
+        },
+        nation: {
+            type: DataTypes.TEXT,
+            allowNull: false,
         }
     },
     {
@@ -32,8 +36,5 @@ const TemporaryResidenceAddress = sequelize.define(
         tableName: "temporary residence address",
     }
 );
-
-TemporaryResidenceAddress.belongsTo(Nationality, {foreignKey: "nationalId"});
-Nationality.hasMany(TemporaryResidenceAddress, {foreignKey: "nationalId"});
 
 module.exports = TemporaryResidenceAddress;
