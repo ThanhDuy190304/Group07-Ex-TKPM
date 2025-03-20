@@ -5,6 +5,7 @@ const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
 const { get } = require("../../route/studentRoute");
 const { Op } = require("sequelize");
+const Nationality = require("../nationality/nationalityModel");
 
 async function deleteStudent(studentId) {
   try {
@@ -81,6 +82,10 @@ async function getOneStudentById(studentId) {
             "country",
             "note",
           ],
+        },
+        {
+          model: Nationality,
+          attributes: ["id", "name", "code"],
         },
       ],
     });

@@ -451,8 +451,6 @@ function ProgramTable({ programs, setPrograms }) {
     );
 }
 
-
-
 function Academic() {
     const [faculties, setFaculties] = useState([]);
     const [programs, setPrograms] = useState([]);
