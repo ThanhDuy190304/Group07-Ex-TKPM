@@ -15,9 +15,7 @@ export const getStudents = async ({ searchQuery = {}, page = 1, limit = 20 } = {
         Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
         const queryString = new URLSearchParams(params).toString();
         const url = `/student?${queryString}`;
-        console.log("Fetching from:", url);
         const response = await api.get(url);
-        console.log("Response:", response.data);
         return response.data;
     } catch (error) {
         console.error("Lỗi khi fetch students:", error);
@@ -69,3 +67,46 @@ export const getStatuses = async () => {
         return { error: error.response?.data?.message || "Lỗi server" };
     }
 }
+
+export const putStatus = async (statusId, updatedData) => {
+    try {
+        const response = await api.put(`/student/statuses/${statusId}`, updatedData)
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi cập nhật trạng thái: ", error);
+        return { error: error.response?.data?.message || "Lỗi server" };
+    }
+}
+
+export const postStatus = async (newStatus) => {
+    try {
+        const response = await api.post("/student/statuses", newStatus);
+        console.log("res: ", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi tạo trạng thái: ", error);
+        return { error: "Lỗi server" };
+    }
+}
+
+export const getToExportStudents = async (searchQuery) => {
+    try {
+        const params = {
+            studentId: searchQuery.studentId || undefined,
+            fullName: searchQuery.fullName || undefined,
+            facultyId: searchQuery.facultyId || undefined,
+            courseId: searchQuery.courseId || undefined,
+            programId: searchQuery.programId || undefined,
+        };
+        // Xóa các giá trị undefined
+        Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
+        const queryString = new URLSearchParams(params).toString();
+        const url = `/student/export?${queryString}`;
+        console.log(url);
+        const response = await api.get(url);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi fetch students:", error);
+        return { students: [], total: 0, error: error.response?.data?.message || "Lỗi server" };
+    }
+};

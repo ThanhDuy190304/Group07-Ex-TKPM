@@ -5,8 +5,7 @@ import {
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon, DocumentArrowDownIcon
 } from "@heroicons/react/24/outline";
 import Button from '@mui/joy/Button';
-import Select from 'react-select'
-import { getStudents, putStudent, deleteStudent, postStudent } from "../api/useStudents";
+import { getStudents, putStudent, deleteStudent, postStudent, getStatuses, getToExportStudents } from "../api/useStudents";
 import { getFaculties } from "../api/useFalcuties";
 import { getPrograms } from "../api/usePrograms";
 import { getCourses } from "../api/useCoures";
@@ -14,7 +13,10 @@ import { getCourses } from "../api/useCoures";
 import { validateEmail, validatePhone, validateBirthdate } from "../utils/validators";
 import { useError } from "../utils/ErrorContext";
 import { Tooltip } from 'react-tooltip';
-import lodash from "lodash";
+import lodash, { set } from "lodash";
+import { saveAs } from "file-saver";
+import { utils, writeFile } from "xlsx";
+
 
 
 /**
@@ -29,7 +31,7 @@ import lodash from "lodash";
  * @property {string} address - Địa chỉ sinh viên
  * @property {string} email - Email sinh viên
  * @property {string} phoneNumber - Số điện thoại sinh viên
- * @property {string} status - Trạng thái học tập
+ * @property {string} statusId - Trạng thái học tập
  *     (Giá trị hợp lệ: "Đang học", "Đã tốt nghiệp", "Đã thôi học", "Tạm dừng học")
  */
 
@@ -46,6 +48,13 @@ import lodash from "lodash";
  * @property {string} short_name - Tên viết tắt
  */
 
+/**
+ * @typedef {Object} Status
+ * @property {number} statusId - Mã trạng thái
+ * @property {string} name - Tên trạng thái
+ * @property {string} description - Mô tả trạng thái
+ */
+
 
 const studentFields = {
     studentId: "MSSV",
@@ -58,17 +67,12 @@ const studentFields = {
     address: "Địa chỉ",
     email: "Email",
     phoneNumber: "SĐT",
-    status: "Tình trạng",
+    statusId: "Tình trạng",
 };
 
-const STUDENT_STATUSES = [
-    "Đang học",
-    "Đã tốt nghiệp",
-    "Đã thôi học",
-    "Tạm dừng học",
-];
 const GENDERS = ["Nam", "Nữ", "Khác"];
 
+const FILETYPES = ["JSON", "XLSX"];
 
 //Hàm tìm kiếm  sinh viên theo filter
 function Search({ setSearchQuery, faculties, courses, programs }) {
@@ -246,7 +250,7 @@ const SelectInput = memo(({ name, value, onChange, options, placeholder }) => {
     );
 });
 
-const CreateAStudent_Button = ({ faculties, courses, programs }) => {
+const CreateAStudent_Button = ({ faculties, courses, programs, statuses }) => {
     const { showError } = useError();
 
     const [errors, setErrors] = useState({});
@@ -286,7 +290,7 @@ const CreateAStudent_Button = ({ faculties, courses, programs }) => {
         }
     }
     const initialStudent = {
-        studentId: "", fullName: "", dateOfBirth: "", gender: "", facultyId: "", courseId: "", programId: "", address: "", phoneNumber: "", status: "", email: ""
+        studentId: "", fullName: "", dateOfBirth: "", gender: "", facultyId: "", courseId: "", programId: "", address: "", phoneNumber: "", statusId: "", email: ""
     };
     const [student, studentDispatch] = useReducer(createNewStudent, initialStudent);
 
@@ -370,7 +374,14 @@ const CreateAStudent_Button = ({ faculties, courses, programs }) => {
                                     <TextInput name="phoneNumber" value={student.phoneNumber} onChange={handleChange} onBlur={handleBlur} placeholder={studentFields.phoneNumber} />
                                 </div>
                             </div>
-                            <SelectInput name="status" value={student.status} onChange={handleChange} options={STUDENT_STATUSES} placeholder="Chọn tình trạng" />
+                            <select className="border p-2 rounded" name="statusId" value={student.statusId} onChange={handleChange}>
+                                <option value="" className="disabled hidden">Chọn tình trạng</option>
+                                {statuses.map(status => (
+                                    <option key={status.statusId} value={status.statusId}>
+                                        {status.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="flex justify-end mt-4 gap-2">
                             <button onClick={closeModal} className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md cursor-pointer">
@@ -387,9 +398,79 @@ const CreateAStudent_Button = ({ faculties, courses, programs }) => {
     );
 };
 
-function downFile({ students, faculties, courses, programs }) {
-
+function downFile(data, type) {
+    if (type === "JSON") {
+        const jsonData = JSON.stringify(data, null, 2); // Chuyển object thành chuỗi JSON
+        const blob = new Blob([jsonData], { type: "application/json" }); // Tạo file JSON dưới dạng Blob
+        saveAs(blob, "students.json"); // Gọi hộp thoại lưu file về máy
+    }
+    else if (type === "XLSX") {
+        const worksheet = utils.json_to_sheet(data);
+        const workbook = utils.book_new();
+        utils.book_append_sheet(workbook, worksheet, "Students");
+        writeFile(workbook, "students.xlsx");
+    }
 }
+
+async function fetchStudentsToExport(searchQuery) {
+    try {
+        const students = await getToExportStudents(searchQuery);
+        return { success: true, data: students };
+    } catch (error) {
+        return { success: false, error: error };
+    }
+}
+
+function mapStudentsForExport(students, faculties, programs, statuses) {
+    return students.map(student => ({
+        "MSSV": student.studentId,
+        "Họ tên": student.fullName,
+        "Ngày sinh": student.dateOfBirth,
+        "Giới tính": student.gender,
+        "Khoa": faculties.find(f => f.facultyId === student.facultyId)?.name || "N/A",
+        "Khóa": student.courseId,
+        "Chương trình": programs.find(p => p.programId === student.programId)?.name || "N/A",
+        "Địa chỉ": student.mailAddress || "N/A",
+        "Email": student.email,
+        "SĐT": student.phoneNumber,
+        "Tình trạng": statuses.find(s => s.statusId === student.statusId)?.name || "N/A",
+    }));
+}
+
+function ExportButton({ searchQuery, faculties, programs, statuses }) {
+    const { showError } = useError();
+    const [fileType, setFileType] = useState("JSON");
+    const handleExport = async () => {
+        const response = await fetchStudentsToExport(searchQuery);
+        if (!response.success) {
+            showError("Lỗi khi tải dữ liệu!");
+            return;
+        }
+        const formattedData = mapStudentsForExport(response.data, faculties, programs, statuses);
+        downFile(formattedData, fileType);
+    };
+    return (
+        <div className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer"
+            onClick={handleExport}>
+            <DocumentArrowDownIcon className="w-5 h-5" />
+            <span>Tải xuống</span>
+            {/* Dropdown chọn loại file */}
+            <select
+                value={fileType}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => setFileType(e.target.value)}
+                className="bg-blue-600 text-white border-none outline-none cursor-pointer"
+            >
+                {FILETYPES.map((type) => (
+                    <option key={type} value={type} className="cursor-pointer">
+                        {type}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
 
 function Pagination({ total, limit, currentPage, onPageChange }) {
 
@@ -459,7 +540,7 @@ async function editStudent(studentId, updateData) {
     return true;
 }
 
-function StudentInf({ student, onClose, facultyMap }) {
+function StudentInf({ student, onClose, facultyMap, programMap, statusMap }) {
     return (
         <div className="relative p-4 min-w-80 bg-white rounded-md shadow-md">
             <XMarkIcon
@@ -477,8 +558,8 @@ function StudentInf({ student, onClose, facultyMap }) {
                 <div className="col-span-2"><span className="font-bold">Email:</span> <span className="break-words">{student.email}</span></div>
                 <div><span className="font-bold">Khoa:</span> <span className="break-words">{facultyMap[student.facultyId]?.name || "Không xác định"}</span></div>
                 <div><span className="font-bold">Khóa:</span> <span className="break-words">{student.courseId}</span></div>
-                <div><span className="font-bold">Chương trình:</span> <span className="break-words">{student.programId}</span></div>
-                <div><span className="font-bold">Trạng thái:</span> <span className="break-words">{student.status}</span></div>
+                <div><span className="font-bold">Chương trình:</span> <span className="break-words">{programMap[student.programId]?.name || "Không xác định"}</span></div>
+                <div><span className="font-bold">Trạng thái:</span> <span className="break-words">{statusMap[student.statusId]?.name || "Không xác định"}</span></div>
             </div>
 
 
@@ -494,7 +575,7 @@ function StudentInf({ student, onClose, facultyMap }) {
  * @param {number} props.faculties[].facultyId - ID của khoa
  * @param {string} props.faculties[].name - Tên khoa
  */
-function StudentList({ students, setStudents, faculties, courses, programs }) {
+function StudentList({ students, setStudents, faculties, courses, programs, statuses }) {
     const { showError } = useError();
     const [showStudentInf, setShowStudentInf] = useState(false);
     const columns = [
@@ -503,7 +584,7 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
         { key: "facultyId", label: studentFields.facultyId, width: "w-36" },
         { key: "courseId", label: studentFields.courseId, width: "w-12" },
         { key: "programId", label: studentFields.programId, width: "w-24" },
-        { key: "status", label: studentFields.status, width: "w-24" },
+        { key: "statusId", label: studentFields.statusId, width: "w-24" },
         { key: "action", label: "", width: "w-20" },
     ];
 
@@ -539,6 +620,7 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
         // Gọi hàm editStudent và đợi kết quả
         const { studentId, ...studentData } = editStudentState;  // Loại bỏ studentId
         const updateData = { ...studentData };
+        console.log("Update data:", updateData);
         const success = await editStudent(checkEditingRow, updateData);
         if (!success) {
             showError("Update fail!");
@@ -567,7 +649,7 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
     students = lodash.orderBy(students, ["studentId"], ["asc"]);
     const facultyMap = lodash.keyBy(faculties, "facultyId");
     const programMap = lodash.keyBy(programs, "programId");
-    console.log(programMap);
+    const statusMap = lodash.keyBy(statuses, "statusId");
     return (
         <div className="flex gap-4">
             <div className={`overflow-x-auto ${showStudentInf ? "w-3/5" : "w-full"}`}>
@@ -640,6 +722,7 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                                 // Chọn Khoa
                                                 <select
                                                     value={editStudentState[col.key] || ""}
+                                                    onClick={(e) => e.stopPropagation()}
                                                     onChange={(e) => handleEditChange(col.key, e.target.value)}
                                                     className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
                                                 >
@@ -653,6 +736,7 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                                 // Chọn Chương trình học
                                                 <select
                                                     value={editStudentState[col.key] || ""}
+                                                    onClick={(e) => e.stopPropagation()}
                                                     onChange={(e) => handleEditChange(col.key, e.target.value)}
                                                     className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
                                                 >
@@ -666,6 +750,7 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                                 // Chọn Khóa học
                                                 <select
                                                     value={editStudentState[col.key] || ""}
+                                                    onClick={(e) => e.stopPropagation()}
                                                     onChange={(e) => handleEditChange(col.key, e.target.value)}
                                                     className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
                                                 >
@@ -675,34 +760,30 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                                         </option>
                                                     ))}
                                                 </select>
-                                            ) : col.key === "status" ? (
+                                            ) : col.key === "statusId" ? (
                                                 // Chọn tình trạng sinh viên
                                                 <select
                                                     value={editStudentState[col.key] || ""}
+                                                    onClick={(e) => e.stopPropagation()}
                                                     onChange={(e) => handleEditChange(col.key, e.target.value)}
                                                     className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
                                                 >
-                                                    {STUDENT_STATUSES.map((status) => (
-                                                        <option key={status} value={status}>
-                                                            {status}
+                                                    {statuses.map((status) => (
+                                                        <option key={status.statusId} value={status.statusId}>
+                                                            {status.name}
                                                         </option>
                                                     ))}
                                                 </select>
                                             ) : (
-                                                // Các trường khác vẫn dùng input bình thường
-                                                <input
-                                                    type="text"
-                                                    value={editStudentState[col.key] || ""}
-                                                    onChange={(e) => handleEditChange(col.key, e.target.value)}
-                                                    className="border-b border-blue-500 w-full rounded-sm focus:outline-none"
-                                                    readOnly={col.key === "studentId" || col.key === "fullName"}
-                                                />
+                                                student[col.key]
                                             )
                                         ) : col.key === "facultyId" ? (
                                             // Hiển thị facultyName thay vì facultyId
                                             facultyMap[student.facultyId]?.name || "Không xác định"
                                         ) : col.key == "programId" ? (
                                             programMap[student.programId]?.short_name || "Không xác định"
+                                        ) : col.key == "statusId" ? (
+                                            statusMap[student.statusId]?.name || "Không xác định"
                                         ) : (
                                             student[col.key]
                                         )}
@@ -716,7 +797,7 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
             {/* Hiển thị StudentInf nếu có sinh viên được chọn */}
             {showStudentInf && (
                 <div className="w-2/5 border border-gray-300 p-4 bg-white rounded-md">
-                    <StudentInf student={showStudentInf} onClose={() => setShowStudentInf(false)} facultyMap={facultyMap} />
+                    <StudentInf student={showStudentInf} onClose={() => setShowStudentInf(false)} facultyMap={facultyMap} programMap={programMap} statusMap={statusMap} />
                 </div>
             )}
         </div>
@@ -728,6 +809,7 @@ function Student() {
     const [faculties, setFaculties] = useState([]);
     const [programs, setPrograms] = useState([]);
     const [courses, setCourses] = useState([]);
+    const [statuses, setStatuses] = useState([]);
 
     const [students, setStudents] = useState([]);
     const [total, setTotal] = useState(0);
@@ -739,14 +821,16 @@ function Student() {
         const fetchData = async () => {
             try {
                 console.log("Fetching faculties, programs, and courses...");
-                const [facultiesData, programsData, coursesData] = await Promise.all([
+                const [facultiesData, programsData, coursesData, statusesData] = await Promise.all([
                     getFaculties(),
                     getPrograms(),
-                    getCourses()
+                    getCourses(),
+                    getStatuses()
                 ]);
                 setFaculties(facultiesData);
                 setPrograms(programsData);
                 setCourses(coursesData);
+                setStatuses(statusesData);
             } catch (error) {
                 console.error("Lỗi khi fetch dữ liệu:", error);
             }
@@ -778,12 +862,19 @@ function Student() {
         <div className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
 
-            <div className="flex mt-4 gap-4">
+            <div className="flex mt-4 gap-4 ">
                 <Search setSearchQuery={setSearchQuery} faculties={faculties} courses={courses} programs={programs} />
                 <CreateAStudent_Button
                     faculties={faculties}
                     courses={courses}
-                    programs={programs} />
+                    programs={programs}
+                    statuses={statuses} />
+                <ExportButton
+                    searchQuery={searchQuery}
+                    faculties={faculties}
+                    programs={programs}
+                    statuses={statuses}
+                    className="ml-auto" />
             </div>
 
             <div className="mt-6">
@@ -791,7 +882,9 @@ function Student() {
                     setStudents={setStudents}
                     faculties={faculties}
                     courses={courses}
-                    programs={programs} />
+                    programs={programs}
+                    statuses={statuses}
+                />
                 <div className="mx-auto w-fit mt-4">
                     <Pagination total={total} limit={limit} currentPage={currentPage} onPageChange={handlePageChange} />
                 </div>
