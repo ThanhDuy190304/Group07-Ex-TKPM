@@ -1,3 +1,4 @@
+const { processFile } = require("../import/fileUploadService");
 const StudentService = require("./studentService");
 const { validationResult, body } = require("express-validator");
 
@@ -111,4 +112,21 @@ async function getStudents(req, res) {
   }
 }
 
-module.exports = { deleteStudent, postStudent, putStudent, getStudents };
+async function importStudents(req, res) {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const result = await processFile(req.file);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error processing file:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+module.exports = {
+  deleteStudent,
+  postStudent,
+  putStudent,
+  getStudents,
+  importStudents,
+};
