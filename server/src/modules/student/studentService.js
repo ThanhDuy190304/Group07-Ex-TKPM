@@ -133,6 +133,27 @@ async function getStudentsByName(fullName, page = 1, limit = 10) {
   }
 }
 
+async function getStudentsByFaculty(facultyName, page = 1, limit = 10){
+  try{
+    const offset = (page-1)*limit;
+    const {count: total, rows: students} = await Student.findAndCountAll({
+      where: {},
+      include: {
+        model: Faculty,
+        where: {facultyName},
+        attributes: { exclude: ["createdAt", "updatedAt"] },
+      },
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+    return {students, total};
+  } catch(error){
+    console.error("Error in StudentService.getStudentsByFaculty:", error.message);
+    throw new Error("Error Server");
+  }
+}
+
 async function getStudentsByPageLimit(page = 1, limit = 10) {
   try {
     const offset = (page - 1) * limit;
@@ -230,6 +251,7 @@ module.exports = {
   createStudent,
   getOneStudentById,
   getStudentsByName,
+  getStudentsByFaculty,
   updateStudent,
   getStudentsByPageLimit,
   getStudents,
