@@ -5,8 +5,7 @@ import {
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon, DocumentArrowDownIcon
 } from "@heroicons/react/24/outline";
 import Button from '@mui/joy/Button';
-import Select from 'react-select'
-import { getStudents, putStudent, deleteStudent, postStudent, getStatuses } from "../api/useStudents";
+import { getStudents, putStudent, deleteStudent, postStudent, getStatuses, getToExportStudents } from "../api/useStudents";
 import { getFaculties } from "../api/useFalcuties";
 import { getPrograms } from "../api/usePrograms";
 import { getCourses } from "../api/useCoures";
@@ -15,6 +14,9 @@ import { validateEmail, validatePhone, validateBirthdate } from "../utils/valida
 import { useError } from "../utils/ErrorContext";
 import { Tooltip } from 'react-tooltip';
 import lodash, { set } from "lodash";
+import { saveAs } from "file-saver";
+import { utils, writeFile } from "xlsx";
+
 
 
 /**
@@ -68,9 +70,9 @@ const studentFields = {
     statusId: "Tình trạng",
 };
 
-
 const GENDERS = ["Nam", "Nữ", "Khác"];
 
+const FILETYPES = ["JSON", "XLSX"];
 
 //Hàm tìm kiếm  sinh viên theo filter
 function Search({ setSearchQuery, faculties, courses, programs }) {
@@ -396,9 +398,79 @@ const CreateAStudent_Button = ({ faculties, courses, programs, statuses }) => {
     );
 };
 
-function downFile({ students, faculties, courses, programs, statuses }) {
-
+function downFile(data, type) {
+    if (type === "JSON") {
+        const jsonData = JSON.stringify(data, null, 2); // Chuyển object thành chuỗi JSON
+        const blob = new Blob([jsonData], { type: "application/json" }); // Tạo file JSON dưới dạng Blob
+        saveAs(blob, "students.json"); // Gọi hộp thoại lưu file về máy
+    }
+    else if (type === "XLSX") {
+        const worksheet = utils.json_to_sheet(data);
+        const workbook = utils.book_new();
+        utils.book_append_sheet(workbook, worksheet, "Students");
+        writeFile(workbook, "students.xlsx");
+    }
 }
+
+async function fetchStudentsToExport(searchQuery) {
+    try {
+        const students = await getToExportStudents(searchQuery);
+        return { success: true, data: students };
+    } catch (error) {
+        return { success: false, error: error };
+    }
+}
+
+function mapStudentsForExport(students, faculties, programs, statuses) {
+    return students.map(student => ({
+        "MSSV": student.studentId,
+        "Họ tên": student.fullName,
+        "Ngày sinh": student.dateOfBirth,
+        "Giới tính": student.gender,
+        "Khoa": faculties.find(f => f.facultyId === student.facultyId)?.name || "N/A",
+        "Khóa": student.courseId,
+        "Chương trình": programs.find(p => p.programId === student.programId)?.name || "N/A",
+        "Địa chỉ": student.mailAddress || "N/A",
+        "Email": student.email,
+        "SĐT": student.phoneNumber,
+        "Tình trạng": statuses.find(s => s.statusId === student.statusId)?.name || "N/A",
+    }));
+}
+
+function ExportButton({ searchQuery, faculties, programs, statuses }) {
+    const { showError } = useError();
+    const [fileType, setFileType] = useState("JSON");
+    const handleExport = async () => {
+        const response = await fetchStudentsToExport(searchQuery);
+        if (!response.success) {
+            showError("Lỗi khi tải dữ liệu!");
+            return;
+        }
+        const formattedData = mapStudentsForExport(response.data, faculties, programs, statuses);
+        downFile(formattedData, fileType);
+    };
+    return (
+        <div className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer"
+            onClick={handleExport}>
+            <DocumentArrowDownIcon className="w-5 h-5" />
+            <span>Tải xuống</span>
+            {/* Dropdown chọn loại file */}
+            <select
+                value={fileType}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => setFileType(e.target.value)}
+                className="bg-blue-600 text-white border-none outline-none cursor-pointer"
+            >
+                {FILETYPES.map((type) => (
+                    <option key={type} value={type} className="cursor-pointer">
+                        {type}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
 
 function Pagination({ total, limit, currentPage, onPageChange }) {
 
@@ -790,13 +862,19 @@ function Student() {
         <div className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
 
-            <div className="flex mt-4 gap-4">
+            <div className="flex mt-4 gap-4 ">
                 <Search setSearchQuery={setSearchQuery} faculties={faculties} courses={courses} programs={programs} />
                 <CreateAStudent_Button
                     faculties={faculties}
                     courses={courses}
                     programs={programs}
                     statuses={statuses} />
+                <ExportButton
+                    searchQuery={searchQuery}
+                    faculties={faculties}
+                    programs={programs}
+                    statuses={statuses}
+                    className="ml-auto" />
             </div>
 
             <div className="mt-6">
