@@ -1,4 +1,5 @@
 const Student = require("./studentModel");
+const StudentStatus = require("./studentStatusModel");
 const Faculty = require("../faculty/facultyModel");
 const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
@@ -248,13 +249,58 @@ async function getStudents({ query = "", page = 1, limit = 10 }) {
 
 async function getStatuses() {
   try {
-    return Student.getAttributes().status.type.values;
+    return StudentStatus.findAll({
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+    });
   } catch (error) {
     console.error("Error in StudentService.getStatuses:", error.message);
     throw new Error("Error Server");
   }
 }
 
+async function updateStatus(statusId, updatedData) {
+  try {
+    const [affectedRows] = await StudentStatus.update(updatedData, {
+      where: { statusId }
+    });
+    if (affectedRows === 0) {
+      return null;
+    }
+    return true;
+  } catch (error) {
+    console.error("Error in StudentService.updateStatus:", error.message);
+    throw new Error("Error server");
+  }
+}
+
+async function createStatus(newStatus) {
+  try {
+    const status = await StudentStatus.create(newStatus);
+    return status;
+  } catch (error) {
+    console.error("Error in StudentService.createStatus:", error.message);
+    throw new Error("Error server");
+  }
+}
+
+async function getToExportStudents(filters) {
+  try {
+    const whereClause = {};
+    if (filters.studentId) whereClause.studentId = filters.studentId;
+    if (filters.fullName) whereClause.fullName = { $like: `%${filters.fullName}%` };
+    if (filters.facultyId) whereClause.facultyId = filters.facultyId;
+    if (filters.courseId) whereClause.courseId = filters.courseId;
+    if (filters.programId) whereClause.programId = filters.programId;
+    const students = await Student.findAll({
+      where: whereClause,
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+    });
+    return students;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách students:", error);
+    throw new Error("Error server");
+  }
+}
 
 module.exports = {
   deleteStudent,
@@ -266,4 +312,7 @@ module.exports = {
   getStudentsByPageLimit,
   getStudents,
   getStatuses,
+  createStatus,
+  updateStatus,
+  getToExportStudents
 };

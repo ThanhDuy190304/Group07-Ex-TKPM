@@ -1,7 +1,7 @@
 import { useEffect, useState, useReducer, useCallback } from 'react';
 import { getFaculties, putFaculty, postFaculty } from '../api/useFalcuties';
 import { getPrograms, putProgram, postProgram } from '../api/usePrograms';
-import { getStatuses } from '../api/useStudents';
+import { getStatuses, putStatus, postStatus } from '../api/useStudents';
 import { PencilSquareIcon, CheckIcon } from '@heroicons/react/20/solid';
 import { Tooltip } from 'react-tooltip';
 import { Table } from '@mui/joy';
@@ -9,6 +9,7 @@ import Modal from "react-modal";
 import { motion } from "framer-motion";
 import { validateNotEmptyFields } from '../utils/validators';
 import { useError } from "../utils/ErrorContext";
+import { update } from 'lodash';
 
 
 Modal.setAppElement("#root");
@@ -27,7 +28,10 @@ Modal.setAppElement("#root");
  */
 
 /**
- * @typedef {string[]} Statuses
+ * @typedef {Object} status
+ * @property {string} statusId
+ * @property {string} name
+ * @property {string} description
  */
 
 async function updateFaculty(facultyId, updateData) {
@@ -456,6 +460,217 @@ function ProgramTable({ programs, setPrograms }) {
     );
 }
 
+async function insertStatus(newStatus) {
+    try {
+        const response = await postStatus(newStatus);
+        return { success: true, data: response };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+function StatusInsertion_Button({ statuses, setStatuses }) {
+    const { showError } = useError();
+    const [newStatus, setNewStatus] = useState({ name: "", description: "" });
+    const [isInserting, setIsInserting] = useState(false);
+
+    const openStatusInsertion = () => setIsInserting(true);
+    const closeStatusInsertion = () => setIsInserting(false);
+
+    const saveStatus = async () => {
+        let error = validateNotEmptyFields(newStatus);
+        if (error) {
+            showError(error);
+            return;
+        }
+        const response = await insertStatus(newStatus);
+        if (response.success) {
+            setStatuses([...statuses, response.data]);
+            closeStatusInsertion();
+        } else {
+            showError(response.error);
+        }
+        setNewStatus({ name: "", description: "" });
+    };
+
+    return (
+        <>
+            <button
+                onClick={openStatusInsertion}
+                className="bg-green-800 hover:bg-green-900 text-white py-1 px-4 rounded cursor-pointer"
+            >
+                Thêm Tình Trạng
+            </button>
+
+            {isInserting && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-white p-6 rounded-lg shadow-lg w-96"
+                    >
+                        <h2 className="text-lg font-bold mb-4">Thêm Tình Trạng</h2>
+                        <input
+                            type="text"
+                            value={newStatus.name}
+                            onChange={(e) => setNewStatus({ ...newStatus, name: e.target.value })}
+                            placeholder="Tên Tình Trạng"
+                            className="border p-2 rounded w-full mb-3"
+                        />
+                        <input
+                            type="text"
+                            value={newStatus.description}
+                            onChange={(e) => setNewStatus({ ...newStatus, description: e.target.value })}
+                            placeholder="Mô Tả"
+                            className="border p-2 rounded w-full mb-3"
+                        />
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={saveStatus}
+                                className="bg-green-800 hover:bg-green-900 text-white py-2 px-4 rounded cursor-pointer"
+                            >
+                                Lưu
+                            </button>
+                            <button
+                                onClick={closeStatusInsertion}
+                                className="bg-red-800 hover:bg-red-900 text-white py-2 px-4 rounded cursor-pointer"
+                            >
+                                Hủy
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </>
+    );
+}
+
+async function updateStatus(statusId, updateData) {
+    try {
+        console.log(updateData);
+        const result = putStatus(statusId, updateData);
+        return { success: true, data: result };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+function StatusTable({ statuses, setStatuses }) {
+    const { showError } = useError();
+
+    function statusDispatch(state, action) {
+        switch (action.type) {
+            case "START_EDIT":
+                return { ...action.data };
+            case "EDIT_FIELD":
+                return { ...state, [action.field]: action.value };
+            default:
+                return state;
+        }
+    }
+
+    const [editStatus, editStatusDispatch] = useReducer(statusDispatch, {});
+    const [checkEditingRow, setCheckEditingRow] = useState(null);
+
+    const startEdit = useCallback((status) => {
+        setCheckEditingRow(status.statusId);
+        editStatusDispatch({ type: "START_EDIT", data: status });
+    }, []);
+
+    const editField = useCallback((field, value) => {
+        editStatusDispatch({ type: "EDIT_FIELD", field, value });
+    }, []);
+
+    const saveEdit = useCallback(async () => {
+        const { statusId, ...updateData } = editStatus;
+        const result = await updateStatus(statusId, updateData);
+        if (result.success) {
+            setStatuses(statuses.map(status => status.statusId === statusId ? { ...status, ...updateData } : status));
+        } else {
+            showError(result.error);
+        }
+        setCheckEditingRow(null);
+    }, [editStatus]);
+
+    return (
+        <Table
+            stickyHeader
+            sx={{
+                width: '100%',
+                borderRadius: '8px',
+                border: '2px solid #9ca3af',
+                overflow: 'hidden',
+                '& th[scope="col"]': { bgcolor: 'var(--joy-palette-neutral-300, #CDD7E1)' },
+                '& th:nth-of-type(1), & td:nth-of-type(1)': { width: '100px' }, // STT hẹp
+                '& th:nth-of-type(2), & td:nth-of-type(2)': { width: '250px' },
+            }}
+        >
+            <thead>
+                <tr>
+                    <th scope="col">STT</th>
+                    <th scope="col">Tên Tình Trạng</th>
+                    <th scope="col">Mô Tả</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {statuses.map((status, index) => (
+                    <tr key={status.statusId}>
+                        <th scope="row">{index + 1}</th>
+
+                        {/* Cột Tên Tình Trạng */}
+                        <td>
+                            {checkEditingRow === status.statusId ? (
+                                <input
+                                    type="text"
+                                    value={editStatus.name}
+                                    onChange={(e) => editField("name", e.target.value)}
+                                    className="border-b border-sky-700 p-1 rounded w-full focus:outline-none"
+                                />
+                            ) : (
+                                status.name
+                            )}
+                        </td>
+
+                        {/* Cột Mô Tả */}
+                        <td>
+                            {checkEditingRow === status.statusId ? (
+                                <input
+                                    type="text"
+                                    value={editStatus.description}
+                                    onChange={(e) => editField("description", e.target.value)}
+                                    className="border-b border-sky-700 p-1 rounded w-full focus:outline-none"
+                                />
+                            ) : (
+                                status.description
+                            )}
+                        </td>
+
+                        {/* Cột chứa nút chỉnh sửa / lưu */}
+                        <td className="flex justify-end">
+                            {checkEditingRow === null ? (
+                                <PencilSquareIcon
+                                    onClick={() => startEdit(status)}
+                                    className="w-5 h-5 text-blue-500 cursor-pointer"
+                                />
+                            ) : checkEditingRow === status.statusId ? (
+                                <CheckIcon
+                                    onClick={() => saveEdit()}
+                                    className="w-5 h-5 text-green-500 cursor-pointer"
+                                />
+                            ) : (
+                                <PencilSquareIcon className="w-5 h-5 text-gray-400 cursor-not-allowed" />
+                            )}
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </Table>
+    );
+}
+
 
 function Academic() {
     const [faculties, setFaculties] = useState([]);
@@ -482,6 +697,13 @@ function Academic() {
         <div>
             <div className="flex flex-col w-full">
                 <h2 className="text-2xl font-bold">Quản lý đào tạo</h2>
+            </div>
+            <div className="mt-8">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-xl font-bold">Tình trạng sinh viên</h3>
+                    <StatusInsertion_Button statuses={statuses} setStatuses={setStatuses} />
+                </div>
+                <StatusTable statuses={statuses} setStatuses={setStatuses} />
             </div>
             <div className="mt-8">
                 <div className="flex justify-between items-center mb-2">

@@ -16,47 +16,46 @@ app.use("/api/faculty", require("./route/facultyRoute"));
 app.use("/api/course", require("./route/courseRoute"));
 app.use("/api/program", require("./route/programRoute"));
 
-
 // Import models
 const Student = require("./modules/student/studentModel");
 const Faculty = require("./modules/faculty/facultyModel");
 const Course = require("./modules/course/courseModel");
 const Program = require("./modules/program/programModel");
+const StudentStatus = require("./modules/student/studentStatusModel");
 
 // Fake data function
 async function seedStudents() {
     const courses = ["K2020", "K2021", "K2022", "K2023"];
     const faculties = [1, 2, 3, 4];
     const programs = [1, 2, 3];
+    const statuses = await StudentStatus.findAll();
 
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 200; i++) {
         const fullName = faker.person.fullName();
         const dateOfBirth = faker.date.birthdate({ min: 18, max: 25, mode: "age" });
         const gender = faker.helpers.arrayElement(["Nam", "Nữ", "Khác"]);
-        const address = faker.location.streetAddress();
-        const cleanName = fullName.replace(/\s+/g, "").toLowerCase(); // Loại bỏ khoảng trắng
-        const email = faker.internet.email({ firstName: cleanName });
+        const email = faker.internet.email({ firstName: fullName.replace(/\s+/g, "").toLowerCase() });
 
         const phoneNumber = faker.string.numeric(10);
-        const status = faker.helpers.arrayElement(["Đang học", "Đã tốt nghiệp", "Đã thôi học", "Tạm dừng học"]);
+        const statusId = faker.helpers.arrayElement(statuses).statusId;
 
         await Student.create({
             fullName,
             dateOfBirth,
             gender,
-            address,
             email,
             phoneNumber,
             courseId: faker.helpers.arrayElement(courses),
             facultyId: faker.helpers.arrayElement(faculties),
             programId: faker.helpers.arrayElement(programs),
-            status,
+            statusId,
         });
     }
 }
+
 // Khởi tạo database
 sequelize
-    .sync({ force: true }) // Luôn xóa & tạo lại database khi chạy server
+    .sync({ force: true }) // Xóa & tạo lại database khi chạy server
     .then(async () => {
         console.log("✅ Database synced");
 
@@ -78,6 +77,13 @@ sequelize
             { short_name: "CQ", name: "Chính quy" },
             { short_name: "TT", name: "Tiên tiến" },
             { short_name: "CLC", name: "Chất lượng cao" },
+        ]);
+
+        await StudentStatus.bulkCreate([
+            { name: "Đang học" },
+            { name: "Đã tốt nghiệp" },
+            { name: "Đã thôi học" },
+            { name: "Tạm dừng học" },
         ]);
 
         console.log("✅ Database seeded");
