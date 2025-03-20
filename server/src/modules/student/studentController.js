@@ -153,9 +153,19 @@ async function postStatus(req, res) {
     const result = await StudentService.createStatus(req.body);
     return res.status(201).json(result);
   } catch (error) {
-    console.error("Error in postStatus:", error);
+    console.error("Error in studentController.postStatus:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
 
-module.exports = { deleteStudent, postStudent, putStudent, getStudents, getStatuses, putStatus, postStatus, importStudents };
+async function exportStudents(req, res) {
+  try {
+    const students = await StudentService.getToExportStudents(req.query);
+    return res.status(200).json(students);
+  } catch (error) {
+    console.error("Error in studentController.exportStudents:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+module.exports = { deleteStudent, postStudent, putStudent, getStudents, getStatuses, putStatus, postStatus, importStudents, exportStudents };

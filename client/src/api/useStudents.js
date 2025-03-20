@@ -89,3 +89,24 @@ export const postStatus = async (newStatus) => {
     }
 }
 
+export const getToExportStudents = async (searchQuery) => {
+    try {
+        const params = {
+            studentId: searchQuery.studentId || undefined,
+            fullName: searchQuery.fullName || undefined,
+            facultyId: searchQuery.facultyId || undefined,
+            courseId: searchQuery.courseId || undefined,
+            programId: searchQuery.programId || undefined,
+        };
+        // Xóa các giá trị undefined
+        Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
+        const queryString = new URLSearchParams(params).toString();
+        const url = `/student/export?${queryString}`;
+        console.log(url);
+        const response = await api.get(url);
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi fetch students:", error);
+        return { students: [], total: 0, error: error.response?.data?.message || "Lỗi server" };
+    }
+};

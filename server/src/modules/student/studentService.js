@@ -283,6 +283,25 @@ async function createStatus(newStatus) {
   }
 }
 
+async function getToExportStudents(filters) {
+  try {
+    const whereClause = {};
+    if (filters.studentId) whereClause.studentId = filters.studentId;
+    if (filters.fullName) whereClause.fullName = { $like: `%${filters.fullName}%` };
+    if (filters.facultyId) whereClause.facultyId = filters.facultyId;
+    if (filters.courseId) whereClause.courseId = filters.courseId;
+    if (filters.programId) whereClause.programId = filters.programId;
+    const students = await Student.findAll({
+      where: whereClause,
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+    });
+    return students;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách students:", error);
+    throw new Error("Error server");
+  }
+}
+
 module.exports = {
   deleteStudent,
   createStudent,
@@ -295,4 +314,5 @@ module.exports = {
   getStatuses,
   createStatus,
   updateStatus,
+  getToExportStudents
 };
