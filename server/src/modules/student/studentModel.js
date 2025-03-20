@@ -79,13 +79,11 @@ Nationality.hasMany(Student, { foreignKey: "nationalId" });
 
 PermanentAddress.hasOne(Student, {foreignKey: "permanentAddressId"});
 TemporaryResidenceAddress.hasOne(Student, {foreignKey: "temporaryResidenceAddressId"});
-MailAddress.belongsTo(Student, {foreignKey: "mailAddress"});
+MailAddress.hasOne(Student, {foreignKey: "mailAddress"});
 
 Passport.belongsTo(Student, { foreignKey: "studentId" });
 NIDCard.belongsTo(Student, { foreignKey: "studentId" });
 OIDCard.belongsTo(Student, { foreignKey: "studentId" });
-
-
 
 // 🛠 Hook để tạo studentId dựa trên courseId
 Student.beforeCreate(async (student, options) => {

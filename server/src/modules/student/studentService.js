@@ -3,6 +3,10 @@ const Faculty = require("../faculty/facultyModel");
 const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
+const PermanentAddress = require("../address/permanentAddressModel");
+const TemporaryResidenceAddress = require("../address/temporaryResidenceAddressModel");
+const MailAddress = require("../address/mailAddressModel");
+
 const { get } = require("../../route/studentRoute");
 const { Op } = require("sequelize");
 const Nationality = require("../nationality/nationalityModel");
@@ -214,6 +218,24 @@ async function getStudents({ course, faculty, program, page = 1, limit = 10 }) {
             "note",
           ],
         },
+        {
+          model: PermanentAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: TemporaryResidenceAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: MailAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: Nationality,
+          attributes: {
+            exclude: ["createdAt", "updatedAt"]
+          }
+        }
       ],
       offset: (page - 1) * limit,
       limit: parseInt(limit),
@@ -297,6 +319,24 @@ async function searchStudents(studentId, fullname, page = 1, limit = 10) {
             "note",
           ],
         },
+        {
+          model: PermanentAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: TemporaryResidenceAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: MailAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: Nationality,
+          attributes: {
+            exclude: ["createdAt", "updatedAt"]
+          }
+        }
       ],
       offset: (page - 1) * limit,
       limit: parseInt(limit),
