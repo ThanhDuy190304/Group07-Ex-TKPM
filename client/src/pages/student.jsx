@@ -2,8 +2,9 @@ import { useState, useReducer, useRef, useEffect, useCallback, memo } from "reac
 import {
     MagnifyingGlassIcon, ListBulletIcon, TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
-    ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon
+    ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon, DocumentArrowDownIcon
 } from "@heroicons/react/24/outline";
+import Button from '@mui/joy/Button';
 import Select from 'react-select'
 import { getStudents, putStudent, deleteStudent, postStudent } from "../api/useStudents";
 import { getFaculties } from "../api/useFalcuties";
@@ -68,79 +69,118 @@ const STUDENT_STATUSES = [
 ];
 const GENDERS = ["Nam", "Nữ", "Khác"];
 
-// Hàm tìm kiếm sinh viên
-function Search({ setSearchQuery }) {
-    const [searchField, setSearchField] = useState({ value: "studentId", label: "MSSV" });
-    const searchInput = useRef(null);
-    const handleSearchFieldChange = (selectedOption) => {
-        setSearchField(selectedOption);
-    };
+
+//Hàm tìm kiếm  sinh viên theo filter
+function Search({ setSearchQuery, faculties, courses, programs }) {
+    const [queryFullName, setQueryFullName] = useState("");
+    const [queryStudentId, setQueryStudentId] = useState("");
+    const [queryFacultyId, setQueryFacultyId] = useState("");
+    const [queryCourseId, setQueryCourseId] = useState("");
+    const [queryProgramId, setQueryProgramId] = useState("");
+    const [isOpen, setIsOpen] = useState(false);
+    const searchRef = useRef(null);
+
     const handleSearch = () => {
-        const searchValue = searchInput.current.value.trim();
-        if (!searchValue) return;
-        console.log("Tìm kiếm theo:", searchField.value, "Giá trị:", searchValue);
-        setSearchQuery((prev) => {
-            if (prev[searchField.value] === searchValue) return prev;
-            return { [searchField.value]: searchValue };
-        });
+        const query = {
+            studentId: queryStudentId,
+            fullName: queryFullName.trim(),
+            facultyId: queryFacultyId,
+            courseId: queryCourseId,
+            programId: queryProgramId,
+        };
+        const filteredQuery = Object.fromEntries(
+            Object.entries(query).filter(([_, value]) => value && value.trim())
+        );
+        setSearchQuery(filteredQuery);
     };
-    const handleKeyDown = (event) => {
-        if (event.key === "Enter") {
-            handleSearch();
+
+    // Lắng nghe sự kiện click bên ngoài box để tự động đóng
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
         }
-    };
-    const options = Object.entries(studentFields)
-        .filter(([key]) => key === "studentId" || key === "fullName") // Chỉ lấy id và name
-        .map(([key, label]) => ({
-            value: key,
-            label: label,
-        }));
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isOpen]);
 
     return (
-        <div className="flex flex-row rounded-sm">
-            {/* Select a field */}
-            <div className="flex flex-row items-center text-sm px-2 bg-gray-300 gap-2 border rounded-l-sm">
-                <ListBulletIcon className="w-5 h-5 text-black" />
-                <Select
-                    options={options}
-                    value={searchField}
-                    onChange={handleSearchFieldChange}
-                    isSearchable={false}
-                    classNames={{
-                        control: () => "!border-none !shadow-none !bg-transparent !cursor-pointer !w-32",
-                        option: () => "!text-gray-700 hover:!bg-gray-100",
-                        menu: () => "!mt-2",
-                        placeholder: () => "!text-gray-400",
-                        singleValue: () => "!text-black-700",
-                        dropdownIndicator: () => "!text-slate-500"
-                    }}
-                    styles={{
-                        option: (provided, state) => ({
-                            ...provided,
-                            backgroundColor: state.isSelected ? "#e2e8f0" : "white", // Màu nền khi được chọn
-                            color: state.isSelected ? "black" : "black", // Màu chữ khi được chọn
-                            "&:hover": {
-                                backgroundColor: "#f3f4f6",
-                            },
-                        }),
-                    }}
-                />
-            </div>
-            {/* Search input */}
-            <div className="flex items-center p-2 bg-white rounded-r-sm border w-96">
-                <input
-                    ref={searchInput}
-                    type="text"
-                    placeholder="Tìm kiếm..."
-                    className="w-full bg-transparent focus:outline-none"
-                    onKeyDown={handleKeyDown}
-                />
-                <MagnifyingGlassIcon onClick={handleSearch} className="w-5 h-5 text-gray-400 hover:text-gray-500 cursor-pointer" />
-            </div>
+        <div className="relative" ref={searchRef}>
+            <MagnifyingGlassIcon
+                onClick={() => setIsOpen(!isOpen)}
+                className="box-content w-5 h-5 p-2 cursor-pointer bg-white border border-black rounded-md"
+            />
+            {isOpen && (
+                <div className="absolute flex flex-col w-fit h-fit z-100 top-12 left-0 w-80 bg-white p-4 shadow-xl rounded-md border">
+                    <div className="flex flex-row gap-2">
+                        <input
+                            type="text"
+                            placeholder="MSSV"
+                            value={queryStudentId}
+                            onChange={(e) => setQueryStudentId(e.target.value)}
+                            className="w-40 h-8 px-2 border rounded"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Họ và tên"
+                            value={queryFullName}
+                            onChange={(e) => setQueryFullName(e.target.value)}
+                            className="w-40 h-8 px-2 border rounded"
+                        />
+                        <select
+                            value={queryFacultyId}
+                            onChange={(e) => setQueryFacultyId(e.target.value)}
+                            className="w-40 h-8 px-2 border rounded"
+                        >
+                            <option value="">Chọn Khoa</option>
+                            {faculties.map((faculty) => (
+                                <option key={faculty.facultyId} value={faculty.facultyId}>
+                                    {faculty.short_name}
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={queryProgramId}
+                            onChange={(e) => setQueryProgramId(e.target.value)}
+                            className="w-48 h-8 px-2 border rounded"
+                        >
+                            <option value="">Chọn Chương trình</option>
+                            {programs.map((program) => (
+                                <option key={program.programId} value={program.programId}>
+                                    {program.name}
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={queryCourseId}
+                            onChange={(e) => setQueryCourseId(e.target.value)}
+                            className="w-40 h-8 px-2 border rounded"
+                        >
+                            <option value="">Chọn Khóa học</option>
+                            {courses.map((course) => (
+                                <option key={course.courseId} value={course.courseId}>
+                                    {course.courseId}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex justify-end mt-2">
+                        <Button onClick={handleSearch} size="md">
+                            Tìm kiếm
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
-
 /**
  * Hàm để tạo sinh viên mới
  * @param {Student} newStudent - Thông tin sinh viên mới cần thêm
@@ -285,7 +325,7 @@ const CreateAStudent_Button = ({ faculties, courses, programs }) => {
     };
     return (
         <>
-            <button onClick={openModal} className="px-4 py-2 bg-green-800 hover:bg-green-900 text-white rounded-md cursor-pointer w-40 mt-4">
+            <button onClick={openModal} className="px-4 py-2 bg-green-800 hover:bg-green-900 text-white rounded-md cursor-pointer w-40">
                 Thêm 1 sinh viên
             </button>
             {isOpen && (
@@ -346,6 +386,10 @@ const CreateAStudent_Button = ({ faculties, courses, programs }) => {
         </>
     );
 };
+
+function downFile({ students, faculties, courses, programs }) {
+
+}
 
 function Pagination({ total, limit, currentPage, onPageChange }) {
 
@@ -441,9 +485,6 @@ function StudentInf({ student, onClose, facultyMap }) {
         </div >
     );
 }
-
-
-
 
 /**
  * Component hiển thị danh sách sinh viên
@@ -553,12 +594,18 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                             <div className="flex gap-2">
                                                 {checkEditingRow === null ? (
                                                     <PencilSquareIcon
-                                                        onClick={() => startEdit(student)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            startEdit(student);
+                                                        }}
                                                         className="w-5 h-5 text-blue-500 cursor-pointer"
                                                     />
                                                 ) : checkEditingRow === student.studentId ? (
                                                     <CheckIcon
-                                                        onClick={() => saveEdit()}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            saveEdit();
+                                                        }}
                                                         className="w-5 h-5 text-green-500 cursor-pointer"
                                                     />
                                                 ) : (
@@ -567,12 +614,15 @@ function StudentList({ students, setStudents, faculties, courses, programs }) {
                                                             id="edit-icon"
                                                             className="w-5 h-5 text-gray-400 cursor-not-allowed focus:outline-none"
                                                         />
-                                                        <Tooltip className="" anchorSelect="#edit-icon" content="Vui lòng hoàn thành chỉnh sửa trước" />
+                                                        <Tooltip anchorSelect="#edit-icon" content="Vui lòng hoàn thành chỉnh sửa trước" />
                                                     </div>
                                                 )}
                                                 {checkEditingRow === null ? (
                                                     <TrashIcon
-                                                        onClick={() => handleDeleteStudent(student.studentId)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteStudent(student.studentId);
+                                                        }}
                                                         className="w-5 h-5 text-red-500 cursor-pointer"
                                                     />
                                                 ) : (
@@ -712,7 +762,6 @@ function Student() {
                     page: currentPage,
                     limit: limit
                 });
-                console.log("Dữ liệu từ API:", data);
                 setStudents(data.students);
                 setTotal(data.total);
             } catch (error) {
@@ -728,12 +777,13 @@ function Student() {
     return (
         <div className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
-            <CreateAStudent_Button
-                faculties={faculties}
-                courses={courses}
-                programs={programs} />
-            <div className="flex flex-row mt-4 justify-between">
-                <Search setSearchQuery={setSearchQuery} />
+
+            <div className="flex mt-4 gap-4">
+                <Search setSearchQuery={setSearchQuery} faculties={faculties} courses={courses} programs={programs} />
+                <CreateAStudent_Button
+                    faculties={faculties}
+                    courses={courses}
+                    programs={programs} />
             </div>
 
             <div className="mt-6">
