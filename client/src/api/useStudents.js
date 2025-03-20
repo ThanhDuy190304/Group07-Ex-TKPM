@@ -2,25 +2,29 @@ import api from "../utils/axios";
 
 export const getStudents = async ({ searchQuery = {}, page = 1, limit = 20 } = {}) => {
     try {
-        let url = `/student?page=${page}&limit=${limit}`;
-        console.log(searchQuery);
-        // Kiểm tra và thêm studentId hoặc fullName vào URL nếu có
-        if (searchQuery.studentId) {
-            console.log(1);
-            url = `/student?studentId=${searchQuery.studentId}`;
-        }
-        else if (searchQuery.fullName) {
-            console.log(2);
-            url += `&fullName=${searchQuery.fullName}`;
-        }
+        const params = {
+            page,
+            limit,
+            studentId: searchQuery.studentId || undefined,
+            fullName: searchQuery.fullName || undefined,
+            facultyId: searchQuery.facultyId || undefined,
+            courseId: searchQuery.courseId || undefined,
+            programId: searchQuery.programId || undefined,
+        };
+        // Xóa các giá trị undefined
+        Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
+        const queryString = new URLSearchParams(params).toString();
+        const url = `/student?${queryString}`;
+        console.log("Fetching from:", url);
         const response = await api.get(url);
-        console.log(response.data);
+        console.log("Response:", response.data);
         return response.data;
     } catch (error) {
         console.error("Lỗi khi fetch students:", error);
         return { students: [], total: 0, error: error.response?.data?.message || "Lỗi server" };
     }
 };
+
 
 export const putStudent = async (studentId, updatedData) => {
     try {
@@ -56,7 +60,7 @@ export const postStudent = async (studentData) => {
     }
 };
 
-export const getStudentStatuses = async () => {
+export const getStatuses = async () => {
     try {
         const response = await api.get("/student/statuses");
         return response.data;
