@@ -55,3 +55,13 @@ export const postStudent = async (studentData) => {
         return { error: "Lỗi server" };
     }
 };
+
+export const getStudentStatuses = async () => {
+    try {
+        const response = await api.get("/student/statuses");
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi fetch student statuses:", error);
+        return { error: error.response?.data?.message || "Lỗi server" };
+    }
+}

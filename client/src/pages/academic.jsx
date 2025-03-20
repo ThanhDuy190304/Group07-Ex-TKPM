@@ -1,6 +1,7 @@
 import { useEffect, useState, useReducer, useCallback } from 'react';
 import { getFaculties, putFaculty, postFaculty } from '../api/useFalcuties';
 import { getPrograms, putProgram, postProgram } from '../api/usePrograms';
+import { getStatuses } from '../api/useStudents';
 import { PencilSquareIcon, CheckIcon } from '@heroicons/react/20/solid';
 import { Tooltip } from 'react-tooltip';
 import { Table } from '@mui/joy';
@@ -23,6 +24,10 @@ Modal.setAppElement("#root");
  * @property {string} programId
  * @property {string} name
  * @property {string} short_name 
+ */
+
+/**
+ * @typedef {string[]} Statuses
  */
 
 async function updateFaculty(facultyId, updateData) {
@@ -451,19 +456,23 @@ function ProgramTable({ programs, setPrograms }) {
     );
 }
 
+
 function Academic() {
     const [faculties, setFaculties] = useState([]);
     const [programs, setPrograms] = useState([]);
+    const [statuses, setStatuses] = useState([]);
     useEffect(() => {
         const fetchData = async () => {
             try {
                 console.log("Fetching faculties, programs");
-                const [facultiesData, programsData] = await Promise.all([
+                const [facultiesData, programsData, statusesData] = await Promise.all([
                     getFaculties(),
                     getPrograms(),
+                    getStatuses()
                 ]);
                 setFaculties(facultiesData);
                 setPrograms(programsData);
+                setStatuses(statusesData);
             } catch (error) {
                 console.error("Failed to fetch faculties, programs");
             }
