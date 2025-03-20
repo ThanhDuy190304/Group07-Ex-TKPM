@@ -25,6 +25,10 @@ const PermanentAddress = sequelize.define(
         city_province: {
             type: DataTypes.TEXT,
             allowNull: false,
+        },
+        nation: {
+            type: DataTypes.TEXT,
+            allowNull: false,
         }
     },
     {
@@ -32,8 +36,5 @@ const PermanentAddress = sequelize.define(
         tableName: "permanent address",
     }
 );
-
-PermanentAddress.belongsTo(Nationality, {foreignKey: "nationalId"});
-Nationality.hasMany(PermanentAddress, {foreignKey: "nationalId"});
 
 module.exports = PermanentAddress;

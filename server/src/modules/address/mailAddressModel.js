@@ -25,6 +25,10 @@ const MailAddress = sequelize.define(
         city_province: {
             type: DataTypes.TEXT,
             allowNull: false,
+        },
+        nation: {
+            type: DataTypes.TEXT,
+            allowNull: false,
         }
     },
     {
@@ -32,8 +36,5 @@ const MailAddress = sequelize.define(
         tableName: "address",
     }
 );
-
-MailAddress.belongsTo(Nationality, {foreignKey: "nationalId"});
-Nationality.hasMany(MailAddress, {foreignKey: "nationalId"});
 
 module.exports = MailAddress;
