@@ -79,34 +79,23 @@ async function putStudent(req, res) {
 
 async function getStudents(req, res) {
   try {
-    const { studentId, query } = req.query;
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const { course, faculty, program, page, limit } = req.query;
+    console.log({ course, faculty, program, page, limit });
 
-    if (studentId) {
-      const student = await StudentService.getOneStudentById(studentId);
-      return res
-        .status(200)
-        .json({ students: student ? [student] : [], total: student ? 1 : 0 });
-    }
-
-    const {
-      students,
-      total,
-      page: fetched_page,
-      limit: fetched_limit,
-    } = await StudentService.getStudents({
-      query,
-      page,
-      limit,
+    const result = await StudentService.getStudents({
+      course,
+      faculty,
+      program: parseInt(program),
+      page: parseInt(page),
+      limit: parseInt(limit),
     });
 
-    return res
-      .status(200)
-      .json({ students, total, page: fetched_page, limit: fetched_limit });
+    if (!result || result.students.length === 0) {
+      return res.status(200).json({ students: [], total: 0 });
+    }
+    return res.status(200).json(result);
   } catch (error) {
-    console.error("Error in getStudents:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: error.message });
   }
 }
 
@@ -117,7 +106,31 @@ async function getStatuses(req, res) {
   } catch (error) {
     console.error("Error in getStatuses:", error);
     return res.status(500).json({ error: "Internal server error" });
+  }
+}
 
+async function searchStudents(req, res) {
+  try {
+    const { studentId, fullName, page, limit } = req.query;
+    if (!studentId && !fullName) {
+      return res
+        .status(400)
+        .json({ error: "studentId and fullName parameter is required" });
+    }
+
+    const result = await StudentService.searchStudents(
+      studentId,
+      fullName,
+      page,
+      limit
+    );
+
+    if (!result || result.students.length === 0) {
+      return res.status(200).json({ students: [], total: 0 });
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 }
 
