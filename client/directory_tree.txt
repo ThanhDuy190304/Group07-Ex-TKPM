@@ -21,6 +21,7 @@
     ├── components
     │   └── sidebar.jsx
     ├── pages
+    │   ├── academic.jsx
     │   └── student.jsx
     ├── utils
     │   ├── axios.js
@@ -32,4 +33,4 @@
     ├── index.css
     └── main.jsx
 
-7 directories, 24 files
+7 directories, 25 files
