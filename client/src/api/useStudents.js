@@ -111,3 +111,19 @@ export const getToExportStudents = async (searchQuery) => {
         return { students: [], total: 0, error: error.response?.data?.message || "Lỗi server" };
     }
 };
+
+export const importStudents = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await api.post("/student/import", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Lỗi khi import sinh viên:", error);
+        return { error: error.response?.data?.message || "Lỗi server" };
+    }
+};

@@ -1,11 +1,16 @@
 import { useState, useReducer, useRef, useEffect, useCallback, memo } from "react";
 import {
-    MagnifyingGlassIcon, ListBulletIcon, TrashIcon,
+    MagnifyingGlassIcon, TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
-    ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon, DocumentArrowDownIcon
+    ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon,
+    DocumentArrowDownIcon, DocumentArrowUpIcon
 } from "@heroicons/react/24/outline";
 import Button from '@mui/joy/Button';
-import { getStudents, putStudent, deleteStudent, postStudent, getStatuses, getToExportStudents } from "../api/useStudents";
+import {
+    getStudents, putStudent, deleteStudent,
+    postStudent, getStatuses, getToExportStudents,
+    importStudents
+} from "../api/useStudents";
 import { getFaculties } from "../api/useFalcuties";
 import { getPrograms } from "../api/usePrograms";
 import { getCourses } from "../api/useCoures";
@@ -551,6 +556,56 @@ function ExportButton({ searchQuery, faculties, programs, statuses }) {
     );
 }
 
+function ImportButton() {
+    const { showError } = useError();
+    const [selectedFile, setSelectedFile] = useState(null);
+
+    const handleFileChange = (event) => {
+        setSelectedFile(event.target.files[0]);
+    };
+
+    const handleUpload = async () => {
+        if (!selectedFile) {
+            showError("Vui lòng chọn file CSV");
+            return;
+        }
+        const result = await importStudents(selectedFile);
+        if (result.error) {
+            showError("Lỗi import: " + result.error);
+        } else {
+            alert("Import thành công!");
+        }
+        setSelectedFile(null); // Reset file sau khi upload
+    };
+
+    return (
+        <div className="flex items-center space-x-4">
+            <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="hidden"
+                id="csvUpload"
+            />
+            <label
+                htmlFor="csvUpload"
+                className="cursor-pointer flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+            >
+                <DocumentArrowUpIcon className="h-6 w-6 mr-2" />
+                Chọn file CSV
+            </label>
+            <button
+                onClick={handleUpload}
+                disabled={!selectedFile}
+                className={`px-4 py-2 text-white rounded-md transition ${selectedFile ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed"
+                    }`}
+            >
+                Upload
+            </button>
+        </div>
+    );
+}
+
 
 function Pagination({ total, limit, currentPage, onPageChange }) {
 
@@ -974,7 +1029,8 @@ function Student() {
                     faculties={faculties}
                     programs={programs}
                     statuses={statuses}
-                    className="ml-auto" />
+                />
+                <ImportButton />
             </div>
 
             <div className="mt-6">
