@@ -1,58 +1,159 @@
 const xlsx = require("xlsx");
-const csvParser = require("csv-parser");
-const { Student } = require("../student/studentModel");
+const csv = require("csv-parser");
+const Student = require("../student/studentModel");
+const PermanentAddress = require("../address/permanentAddressModel");
+const MailAddress = require("../address/mailAddressModel");
+const TemporaryResidenceAddress = require("../address/temporaryResidenceAddressModel");
+const OIDCard = require("../student/oidCardModel");
+const NIDCard = require("../student/nidCardModel");
+const Passport = require("../student/passportModel");
+const Nationality = require("../nationality/nationalityModel");
+
 const { Readable } = require("stream");
+const { where } = require("sequelize");
 
-// Function to process and update the database
-async function processFile(file) {
-  let data = [];
+exports.processFile = async (file) => {
+  const students = await parseCSV(file.buffer);
+  return upsertStudents(students);
+};
 
-  // Check file type
-  if (file.mimetype === "text/csv") {
-    data = await parseCSV(file.buffer);
-  } else if (
-    file.mimetype ===
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  ) {
-    data = parseExcel(file.buffer);
-  } else {
-    throw new Error("Unsupported file format");
-  }
-
-  if (!data.length) throw new Error("Empty file or invalid data format");
-
-  // Process each row and update database
-  for (const record of data) {
-    // await updateStudent(record.);
-    console.log(record);
-  }
-
-  return {
-    message: "File processed successfully",
-    recordsProcessed: data.length,
-  };
-}
-
-// Function to parse CSV file
+// 📝 Parse CSV file
 function parseCSV(buffer) {
   return new Promise((resolve, reject) => {
-    const results = [];
-    const stream = Readable.from(buffer.toString()); // Convert buffer to stream
+    const students = [];
+    const stream = Readable.from(buffer.toString());
 
     stream
-      .pipe(csvParser())
-      .on("data", (row) => results.push(row))
-      .on("end", () => resolve(results))
+      .pipe(csv({ separator: "," })) // Use comma as separator
+      .on("data", (row) => students.push(row))
+      .on("end", () => resolve(students))
       .on("error", (err) => reject(err));
   });
 }
 
-// Function to parse Excel file
-function parseExcel(buffer) {
-  const workbook = xlsx.read(buffer, { type: "buffer" });
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
-  return xlsx.utils.sheet_to_json(worksheet);
+// 🛠️ Update students in the database
+async function upsertStudents(students) {
+  for (const row of students) {
+    console.log(row);
+    const filter = { mssv: row["MSSV"] };
+    const update = {
+      fullName: row["Họ tên"],
+      dateOfBirth: row["Ngày sinh"],
+      gender: row["Giới tính"],
+      // faculty: row["Khoa"],
+      // batch: row["Khóa"],
+      // program: row["Chương trình"],
+      "temporary residence address": {
+        street: row["Địa chỉ tạm trú - Đường"],
+        ward_communes: row["Địa chỉ tạm trú - Phường/Xã"],
+        district: row["Địa chỉ tạm trú - Quận/Huyện"],
+        city_province: row["Địa chỉ tạm trú - Tỉnh/Thành phố"],
+        nation: row["Địa chỉ tạm trú - Quốc gia"],
+      },
+      "permanent address": {
+        street: row["Địa chỉ thường trú - Đường"],
+        ward_communes: row["Địa chỉ thường trú - Phường/Xã"],
+        district: row["Địa chỉ thường trú - Quận/Huyện"],
+        city_province: row["Địa chỉ thường trú - Tỉnh/Thành phố"],
+        nation: row["Địa chỉ thường trú - Quốc gia"],
+      },
+      "mail address": {
+        street: row["Địa chỉ nhận thư - Đường"],
+        ward_communes: row["Địa chỉ nhận thư - Phường/Xã"],
+        district: row["Địa chỉ nhận thư - Quận/Huyện"],
+        city_province: row["Địa chỉ nhận thư - Tỉnh/Thành phố"],
+        nation: row["Địa chỉ nhận thư - Quốc gia"],
+      },
+      email: row["Email"],
+      phone: row["SĐT"],
+      status: row["Tình trạng"],
+      Nationality: {
+        name: row["Quốc tịch"],
+      },
+      // identification: {
+      //   nid: row["Số CMND"],
+      //   nidIssuedDate: row["Ngày cấp CMND"],
+      //   nidIssuedPlace: row["Nơi cấp CMND"],
+      //   nidExpiryDate: row["Ngày hết hạn CMND"],
+      //   oid: row["Số CCCD"],
+      //   oidIssuedDate: row["Ngày cấp CCCD"],
+      //   oidIssuedPlace: row["Nơi cấp CCCD"],
+      //   oidExpiryDate: row["Ngày hết hạn CCCD"],
+      //   chip: row["Chip"],
+      //   passport: row["Số hộ chiếu"],
+      //   passportIssuedDate: row["Ngày cấp hộ chiếu"],
+      //   passportIssuedPlace: row["Nơi cấp hộ chiếu"],
+      //   passportExpiryDate: row["Ngày hết hạn hộ chiếu"],
+      //   passportCountry: row["Quốc gia cấp"],
+      // },
+      // note: row["Ghi chú"],
+    };
+
+    const student = await Student.findOne({
+      where: { studentId: row["MSSV"] },
+      include: [
+        {
+          model: NIDCard,
+          attributes: [
+            "id",
+            "placeOfIssue",
+            "dateOfIssue",
+            "expiryOfIssue",
+            "chip",
+          ],
+        },
+        {
+          model: OIDCard,
+          attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue"],
+        },
+        {
+          model: Passport,
+          attributes: [
+            "id",
+            "dateOfIssue",
+            "placeOfIssue",
+            "expiryOfIssue",
+            "country",
+            "note",
+          ],
+        },
+        {
+          model: PermanentAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: TemporaryResidenceAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: MailAddress,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+        {
+          model: Nationality,
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
+        },
+      ],
+    });
+
+    student.update(update);
+  }
 }
 
-module.exports = { processFile };
+async function upsertAddress(Model, address) {
+  if (!address) return null;
+
+  const [record] = await Model.upsert({ ...address }, { returning: true });
+  return record.id;
+}
+
+async function upsertIdentity(Model, studentId, data) {
+  if (!data.id) return;
+
+  await Model.upsert({
+    studentId,
+    ...data,
+  });
+}
