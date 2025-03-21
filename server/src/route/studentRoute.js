@@ -10,7 +10,6 @@ router.post("/statuses", studentController.postStatus);
 router.get("/export", studentController.exportStudents)
 
 router.get("/", studentController.getStudents);
-router.get("/search", studentController.searchStudents);
 router.post("/", studentController.postStudent);
 router.put("/:studentId", studentController.putStudent);
 router.delete("/:studentId", studentController.deleteStudent);

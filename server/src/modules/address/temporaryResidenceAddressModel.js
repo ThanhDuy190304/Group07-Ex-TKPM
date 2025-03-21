@@ -3,11 +3,12 @@ const sequelize = require("../../config/database");
 const Nationality = require("../nationality/nationalityModel");
 
 const TemporaryResidenceAddress = sequelize.define(
-    "temporary residence address",
+    "temporaryResidenceAddress",
     {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
+            autoIncrement: true,
             allowNull: false,
         },
         street: {

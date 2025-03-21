@@ -54,10 +54,10 @@ const Student = sequelize.define(
 Student.belongsTo(Faculty, { foreignKey: "facultyId" });
 Student.belongsTo(Course, { foreignKey: "courseId" });
 Student.belongsTo(Program, { foreignKey: "programId" });
-Student.belongsTo(Nationality, { foreignKey: "nationalId" });
+Student.belongsTo(Nationality, { foreignKey: "nationalId", targetKey: "code" });
 Student.belongsTo(PermanentAddress, { foreignKey: "permanentAddressId" });
 Student.belongsTo(TemporaryResidenceAddress, { foreignKey: "temporaryResidenceAddressId" });
-Student.belongsTo(MailAddress, { foreignKey: "mailAddress" });
+Student.belongsTo(MailAddress, { foreignKey: "mailAddressId" });
 
 Student.hasOne(OIDCard, { foreignKey: "studentId" });
 Student.hasOne(NIDCard, { foreignKey: "studentId" });
@@ -66,11 +66,11 @@ Student.hasOne(Passport, { foreignKey: "studentId" });
 Faculty.hasMany(Student, { foreignKey: "facultyId" });
 Course.hasMany(Student, { foreignKey: "courseId" });
 Program.hasMany(Student, { foreignKey: "programId" });
-Nationality.hasMany(Student, { foreignKey: "nationalId" });
+Nationality.hasMany(Student, { foreignKey: "nationalId", sourceKey: "code" });
 
 PermanentAddress.hasOne(Student, { foreignKey: "permanentAddressId" });
 TemporaryResidenceAddress.hasOne(Student, { foreignKey: "temporaryResidenceAddressId" });
-MailAddress.hasOne(Student, { foreignKey: "mailAddress" });
+MailAddress.hasOne(Student, { foreignKey: "mailAddressId" });
 
 Passport.belongsTo(Student, { foreignKey: "studentId" });
 NIDCard.belongsTo(Student, { foreignKey: "studentId" });
@@ -82,13 +82,13 @@ StudentStatus.hasMany(Student, { foreignKey: "statusId" });
 // 🛠 Hook để tạo studentId dựa trên courseId
 Student.beforeCreate(async (student, options) => {
   try {
+    if (student.studentId) {
+      return;
+    }
     if (!student.courseId) {
       throw new Error("courseId is required to generate studentId");
     }
-
     const year = student.courseId.replace("K", "").slice(-2); // "K2021" -> "21"
-    const prefix = `${year}000000`; // Bắt đầu từ 21000000
-
     // Tìm studentId lớn nhất hiện tại trong cùng courseId
     const lastStudent = await Student.findOne({
       where: {

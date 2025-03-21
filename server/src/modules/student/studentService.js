@@ -57,152 +57,23 @@ async function updateStudent(studentId, updatedData) {
   }
 }
 
-async function getOneStudentById(studentId) {
-  try {
-    const student = await Student.findOne({
-      where: { studentId },
-      attributes: { exclude: ["createdAt", "updatedAt"] },
-      include: [
-        {
-          model: NIDCard,
-          attributes: [
-            "id",
-            "placeOfIssue",
-            "dateOfIssue",
-            "expiryOfIssue",
-            "chip",
-          ],
-        },
-        {
-          model: OIDCard,
-          attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue"],
-        },
-        {
-          model: Passport,
-          attributes: [
-            "id",
-            "dateOfIssue",
-            "placeOfIssue",
-            "expiryOfIssue",
-            "country",
-            "note",
-          ],
-        },
-        {
-          model: Nationality,
-          attributes: ["id", "name", "code"],
-        },
-      ],
-    });
-
-    const identityTypes = [
-      { type: "NIDCard", key: "NIDCard" },
-      { type: "OIDCard", key: "OIDCard" },
-      { type: "Passport", key: "Passport" },
-    ];
-
-    const identityDocument =
-      identityTypes
-        .map(
-          ({ type, key }) =>
-            student[key] && { type, ...student[key].get({ plain: true }) }
-        )
-        .find(Boolean) || null; // Pick the first available document
-
-    // Convert student to plain object & exclude identity models
-    const studentData = student.get({ plain: true });
-    ["NIDCard", "OIDCard", "Passport"].forEach(
-      (key) => delete studentData[key]
-    );
-
-    return Object.assign(studentData, { identityDocument });
-  } catch (error) {
-    console.error("Error in studentService.getOneStudentById:", error.message);
-    throw new Error("Error server");
-  }
-}
-
-async function getStudentsByName(fullName, page = 1, limit = 10) {
-  try {
-    const offset = (page - 1) * limit;
-    const { count: total, rows: students } = await Student.findAndCountAll({
-      where: { fullName },
-      attributes: { exclude: ["createdAt", "updatedAt"] },
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-    });
-    return { students, total };
-  } catch (error) {
-    console.error("Error in StudentService.getStudentsByName:", error.message);
-    throw new Error("Error Server");
-  }
-}
-
-async function getStudentsByFaculty(facultyName, page = 1, limit = 10) {
-  try {
-    const offset = (page - 1) * limit;
-    const { count: total, rows: students } = await Student.findAndCountAll({
-      where: {},
-      include: {
-        model: Faculty,
-        where: { facultyName },
-        attributes: { exclude: ["createdAt", "updatedAt"] },
-      },
-      attributes: { exclude: ["createdAt", "updatedAt"] },
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-    });
-    return { students, total };
-  } catch (error) {
-    console.error(
-      "Error in StudentService.getStudentsByFaculty:",
-      error.message
-    );
-    throw new Error("Error Server");
-  }
-}
-
-async function getStudentsByPageLimit(page = 1, limit = 10) {
-  try {
-    const offset = (page - 1) * limit;
-    const { count, rows: students } = await Student.findAndCountAll({
-      attributes: { exclude: ["createdAt", "updatedAt"] }, // Loại bỏ các cột không cần
-      limit,
-      offset,
-    });
-    return {
-      total: count,
-      students,
-    };
-  } catch (error) {
-    console.error(
-      "Error in studentService.getStudentsByPageLimit:",
-      error.message
-    );
-    throw new Error("Error server");
-  }
-}
-
-async function getStudents({ course, faculty, program, page = 1, limit = 10 }) {
+async function getStudents({ studentId, fullName, courseId, facultyId, programId, page = 1, limit = 10 }) {
   try {
     const whereClause = {};
-    if (course) whereClause.courseId = course;
-    if (faculty) whereClause.facultyId = faculty;
-    if (program) whereClause.programId = program;
-
+    if (studentId) whereClause.studentId = studentId;
+    else {
+      if (fullName) whereClause.fullName = { $like: `%${fullName}%` };
+      if (courseId) whereClause.courseId = courseId;
+      if (facultyId) whereClause.facultyId = facultyId;
+      if (programId) whereClause.programId = programId;
+    }
     const students = await Student.findAndCountAll({
       where: whereClause,
       attributes: { exclude: ["createdAt", "updatedAt"] },
       include: [
         {
           model: NIDCard,
-          attributes: [
-            "id",
-            "placeOfIssue",
-            "dateOfIssue",
-            "expiryOfIssue",
-            "chip",
-          ],
+          attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue", "chip"],
         },
         {
           model: OIDCard,
@@ -210,14 +81,7 @@ async function getStudents({ course, faculty, program, page = 1, limit = 10 }) {
         },
         {
           model: Passport,
-          attributes: [
-            "id",
-            "dateOfIssue",
-            "placeOfIssue",
-            "expiryOfIssue",
-            "country",
-            "note",
-          ],
+          attributes: ["id", "dateOfIssue", "placeOfIssue", "expiryOfIssue", "country", "note"],
         },
         {
           model: PermanentAddress,
@@ -233,9 +97,7 @@ async function getStudents({ course, faculty, program, page = 1, limit = 10 }) {
         },
         {
           model: Nationality,
-          attributes: {
-            exclude: ["createdAt", "updatedAt"]
-          }
+          attributes: { exclude: ["createdAt", "updatedAt"] }
         }
       ],
       offset: (page - 1) * limit,
@@ -248,33 +110,33 @@ async function getStudents({ course, faculty, program, page = 1, limit = 10 }) {
         { type: "OIDCard", key: "OIDCard" },
         { type: "Passport", key: "Passport" },
       ];
-
-      const identityDocument =
-        identityTypes
-          .map(
-            ({ type, key }) =>
-              student[key] && { type, ...student[key].get({ plain: true }) }
-          )
-          .find(Boolean) || null;
+      const identityDocuments = identityTypes
+        .map(({ type, key }) => student[key] && { type, ...student[key].get({ plain: true }) })
+        .filter(Boolean);
 
       const studentData = student.get({ plain: true });
-      ["NIDCard", "OIDCard", "Passport"].forEach(
-        (key) => delete studentData[key]
-      );
+      ["NIDCard", "OIDCard", "Passport"].forEach((key) => delete studentData[key]);
 
-      return Object.assign(studentData, { identityDocument });
+      // Format addresses to be on a single line
+      if (studentData.permanentAddress) {
+        studentData.permanentAddress = `${studentData.permanentAddress.street}, ${studentData.permanentAddress.wards_communes}, ${studentData.permanentAddress.district}, ${studentData.permanentAddress.city_province}, ${studentData.permanentAddress.nation}`;
+      }
+      if (studentData.temporaryResidenceAddress) {
+        studentData.temporaryResidenceAddress = `${studentData.temporaryResidenceAddress.street}, ${studentData.temporaryResidenceAddress.wards_communes}, ${studentData.temporaryResidenceAddress.district}, ${studentData.temporaryResidenceAddress.city_province}, ${studentData.temporaryResidenceAddress.nation}`;
+      }
+      if (studentData.mailAddress) {
+        studentData.mailAddress = `${studentData.mailAddress.street}, ${studentData.mailAddress.wards_communes}, ${studentData.mailAddress.district}, ${studentData.mailAddress.city_province}, ${studentData.mailAddress.nation}`;
+      }
+
+      return Object.assign(studentData, { identityDocuments });
     });
 
     return { students: formattedStudents, total: students.count };
   } catch (error) {
-    console.error(
-      "Error in studentService.getFilteredStudents:",
-      error.message
-    );
+    console.error("Error in studentService.getFilteredStudents:", error.message);
     throw new Error("Error server");
   }
 }
-
 async function getStatuses() {
   try {
     return StudentStatus.findAll({
@@ -314,40 +176,21 @@ async function createStatus(newStatus) {
 async function getToExportStudents(filters) {
   try {
     const whereClause = {};
+
     if (filters.studentId) whereClause.studentId = filters.studentId;
-    if (filters.fullName) whereClause.fullName = { $like: `%${filters.fullName}%` };
+    if (filters.fullName)
+      whereClause.fullName = { [Op.like]: `%${filters.fullName}%` };
     if (filters.facultyId) whereClause.facultyId = filters.facultyId;
     if (filters.courseId) whereClause.courseId = filters.courseId;
     if (filters.programId) whereClause.programId = filters.programId;
+
     const students = await Student.findAll({
       where: whereClause,
-      attributes: { exclude: ["createdAt", "updatedAt"] },
-    });
-    return students;
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách students:", error);
-  }
-}
-async function searchStudents(studentId, fullname, page = 1, limit = 10) {
-  try {
-    const students = await Student.findAndCountAll({
-      where: {
-        [Op.or]: [
-          { studentId: { [Op.like]: `%${studentId}%` } },
-          { fullName: { [Op.like]: `%${fullname}%` } },
-        ],
-      },
       attributes: { exclude: ["createdAt", "updatedAt"] },
       include: [
         {
           model: NIDCard,
-          attributes: [
-            "id",
-            "placeOfIssue",
-            "dateOfIssue",
-            "expiryOfIssue",
-            "chip",
-          ],
+          attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue", "chip"],
         },
         {
           model: OIDCard,
@@ -355,14 +198,7 @@ async function searchStudents(studentId, fullname, page = 1, limit = 10) {
         },
         {
           model: Passport,
-          attributes: [
-            "id",
-            "dateOfIssue",
-            "placeOfIssue",
-            "expiryOfIssue",
-            "country",
-            "note",
-          ],
+          attributes: ["id", "dateOfIssue", "placeOfIssue", "expiryOfIssue", "country", "note"],
         },
         {
           model: PermanentAddress,
@@ -378,56 +214,40 @@ async function searchStudents(studentId, fullname, page = 1, limit = 10) {
         },
         {
           model: Nationality,
-          attributes: {
-            exclude: ["createdAt", "updatedAt"]
-          }
-        }
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
       ],
-      offset: (page - 1) * limit,
-      limit: parseInt(limit),
     });
-    const formattedStudents = students.rows.map((student) => {
-      const identityTypes = [
-        { type: "NIDCard", key: "NIDCard" },
-        { type: "OIDCard", key: "OIDCard" },
-        { type: "Passport", key: "Passport" },
-      ];
 
-      const identityDocument =
-        identityTypes
-          .map(
-            ({ type, key }) =>
-              student[key] && { type, ...student[key].get({ plain: true }) }
-          )
-          .find(Boolean) || null;
+    const formattedStudents = students.map(student => {
+      const identityDocuments = [];
+      if (student.NIDCard) identityDocuments.push({ type: "NIDCard", ...student.NIDCard.get({ plain: true }) });
+      if (student.OIDCard) identityDocuments.push({ type: "OIDCard", ...student.OIDCard.get({ plain: true }) });
+      if (student.Passport) identityDocuments.push({ type: "Passport", ...student.Passport.get({ plain: true }) });
 
       const studentData = student.get({ plain: true });
-      ["NIDCard", "OIDCard", "Passport"].forEach(
-        (key) => delete studentData[key]
-      );
+      delete studentData.NIDCard;
+      delete studentData.OIDCard;
+      delete studentData.Passport;
 
-      return Object.assign(studentData, { identityDocument });
+      return { ...studentData, identityDocuments };
     });
 
-    return { students: formattedStudents, total: students.count };
+    return formattedStudents;
   } catch (error) {
-    console.error("Error in studentService.searchStudents:", error.message);
-    throw new Error("Error server");
+    console.error("❌ Lỗi khi lấy danh sách students:", error);
+    return [];
   }
 }
+
 
 module.exports = {
   deleteStudent,
   createStudent,
-  getOneStudentById,
-  getStudentsByName,
-  getStudentsByFaculty,
   updateStudent,
-  getStudentsByPageLimit,
   getStudents,
   getStatuses,
   createStatus,
   updateStatus,
   getToExportStudents,
-  searchStudents,
 };

@@ -79,17 +79,17 @@ async function putStudent(req, res) {
 
 async function getStudents(req, res) {
   try {
-    const { course, faculty, program, page, limit } = req.query;
-    console.log({ course, faculty, program, page, limit });
-
+    const { studentId, fullName, courseId, facultyId, programId } = req.query;
+    const { page = 1, limit = 10 } = req.query;
     const result = await StudentService.getStudents({
-      course,
-      faculty,
-      program: parseInt(program),
+      studentId,
+      fullName,
+      courseId,
+      facultyId,
+      programId,
       page: parseInt(page),
       limit: parseInt(limit),
     });
-
     if (!result || result.students.length === 0) {
       return res.status(200).json({ students: [], total: 0 });
     }
@@ -106,31 +106,6 @@ async function getStatuses(req, res) {
   } catch (error) {
     console.error("Error in getStatuses:", error);
     return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-async function searchStudents(req, res) {
-  try {
-    const { studentId, fullName, page, limit } = req.query;
-    if (!studentId && !fullName) {
-      return res
-        .status(400)
-        .json({ error: "studentId and fullName parameter is required" });
-    }
-
-    const result = await StudentService.searchStudents(
-      studentId,
-      fullName,
-      page,
-      limit
-    );
-
-    if (!result || result.students.length === 0) {
-      return res.status(200).json({ students: [], total: 0 });
-    }
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
   }
 }
 
