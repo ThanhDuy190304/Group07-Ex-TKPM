@@ -62,7 +62,7 @@ async function getStudents({ studentId, fullName, courseId, facultyId, programId
     const whereClause = {};
     if (studentId) whereClause.studentId = studentId;
     else {
-      if (fullName) whereClause.fullName = { $like: `%${fullName}%` };
+      if (fullName) whereClause.fullName = { [Op.like]: `%${fullName}%` };
       if (courseId) whereClause.courseId = courseId;
       if (facultyId) whereClause.facultyId = facultyId;
       if (programId) whereClause.programId = programId;

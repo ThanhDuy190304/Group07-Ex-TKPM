@@ -126,8 +126,8 @@ async function importStudents(req, res) {
 
     logger.info('importStudents');
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
     const result = await processFile(req.file);
+    console.log(result);
     return res.status(200).json(result);
   } catch (error) {
     logger.error("Error importStudents", { message: error.message, stack: error.stack });
