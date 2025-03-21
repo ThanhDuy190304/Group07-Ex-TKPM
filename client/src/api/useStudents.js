@@ -2,27 +2,28 @@ import api from "../utils/axios";
 
 export const getStudents = async ({ searchQuery = {}, page = 1, limit = 20 } = {}) => {
     try {
-        const params = {
-            page,
-            limit,
-            studentId: searchQuery.studentId || undefined,
-            fullName: searchQuery.fullName || undefined,
-            facultyId: searchQuery.facultyId || undefined,
-            courseId: searchQuery.courseId || undefined,
-            programId: searchQuery.programId || undefined,
-        };
-        // Xóa các giá trị undefined
+        let url = "/student";
+        let params = { page, limit };
+        if (searchQuery.studentId) {
+            params.studentId = searchQuery.studentId;
+        } else {
+            params = {
+                ...params,
+                fullName: searchQuery.fullName || undefined,
+                facultyId: searchQuery.facultyId || undefined,
+                courseId: searchQuery.courseId || undefined,
+                programId: searchQuery.programId || undefined,
+            };
+        }
         Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
         const queryString = new URLSearchParams(params).toString();
-        const url = `/student?${queryString}`;
-        const response = await api.get(url);
+        const response = await api.get(`${url}?${queryString}`);
         return response.data;
     } catch (error) {
         console.error("Lỗi khi fetch students:", error);
         return { students: [], total: 0, error: error.response?.data?.message || "Lỗi server" };
     }
 };
-
 
 export const putStudent = async (studentId, updatedData) => {
     try {

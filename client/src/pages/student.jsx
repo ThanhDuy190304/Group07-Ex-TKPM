@@ -20,6 +20,27 @@ import { utils, writeFile } from "xlsx";
 
 
 /**
+ * @typedef {Object} Address
+ * @property {string} street - Đường/phố
+ * @property {string} wards_communes - Phường/Xã
+ * @property {string} district - Quận/Huyện
+ * @property {string} city_province - Thành phố/Tỉnh
+ * @property {string} nation - Quốc gia
+ */
+
+/**
+ * @typedef {Object} IdentityDocument
+ * @property {string} type - Loại giấy tờ ("NIDCard", "OIDCard", "Passport")
+ * @property {string} id - Mã số giấy tờ
+ * @property {string} placeOfIssue - Nơi cấp
+ * @property {string} dateOfIssue - Ngày cấp (YYYY-MM-DD)
+ * @property {string} expiryOfIssue - Ngày hết hạn (YYYY-MM-DD)
+ * @property {boolean} [chip] - Chỉ có ở NIDCard
+ * @property {string} [country] - Chỉ có ở Passport
+ * @property {string} [note] - Ghi chú (nếu có)
+ */
+
+/**
  * @typedef {Object} Student
  * @property {string} studentId - Mã số sinh viên (MSSV)
  * @property {string} fullName - Họ và tên đầy đủ
@@ -28,12 +49,15 @@ import { utils, writeFile } from "xlsx";
  * @property {string} facultyId - Khoa của sinh viên
  * @property {string} courseId - Khóa học (VD: "K16", "K17", ...)
  * @property {string} programId - Chương trình đào tạo (VD: "Đại học", "Cao đẳng", "Thạc sĩ", ...)
- * @property {string} address - Địa chỉ sinh viên
  * @property {string} email - Email sinh viên
  * @property {string} phoneNumber - Số điện thoại sinh viên
  * @property {string} statusId - Trạng thái học tập
- *     (Giá trị hợp lệ: "Đang học", "Đã tốt nghiệp", "Đã thôi học", "Tạm dừng học")
+ * @property {Address} permanentAddress - Địa chỉ thường trú
+ * @property {Address} temporaryResidenceAddress - Địa chỉ tạm trú
+ * @property {Address} mailAddress - Địa chỉ nhận thư
+ * @property {IdentityDocument[]} identityDocuments - Danh sách giấy tờ tùy thân
  */
+
 
 /**
  * @typedef {Object} Faculty
@@ -64,20 +88,37 @@ const studentFields = {
     facultyId: "Khoa",
     courseId: "Khóa",
     programId: "Chương trình",
-    address: "Địa chỉ",
     email: "Email",
     phoneNumber: "SĐT",
     statusId: "Tình trạng",
+    nationalId: "Quốc tịch",
+    permanentAddress: "Địa chỉ thường trú",
+    temporaryResidenceAddress: "Địa chỉ tạm trú",
+    mailAddressId: "Địa chỉ nhận mail",
+    identityDocuments: "Giấy tờ tùy thân"
 };
 
 const GENDERS = ["Nam", "Nữ", "Khác"];
 
 const FILETYPES = ["JSON", "XLSX"];
 
+function formatIdentityDocuments(identityDocuments) {
+    if (!identityDocuments || identityDocuments.length === 0) return "Không có";
+
+    return identityDocuments.map(doc => {
+        let details = `[${doc.type}] ID: ${doc.id}, Nơi cấp: ${doc.placeOfIssue}, Ngày cấp: ${doc.dateOfIssue}, Hết hạn: ${doc.expiryOfIssue}`;
+        if (doc.type === "Passport") {
+            details += `, Quốc gia: ${doc.country}, Ghi chú: ${doc.note || "Không có"}`;
+        }
+        return details;
+    }).join("\n"); // Xuống dòng giữa các loại giấy tờ
+}
+
 //Hàm tìm kiếm  sinh viên theo filter
 function Search({ setSearchQuery, faculties, courses, programs }) {
-    const [queryFullName, setQueryFullName] = useState("");
+    const [searchType, setSearchType] = useState("studentId"); // "studentId" hoặc "advanced"
     const [queryStudentId, setQueryStudentId] = useState("");
+    const [queryFullName, setQueryFullName] = useState("");
     const [queryFacultyId, setQueryFacultyId] = useState("");
     const [queryCourseId, setQueryCourseId] = useState("");
     const [queryProgramId, setQueryProgramId] = useState("");
@@ -85,20 +126,26 @@ function Search({ setSearchQuery, faculties, courses, programs }) {
     const searchRef = useRef(null);
 
     const handleSearch = () => {
-        const query = {
-            studentId: queryStudentId,
-            fullName: queryFullName.trim(),
-            facultyId: queryFacultyId,
-            courseId: queryCourseId,
-            programId: queryProgramId,
-        };
+        let query = {};
+
+        if (searchType === "studentId") {
+            query = { studentId: queryStudentId };
+        } else {
+            query = {
+                fullName: queryFullName.trim(),
+                facultyId: queryFacultyId,
+                courseId: queryCourseId,
+                programId: queryProgramId,
+            };
+        }
+
         const filteredQuery = Object.fromEntries(
             Object.entries(query).filter(([_, value]) => value && value.trim())
         );
         setSearchQuery(filteredQuery);
     };
 
-    // Lắng nghe sự kiện click bên ngoài box để tự động đóng
+    // Đóng popup khi click bên ngoài
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -108,7 +155,6 @@ function Search({ setSearchQuery, faculties, courses, programs }) {
         if (isOpen) {
             document.addEventListener("mousedown", handleClickOutside);
         }
-
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
@@ -121,61 +167,84 @@ function Search({ setSearchQuery, faculties, courses, programs }) {
                 className="box-content w-5 h-5 p-2 cursor-pointer bg-white border border-black rounded-md"
             />
             {isOpen && (
-                <div className="absolute flex flex-col w-fit h-fit z-100 top-12 left-0 w-80 bg-white p-4 shadow-xl rounded-md border">
-                    <div className="flex flex-row gap-2">
-                        <input
-                            type="text"
-                            placeholder="MSSV"
-                            value={queryStudentId}
-                            onChange={(e) => setQueryStudentId(e.target.value)}
-                            className="w-40 h-8 px-2 border rounded"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Họ và tên"
-                            value={queryFullName}
-                            onChange={(e) => setQueryFullName(e.target.value)}
-                            className="w-40 h-8 px-2 border rounded"
-                        />
-                        <select
-                            value={queryFacultyId}
-                            onChange={(e) => setQueryFacultyId(e.target.value)}
-                            className="w-40 h-8 px-2 border rounded"
-                        >
-                            <option value="">Chọn Khoa</option>
-                            {faculties.map((faculty) => (
-                                <option key={faculty.facultyId} value={faculty.facultyId}>
-                                    {faculty.short_name}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            value={queryProgramId}
-                            onChange={(e) => setQueryProgramId(e.target.value)}
-                            className="w-48 h-8 px-2 border rounded"
-                        >
-                            <option value="">Chọn Chương trình</option>
-                            {programs.map((program) => (
-                                <option key={program.programId} value={program.programId}>
-                                    {program.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            value={queryCourseId}
-                            onChange={(e) => setQueryCourseId(e.target.value)}
-                            className="w-40 h-8 px-2 border rounded"
-                        >
-                            <option value="">Chọn Khóa học</option>
-                            {courses.map((course) => (
-                                <option key={course.courseId} value={course.courseId}>
-                                    {course.courseId}
-                                </option>
-                            ))}
-                        </select>
+                <div className="absolute flex flex-col w-96 p-4 bg-white shadow-xl rounded-md border top-12 left-0 z-50">
+                    <div className="flex gap-4 mb-2">
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                value="studentId"
+                                checked={searchType === "studentId"}
+                                onChange={() => setSearchType("studentId")}
+                            />
+                            Tìm theo MSSV
+                        </label>
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                value="advanced"
+                                checked={searchType === "advanced"}
+                                onChange={() => setSearchType("advanced")}
+                            />
+                            Tìm nâng cao
+                        </label>
                     </div>
 
-                    <div className="flex justify-end mt-2">
+                    {searchType === "studentId" ? (
+                        <input
+                            type="text"
+                            placeholder="Nhập MSSV"
+                            value={queryStudentId}
+                            onChange={(e) => setQueryStudentId(e.target.value)}
+                            className="w-full h-8 px-2 border rounded mb-2"
+                        />
+                    ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                            <input
+                                type="text"
+                                placeholder="Họ và tên"
+                                value={queryFullName}
+                                onChange={(e) => setQueryFullName(e.target.value)}
+                                className="w-full h-8 px-2 border rounded"
+                            />
+                            <select
+                                value={queryFacultyId}
+                                onChange={(e) => setQueryFacultyId(e.target.value)}
+                                className="w-full h-8 px-2 border rounded"
+                            >
+                                <option value="">Chọn Khoa</option>
+                                {faculties.map((faculty) => (
+                                    <option key={faculty.facultyId} value={faculty.facultyId}>
+                                        {faculty.short_name}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                value={queryProgramId}
+                                onChange={(e) => setQueryProgramId(e.target.value)}
+                                className="w-full h-8 px-2 border rounded"
+                            >
+                                <option value="">Chọn Chương trình</option>
+                                {programs.map((program) => (
+                                    <option key={program.programId} value={program.programId}>
+                                        {program.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                value={queryCourseId}
+                                onChange={(e) => setQueryCourseId(e.target.value)}
+                                className="w-full h-8 px-2 border rounded"
+                            >
+                                <option value="">Chọn Khóa học</option>
+                                {courses.map((course) => (
+                                    <option key={course.courseId} value={course.courseId}>
+                                        {course.courseId}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    <div className="flex justify-end mt-3">
                         <Button onClick={handleSearch} size="md">
                             Tìm kiếm
                         </Button>
@@ -434,6 +503,17 @@ function mapStudentsForExport(students, faculties, programs, statuses) {
         "Email": student.email,
         "SĐT": student.phoneNumber,
         "Tình trạng": statuses.find(s => s.statusId === student.statusId)?.name || "N/A",
+        "Quốc tịch": student.nationalId,
+        "Địa chỉ thường trú": student.permanentAddress ?
+            `${student.permanentAddress.street}, ${student.permanentAddress.wards_communes}, ${student.permanentAddress.district}, ${student.permanentAddress.city_province}, ${student.permanentAddress.nation}`
+            : "Không có",
+        "Địa chỉ tạm trú": student.temporaryResidenceAddress ?
+            `${student.temporaryResidenceAddress.street}, ${student.temporaryResidenceAddress.wards_communes}, ${student.temporaryResidenceAddress.district}, ${student.temporaryResidenceAddress.city_province}, ${student.temporaryResidenceAddress.nation}`
+            : "Không có",
+        "Địa chỉ nhận mail": student.mailAddress ?
+            `${student.mailAddress.street}, ${student.mailAddress.wards_communes}, ${student.mailAddress.district}, ${student.mailAddress.city_province}, ${student.mailAddress.nation}`
+            : "Không có",
+        "Giấy tờ tùy thân": formatIdentityDocuments(student.identityDocuments)
     }));
 }
 
@@ -554,16 +634,35 @@ function StudentInf({ student, onClose, facultyMap, programMap, statusMap }) {
                 <div><span className="font-bold">Ngày sinh:</span> <span className="break-words">{student.dateOfBirth}</span></div>
                 <div><span className="font-bold">Giới tính:</span> <span className="break-words">{student.gender}</span></div>
                 <div className="col-span-2"><span className="font-bold">SĐT:</span> <span className="break-words">{student.phoneNumber}</span></div>
-                <div className="col-span-2"><span className="font-bold">Địa chỉ:</span> <span className="break-words">{student.address}</span></div>
                 <div className="col-span-2"><span className="font-bold">Email:</span> <span className="break-words">{student.email}</span></div>
                 <div><span className="font-bold">Khoa:</span> <span className="break-words">{facultyMap[student.facultyId]?.name || "Không xác định"}</span></div>
                 <div><span className="font-bold">Khóa:</span> <span className="break-words">{student.courseId}</span></div>
                 <div><span className="font-bold">Chương trình:</span> <span className="break-words">{programMap[student.programId]?.name || "Không xác định"}</span></div>
                 <div><span className="font-bold">Trạng thái:</span> <span className="break-words">{statusMap[student.statusId]?.name || "Không xác định"}</span></div>
+
+                {/* Địa chỉ */}
+                <div className="col-span-2">
+                    <span className="font-bold">Địa chỉ thường trú: </span>
+                    <span className="break-words">{student.permanentAddress || "Không có"}</span>
+                </div>
+                <div className="col-span-2">
+                    <span className="font-bold">Địa chỉ tạm trú: </span>
+                    <span className="break-words">{student.temporaryResidenceAddress || "Không có"}</span>
+                </div>
+                <div className="col-span-2">
+                    <span className="font-bold">Địa chỉ nhận thư: </span>
+                    <span className="break-words">{student.mailAddress || "Không có"}</span>
+                </div>
+
+                {/* Giấy tờ tùy thân */}
+                <div className="col-span-2">
+                    <span className="font-bold">Giấy tờ tùy thân:</span>
+                    <pre className="break-words whitespace-pre-wrap">
+                        {formatIdentityDocuments(student.identityDocuments)}
+                    </pre>
+                </div>
             </div>
-
-
-        </div >
+        </div>
     );
 }
 
@@ -578,6 +677,7 @@ function StudentInf({ student, onClose, facultyMap, programMap, statusMap }) {
 function StudentList({ students, setStudents, faculties, courses, programs, statuses }) {
     const { showError } = useError();
     const [showStudentInf, setShowStudentInf] = useState(false);
+    console.log(students);
     const columns = [
         { key: "studentId", label: studentFields.studentId, width: "w-16" },
         { key: "fullName", label: studentFields.fullName, width: "w-24" },

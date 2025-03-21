@@ -9,7 +9,6 @@ import Modal from "react-modal";
 import { motion } from "framer-motion";
 import { validateNotEmptyFields } from '../utils/validators';
 import { useError } from "../utils/ErrorContext";
-import { update } from 'lodash';
 
 
 Modal.setAppElement("#root");

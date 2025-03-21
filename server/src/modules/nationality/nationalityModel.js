@@ -6,17 +6,12 @@ const { DataTypes } = require("sequelize");
 const Nationality = sequelize.define(
   "Nationality",
   {
-    id: {
-      type: DataTypes.INTEGER,
+    code: {
+      type: DataTypes.STRING,
       primaryKey: true,
       allowNull: false,
-      max: 9,
     },
     name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    code: {
       type: DataTypes.STRING,
       allowNull: false,
     },
