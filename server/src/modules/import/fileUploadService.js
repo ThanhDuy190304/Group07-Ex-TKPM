@@ -34,7 +34,7 @@ function parseCSV(buffer) {
 // 🛠️ Update students in the database
 async function upsertStudents(students) {
   for (const row of students) {
-    console.log(row);
+    
     const filter = { mssv: row["MSSV"] };
     const update = {
       fullName: row["Họ tên"],
@@ -43,21 +43,21 @@ async function upsertStudents(students) {
       // faculty: row["Khoa"],
       // batch: row["Khóa"],
       // program: row["Chương trình"],
-      "temporary residence address": {
+      temporaryResidenceAddress: {
         street: row["Địa chỉ tạm trú - Đường"],
         ward_communes: row["Địa chỉ tạm trú - Phường/Xã"],
         district: row["Địa chỉ tạm trú - Quận/Huyện"],
         city_province: row["Địa chỉ tạm trú - Tỉnh/Thành phố"],
         nation: row["Địa chỉ tạm trú - Quốc gia"],
       },
-      "permanent address": {
+      permanentAddress: {
         street: row["Địa chỉ thường trú - Đường"],
         ward_communes: row["Địa chỉ thường trú - Phường/Xã"],
         district: row["Địa chỉ thường trú - Quận/Huyện"],
         city_province: row["Địa chỉ thường trú - Tỉnh/Thành phố"],
         nation: row["Địa chỉ thường trú - Quốc gia"],
       },
-      "mail address": {
+      mailAddress: {
         street: row["Địa chỉ nhận thư - Đường"],
         ward_communes: row["Địa chỉ nhận thư - Phường/Xã"],
         district: row["Địa chỉ nhận thư - Quận/Huyện"],
@@ -136,9 +136,17 @@ async function upsertStudents(students) {
           },
         },
       ],
+    }).then(function (obj) {
+      if (obj) {
+        return obj.update(update);
+      }
+
+      return Model.create(update);
+    }).catch(error => {
+      throw error.message;
     });
 
-    student.update(update);
+    // student.update(update, {});
   }
 }
 
