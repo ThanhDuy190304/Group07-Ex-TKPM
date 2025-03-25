@@ -26,49 +26,10 @@ const NIDCard = require("./modules/student/nidCardModel");
 const OIDCard = require("./modules/student/oidCardModel");
 const Passport = require("./modules/student/passportModel");
 
-const PermanentAddress = require("./modules/address/permanentAddressModel");
-const TemporaryResidenceAddress = require("./modules/address/temporaryResidenceAddressModel");
-const MailAddress = require("./modules/address/mailAddressModel");
 const Nationality = require("./modules/nationality/nationalityModel");
 
 
 const NUM_ADDRESSES = 50; // Số lượng địa chỉ tạo trước
-
-async function seedAddresses() {
-    let permanentAddresses = [];
-    let temporaryAddresses = [];
-    let mailAddresses = [];
-
-    for (let i = 0; i < NUM_ADDRESSES; i++) {
-        permanentAddresses.push({
-            street: faker.location.streetAddress(),
-            wards_communes: faker.location.city(),
-            district: faker.location.city(),
-            city_province: faker.location.state(),
-            nation: "Vietnam",
-        });
-
-        temporaryAddresses.push({
-            street: faker.location.streetAddress(),
-            wards_communes: faker.location.city(),
-            district: faker.location.city(),
-            city_province: faker.location.state(),
-            nation: "Vietnam",
-        });
-
-        mailAddresses.push({
-            street: faker.location.streetAddress(),
-            wards_communes: faker.location.city(),
-            district: faker.location.city(),
-            city_province: faker.location.state(),
-            nation: "Vietnam",
-        });
-    }
-
-    await PermanentAddress.bulkCreate(permanentAddresses);
-    await TemporaryResidenceAddress.bulkCreate(temporaryAddresses);
-    await MailAddress.bulkCreate(mailAddresses);
-}
 
 
 // Fake data function
@@ -79,11 +40,8 @@ async function seedStudents() {
 
     const statuses = await StudentStatus.findAll();
     const nationalities = await Nationality.findAll();
-    const permanentAddresses = await PermanentAddress.findAll();
-    const temporaryAddresses = await TemporaryResidenceAddress.findAll();
-    const mailAddresses = await MailAddress.findAll();
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < NUM_ADDRESSES; i++) {
         const fullName = faker.person.fullName();
         const dateOfBirth = faker.date.birthdate({ min: 18, max: 25, mode: "age" });
         const gender = faker.helpers.arrayElement(["Nam", "Nữ", "Khác"]);
@@ -93,9 +51,29 @@ async function seedStudents() {
         const nationalityId = faker.helpers.arrayElement(nationalities).code;
 
         // 🔄 Chọn địa chỉ ngẫu nhiên
-        const permanentAddress = faker.helpers.arrayElement(permanentAddresses);
-        const temporaryAddress = faker.helpers.arrayElement(temporaryAddresses);
-        const mailAddress = faker.helpers.arrayElement(mailAddresses);
+        const permanentAddress = {
+            street: faker.location.streetAddress(),
+            wards_communes: faker.location.city(),
+            district: faker.location.city(),
+            city_province: faker.location.state(),
+            nation: faker.location.country(),
+        };
+        
+        const temporaryAddress = {
+            street: faker.location.streetAddress(),
+            wards_communes: faker.location.city(),
+            district: faker.location.city(),
+            city_province: faker.location.state(),
+            nation: faker.location.country(),
+        };
+
+        const mailAddress = {
+            street: faker.location.streetAddress(),
+            wards_communes: faker.location.city(),
+            district: faker.location.city(),
+            city_province: faker.location.state(),
+            nation: faker.location.country(),
+        };
 
         // Tạo sinh viên
         const student = await Student.create({
@@ -109,9 +87,9 @@ async function seedStudents() {
             programId: faker.helpers.arrayElement(programs),
             statusId,
             nationalId: nationalityId,
-            permanentAddressId: permanentAddress.id,
-            temporaryResidenceAddressId: temporaryAddress.id,
-            mailAddressId: mailAddress.id,
+            permanentAddress,
+            temporaryResidenceAddress: temporaryAddress,
+            mailAddress,
         });
 
         // Thêm CCCD
@@ -189,7 +167,6 @@ sequelize
         console.log("✅ Database seeded");
 
         console.log("🔄 Seeding students...");
-        await seedAddresses();
         await seedStudents();
 
         app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));

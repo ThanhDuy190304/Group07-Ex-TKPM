@@ -8,9 +8,6 @@ const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
 const Nationality = require("../nationality/nationalityModel");
-const PermanentAddress = require("../address/permanentAddressModel");
-const MailAddress = require("../address/mailAddressModel");
-const TemporaryResidenceAddress = require("../address/temporaryResidenceAddressModel");
 const StudentStatus = require("./studentStatusModel");
 
 const Student = sequelize.define(
@@ -43,6 +40,18 @@ const Student = sequelize.define(
       allowNull: false,
       validate: { is: /^[0-9]{10}$/ },
     },
+    mailAddress: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    permanentAddress: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    temporaryResidenceAddress: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    }
   },
   {
     timestamps: true,
@@ -55,9 +64,6 @@ Student.belongsTo(Faculty, { foreignKey: "facultyId" });
 Student.belongsTo(Course, { foreignKey: "courseId" });
 Student.belongsTo(Program, { foreignKey: "programId" });
 Student.belongsTo(Nationality, { foreignKey: "nationalId", targetKey: "code" });
-Student.belongsTo(PermanentAddress, { foreignKey: "permanentAddressId" });
-Student.belongsTo(TemporaryResidenceAddress, { foreignKey: "temporaryResidenceAddressId" });
-Student.belongsTo(MailAddress, { foreignKey: "mailAddressId" });
 
 Student.hasOne(OIDCard, { foreignKey: "studentId" });
 Student.hasOne(NIDCard, { foreignKey: "studentId" });
@@ -67,10 +73,6 @@ Faculty.hasMany(Student, { foreignKey: "facultyId" });
 Course.hasMany(Student, { foreignKey: "courseId" });
 Program.hasMany(Student, { foreignKey: "programId" });
 Nationality.hasMany(Student, { foreignKey: "nationalId", sourceKey: "code" });
-
-PermanentAddress.hasOne(Student, { foreignKey: "permanentAddressId" });
-TemporaryResidenceAddress.hasOne(Student, { foreignKey: "temporaryResidenceAddressId" });
-MailAddress.hasOne(Student, { foreignKey: "mailAddressId" });
 
 Passport.belongsTo(Student, { foreignKey: "studentId" });
 NIDCard.belongsTo(Student, { foreignKey: "studentId" });

@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
-const Nationality = require("../nationality/nationalityModel");
 
 const TemporaryResidenceAddress = sequelize.define(
     "temporaryResidenceAddress",
