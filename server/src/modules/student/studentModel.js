@@ -51,17 +51,40 @@ const Student = sequelize.define(
 );
 
 // Relationships
-Student.belongsTo(Faculty, { foreignKey: "facultyId" });
-Student.belongsTo(Course, { foreignKey: "courseId" });
-Student.belongsTo(Program, { foreignKey: "programId" });
-Student.belongsTo(Nationality, { foreignKey: "nationalId", targetKey: "code" });
+Student.belongsTo(Faculty, { foreignKey: "facultyId", as: "faculty" });
+Student.belongsTo(Course, { foreignKey: "courseId", as: "course" });
+Student.belongsTo(Program, { foreignKey: "programId", as: "program" });
+Student.belongsTo(Nationality, {
+  foreignKey: "nationalId",
+  targetKey: "code",
+  as: "nationality",
+});
 Student.belongsTo(PermanentAddress, { foreignKey: "permanentAddressId" });
-Student.belongsTo(TemporaryResidenceAddress, { foreignKey: "temporaryResidenceAddressId" });
+Student.belongsTo(TemporaryResidenceAddress, {
+  foreignKey: "temporaryResidenceAddressId",
+});
 Student.belongsTo(MailAddress, { foreignKey: "mailAddressId" });
 
-Student.hasOne(OIDCard, { foreignKey: "studentId" });
-Student.hasOne(NIDCard, { foreignKey: "studentId" });
-Student.hasOne(Passport, { foreignKey: "studentId" });
+Student.hasOne(OIDCard, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false, // Makes foreign key non-nullable
+  },
+  onDelete: "CASCADE", // Delete ID card when student is deleted
+});
+Student.hasOne(NIDCard, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false, // Makes foreign key non-nullable
+  },
+});
+Student.hasOne(Passport, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false, // Makes foreign key non-nullable
+  },
+  onDelete: "CASCADE",
+});
 
 Faculty.hasMany(Student, { foreignKey: "facultyId" });
 Course.hasMany(Student, { foreignKey: "courseId" });
@@ -69,14 +92,31 @@ Program.hasMany(Student, { foreignKey: "programId" });
 Nationality.hasMany(Student, { foreignKey: "nationalId", sourceKey: "code" });
 
 PermanentAddress.hasOne(Student, { foreignKey: "permanentAddressId" });
-TemporaryResidenceAddress.hasOne(Student, { foreignKey: "temporaryResidenceAddressId" });
+TemporaryResidenceAddress.hasOne(Student, {
+  foreignKey: "temporaryResidenceAddressId",
+});
 MailAddress.hasOne(Student, { foreignKey: "mailAddressId" });
 
-Passport.belongsTo(Student, { foreignKey: "studentId" });
-NIDCard.belongsTo(Student, { foreignKey: "studentId" });
-OIDCard.belongsTo(Student, { foreignKey: "studentId" });
+Passport.belongsTo(Student, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false,
+  },
+});
+NIDCard.belongsTo(Student, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false,
+  },
+});
+OIDCard.belongsTo(Student, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false,
+  },
+});
 
-Student.belongsTo(StudentStatus, { foreignKey: "statusId" });
+Student.belongsTo(StudentStatus, { foreignKey: "statusId", as: "status" });
 StudentStatus.hasMany(Student, { foreignKey: "statusId" });
 
 // 🛠 Hook để tạo studentId dựa trên courseId
