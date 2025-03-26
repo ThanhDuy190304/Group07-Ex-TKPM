@@ -1,14 +1,8 @@
 const Student = require("./studentModel");
 const StudentStatus = require("./studentStatusModel");
-const Faculty = require("../faculty/facultyModel");
 const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
-const PermanentAddress = require("../address/permanentAddressModel");
-const TemporaryResidenceAddress = require("../address/temporaryResidenceAddressModel");
-const MailAddress = require("../address/mailAddressModel");
-
-const { get } = require("../../route/studentRoute");
 const { Op } = require("sequelize");
 const Nationality = require("../nationality/nationalityModel");
 
@@ -57,8 +51,9 @@ async function updateStudent(studentId, updatedData) {
   }
 }
 
-async function getStudents({ studentId, fullName, courseId, facultyId, programId, page = 1, limit = 10 }) {
+async function getStudents(queryParams) {
   try {
+    const { studentId, fullName, courseId, facultyId, programId, page = 1, limit = 10, } = queryParams;
     const whereClause = {};
     if (studentId) whereClause.studentId = studentId;
     else {
@@ -83,22 +78,6 @@ async function getStudents({ studentId, fullName, courseId, facultyId, programId
           model: Passport,
           attributes: ["id", "dateOfIssue", "placeOfIssue", "expiryOfIssue", "country", "note"],
         },
-        {
-          model: PermanentAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
-        },
-        {
-          model: TemporaryResidenceAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
-        },
-        {
-          model: MailAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
-        },
-        {
-          model: Nationality,
-          attributes: { exclude: ["createdAt", "updatedAt"] }
-        }
       ],
       offset: (page - 1) * limit,
       limit: parseInt(limit),
@@ -117,17 +96,6 @@ async function getStudents({ studentId, fullName, courseId, facultyId, programId
       const studentData = student.get({ plain: true });
       ["NIDCard", "OIDCard", "Passport"].forEach((key) => delete studentData[key]);
 
-      // Format addresses to be on a single line
-      if (studentData.permanentAddress) {
-        studentData.permanentAddress = `${studentData.permanentAddress.street}, ${studentData.permanentAddress.wards_communes}, ${studentData.permanentAddress.district}, ${studentData.permanentAddress.city_province}, ${studentData.permanentAddress.nation}`;
-      }
-      if (studentData.temporaryResidenceAddress) {
-        studentData.temporaryResidenceAddress = `${studentData.temporaryResidenceAddress.street}, ${studentData.temporaryResidenceAddress.wards_communes}, ${studentData.temporaryResidenceAddress.district}, ${studentData.temporaryResidenceAddress.city_province}, ${studentData.temporaryResidenceAddress.nation}`;
-      }
-      if (studentData.mailAddress) {
-        studentData.mailAddress = `${studentData.mailAddress.street}, ${studentData.mailAddress.wards_communes}, ${studentData.mailAddress.district}, ${studentData.mailAddress.city_province}, ${studentData.mailAddress.nation}`;
-      }
-
       return Object.assign(studentData, { identityDocuments });
     });
 
@@ -137,6 +105,7 @@ async function getStudents({ studentId, fullName, courseId, facultyId, programId
     throw new Error("Error server");
   }
 }
+
 async function getStatuses() {
   try {
     return StudentStatus.findAll({

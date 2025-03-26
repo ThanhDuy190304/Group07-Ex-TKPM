@@ -6,7 +6,7 @@ const { DataTypes } = require("sequelize");
 const Nationality = sequelize.define(
   "Nationality",
   {
-    code: {
+    nationalityId: {
       type: DataTypes.STRING,
       primaryKey: true,
       allowNull: false,
@@ -18,7 +18,7 @@ const Nationality = sequelize.define(
   },
   {
     timestamps: true,
-    tableName: "nationality",
+    tableName: "nationalities",
   }
 );
 

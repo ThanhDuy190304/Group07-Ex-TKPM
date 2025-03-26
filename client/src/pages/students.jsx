@@ -7,16 +7,15 @@ import {
 } from "@heroicons/react/24/outline";
 import Button from '@mui/joy/Button';
 import {
-    getStudents, putStudent, deleteStudent,
-    postStudent, getStatuses, getToExportStudents,
-    importStudents
-} from "../api/useStudents";
-import { getFaculties } from "../api/useFalcuties";
-import { getPrograms } from "../api/usePrograms";
-import { getCourses } from "../api/useCoures";
+    getPaginatedStudents, putStudent, deleteStudent,
+    postStudent, getStatuses, getAllStudents,
+} from "../api/apiStudents";
+import { getFaculties } from "../api/apiFalcuties";
+import { getPrograms } from "../api/apiPrograms";
+import { getCourses } from "../api/apiCoures";
 
 import { validateEmail, validatePhone, validateBirthdate } from "../utils/validators";
-import { useError } from "../utils/ErrorContext";
+import { useError } from "../context/ErrorContext";
 import { Tooltip } from 'react-tooltip';
 import lodash, { set } from "lodash";
 import { saveAs } from "file-saver";
@@ -488,7 +487,7 @@ function downFile(data, type) {
 
 async function fetchStudentsToExport(searchQuery) {
     try {
-        const students = await getToExportStudents(searchQuery);
+        const students = await getAllStudents(searchQuery);
         return { success: true, data: students };
     } catch (error) {
         return { success: false, error: error };
@@ -556,55 +555,55 @@ function ExportButton({ searchQuery, faculties, programs, statuses }) {
     );
 }
 
-function ImportButton() {
-    const { showError } = useError();
-    const [selectedFile, setSelectedFile] = useState(null);
+// function ImportButton() {
+//     const { showError } = useError();
+//     const [selectedFile, setSelectedFile] = useState(null);
 
-    const handleFileChange = (event) => {
-        setSelectedFile(event.target.files[0]);
-    };
+//     const handleFileChange = (event) => {
+//         setSelectedFile(event.target.files[0]);
+//     };
 
-    const handleUpload = async () => {
-        if (!selectedFile) {
-            showError("Vui lòng chọn file CSV");
-            return;
-        }
-        const result = await importStudents(selectedFile);
-        if (result.error) {
-            showError("Lỗi import: " + result.error);
-        } else {
-            alert("Import thành công!");
-        }
-        setSelectedFile(null); // Reset file sau khi upload
-    };
+//     const handleUpload = async () => {
+//         if (!selectedFile) {
+//             showError("Vui lòng chọn file CSV");
+//             return;
+//         }
+//         const result = await importStudents(selectedFile);
+//         if (result.error) {
+//             showError("Lỗi import: " + result.error);
+//         } else {
+//             alert("Import thành công!");
+//         }
+//         setSelectedFile(null); // Reset file sau khi upload
+//     };
 
-    return (
-        <div className="flex items-center space-x-4">
-            <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="hidden"
-                id="csvUpload"
-            />
-            <label
-                htmlFor="csvUpload"
-                className="cursor-pointer flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-            >
-                <DocumentArrowUpIcon className="h-6 w-6 mr-2" />
-                Chọn file CSV
-            </label>
-            <button
-                onClick={handleUpload}
-                disabled={!selectedFile}
-                className={`px-4 py-2 text-white rounded-md transition ${selectedFile ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed"
-                    }`}
-            >
-                Upload
-            </button>
-        </div>
-    );
-}
+//     return (
+//         <div className="flex items-center space-x-4">
+//             <input
+//                 type="file"
+//                 accept=".csv"
+//                 onChange={handleFileChange}
+//                 className="hidden"
+//                 id="csvUpload"
+//             />
+//             <label
+//                 htmlFor="csvUpload"
+//                 className="cursor-pointer flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+//             >
+//                 <DocumentArrowUpIcon className="h-6 w-6 mr-2" />
+//                 Chọn file CSV
+//             </label>
+//             <button
+//                 onClick={handleUpload}
+//                 disabled={!selectedFile}
+//                 className={`px-4 py-2 text-white rounded-md transition ${selectedFile ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed"
+//                     }`}
+//             >
+//                 Upload
+//             </button>
+//         </div>
+//     );
+// }
 
 
 function Pagination({ total, limit, currentPage, onPageChange }) {
@@ -621,11 +620,7 @@ function Pagination({ total, limit, currentPage, onPageChange }) {
         startPage = Math.max(1, endPage - visiblePages + 1);
     }
 
-    // Tạo danh sách các trang cần hiển thị
-    const pages = [];
-    for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-    }
+    const pages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
 
     return (
         <div className="flex items-center gap-2">
@@ -996,7 +991,7 @@ function Student() {
         const fetchData = async () => {
             try {
                 console.log("Fetching students...");
-                const data = await getStudents({
+                const data = await getPaginatedStudents({
                     searchQuery,
                     page: currentPage,
                     limit: limit
@@ -1030,7 +1025,7 @@ function Student() {
                     programs={programs}
                     statuses={statuses}
                 />
-                <ImportButton />
+                {/* <ImportButton /> */}
             </div>
 
             <div className="mt-6">

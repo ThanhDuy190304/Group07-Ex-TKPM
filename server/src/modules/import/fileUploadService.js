@@ -1,9 +1,6 @@
 const xlsx = require("xlsx");
 const csv = require("csv-parser");
 const Student = require("../student/studentModel");
-const PermanentAddress = require("../address/permanentAddressModel");
-const MailAddress = require("../address/mailAddressModel");
-const TemporaryResidenceAddress = require("../address/temporaryResidenceAddressModel");
 const OIDCard = require("../student/oidCardModel");
 const NIDCard = require("../student/nidCardModel");
 const Passport = require("../student/passportModel");
@@ -43,27 +40,6 @@ async function upsertStudents(students) {
       // faculty: row["Khoa"],
       // batch: row["Khóa"],
       // program: row["Chương trình"],
-      temporaryResidenceAddress: {
-        street: row["Địa chỉ tạm trú - Đường"],
-        ward_communes: row["Địa chỉ tạm trú - Phường/Xã"],
-        district: row["Địa chỉ tạm trú - Quận/Huyện"],
-        city_province: row["Địa chỉ tạm trú - Tỉnh/Thành phố"],
-        nation: row["Địa chỉ tạm trú - Quốc gia"],
-      },
-      permanentAddress: {
-        street: row["Địa chỉ thường trú - Đường"],
-        ward_communes: row["Địa chỉ thường trú - Phường/Xã"],
-        district: row["Địa chỉ thường trú - Quận/Huyện"],
-        city_province: row["Địa chỉ thường trú - Tỉnh/Thành phố"],
-        nation: row["Địa chỉ thường trú - Quốc gia"],
-      },
-      mailAddress: {
-        street: row["Địa chỉ nhận thư - Đường"],
-        ward_communes: row["Địa chỉ nhận thư - Phường/Xã"],
-        district: row["Địa chỉ nhận thư - Quận/Huyện"],
-        city_province: row["Địa chỉ nhận thư - Tỉnh/Thành phố"],
-        nation: row["Địa chỉ nhận thư - Quốc gia"],
-      },
       email: row["Email"],
       phone: row["SĐT"],
       status: row["Tình trạng"],
@@ -118,18 +94,6 @@ async function upsertStudents(students) {
           ],
         },
         {
-          model: PermanentAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
-        },
-        {
-          model: TemporaryResidenceAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
-        },
-        {
-          model: MailAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
-        },
-        {
           model: Nationality,
           attributes: {
             exclude: ["createdAt", "updatedAt"],
@@ -148,13 +112,6 @@ async function upsertStudents(students) {
 
     // student.update(update, {});
   }
-}
-
-async function upsertAddress(Model, address) {
-  if (!address) return null;
-
-  const [record] = await Model.upsert({ ...address }, { returning: true });
-  return record.id;
 }
 
 async function upsertIdentity(Model, studentId, data) {

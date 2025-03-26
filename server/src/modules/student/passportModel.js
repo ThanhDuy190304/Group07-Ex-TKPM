@@ -35,7 +35,7 @@ const Passport = sequelize.define(
   },
   {
     timestamps: true,
-    tableName: "passport",
+    tableName: "passports",
   }
 );
 

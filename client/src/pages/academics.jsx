@@ -1,14 +1,14 @@
 import { useEffect, useState, useReducer, useCallback } from 'react';
-import { getFaculties, putFaculty, postFaculty } from '../api/useFalcuties';
-import { getPrograms, putProgram, postProgram } from '../api/usePrograms';
-import { getStatuses, putStatus, postStatus } from '../api/useStudents';
+import { getFaculties, putFaculty, postFaculty } from '../api/apiFalcuties';
+import { getPrograms, putProgram, postProgram } from '../api/apiPrograms';
+import { getStatuses, putStatus, postStatus } from '../api/apiStudents';
 import { PencilSquareIcon, CheckIcon } from '@heroicons/react/20/solid';
 import { Tooltip } from 'react-tooltip';
 import { Table } from '@mui/joy';
 import Modal from "react-modal";
 import { motion } from "framer-motion";
 import { validateNotEmptyFields } from '../utils/validators';
-import { useError } from "../utils/ErrorContext";
+import { useError } from "../context/ErrorContext";
 
 
 Modal.setAppElement("#root");

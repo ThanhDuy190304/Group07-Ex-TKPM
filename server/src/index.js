@@ -26,62 +26,20 @@ const NIDCard = require("./modules/student/nidCardModel");
 const OIDCard = require("./modules/student/oidCardModel");
 const Passport = require("./modules/student/passportModel");
 
-const PermanentAddress = require("./modules/address/permanentAddressModel");
-const TemporaryResidenceAddress = require("./modules/address/temporaryResidenceAddressModel");
-const MailAddress = require("./modules/address/mailAddressModel");
 const Nationality = require("./modules/nationality/nationalityModel");
 
 
-const NUM_ADDRESSES = 50; // Số lượng địa chỉ tạo trước
-
-async function seedAddresses() {
-    let permanentAddresses = [];
-    let temporaryAddresses = [];
-    let mailAddresses = [];
-
-    for (let i = 0; i < NUM_ADDRESSES; i++) {
-        permanentAddresses.push({
-            street: faker.location.streetAddress(),
-            wards_communes: faker.location.city(),
-            district: faker.location.city(),
-            city_province: faker.location.state(),
-            nation: "Vietnam",
-        });
-
-        temporaryAddresses.push({
-            street: faker.location.streetAddress(),
-            wards_communes: faker.location.city(),
-            district: faker.location.city(),
-            city_province: faker.location.state(),
-            nation: "Vietnam",
-        });
-
-        mailAddresses.push({
-            street: faker.location.streetAddress(),
-            wards_communes: faker.location.city(),
-            district: faker.location.city(),
-            city_province: faker.location.state(),
-            nation: "Vietnam",
-        });
-    }
-
-    await PermanentAddress.bulkCreate(permanentAddresses);
-    await TemporaryResidenceAddress.bulkCreate(temporaryAddresses);
-    await MailAddress.bulkCreate(mailAddresses);
-}
 
 
 // Fake data function
 async function seedStudents() {
     const courses = ["K2020", "K2021", "K2022", "K2023"];
-    const faculties = [1, 2, 3, 4];
-    const programs = [1, 2, 3];
+    const faculties = ["LAW", "JPN", "ENCO", "FRA"];
+    const programs = ["CQ", "TT", "CLC"];
 
     const statuses = await StudentStatus.findAll();
     const nationalities = await Nationality.findAll();
-    const permanentAddresses = await PermanentAddress.findAll();
-    const temporaryAddresses = await TemporaryResidenceAddress.findAll();
-    const mailAddresses = await MailAddress.findAll();
+
 
     for (let i = 0; i < 50; i++) {
         const fullName = faker.person.fullName();
@@ -90,12 +48,7 @@ async function seedStudents() {
         const email = faker.internet.email({ firstName: fullName.replace(/\s+/g, "").toLowerCase() });
         const phoneNumber = faker.string.numeric(10);
         const statusId = faker.helpers.arrayElement(statuses).statusId;
-        const nationalityId = faker.helpers.arrayElement(nationalities).code;
-
-        // 🔄 Chọn địa chỉ ngẫu nhiên
-        const permanentAddress = faker.helpers.arrayElement(permanentAddresses);
-        const temporaryAddress = faker.helpers.arrayElement(temporaryAddresses);
-        const mailAddress = faker.helpers.arrayElement(mailAddresses);
+        const nationalityId = faker.helpers.arrayElement(nationalities).nationalityId;
 
         // Tạo sinh viên
         const student = await Student.create({
@@ -108,41 +61,9 @@ async function seedStudents() {
             facultyId: faker.helpers.arrayElement(faculties),
             programId: faker.helpers.arrayElement(programs),
             statusId,
-            nationalId: nationalityId,
-            permanentAddressId: permanentAddress.id,
-            temporaryResidenceAddressId: temporaryAddress.id,
-            mailAddressId: mailAddress.id,
+            nationalityId: nationalityId,
         });
 
-        // Thêm CCCD
-        await NIDCard.create({
-            studentId: student.studentId,
-            id: faker.string.numeric(12),
-            dateOfIssue: faker.date.past(),
-            expiryOfIssue: faker.date.future(),
-            placeOfIssue: faker.location.city(),
-            chip: faker.datatype.boolean(),
-        });
-
-        // Thêm CMND
-        await OIDCard.create({
-            id: faker.string.numeric(9),
-            studentId: student.studentId,
-            dateOfIssue: faker.date.past(),
-            expiryOfIssue: faker.date.future(),
-            placeOfIssue: faker.location.city(),
-        });
-
-        // Thêm Hộ chiếu
-        await Passport.create({
-            id: faker.string.alphanumeric(8).toUpperCase(),
-            studentId: student.studentId,
-            dateOfIssue: faker.date.past(),
-            expiryOfIssue: faker.date.future(),
-            placeOfIssue: faker.location.city(),
-            country: "Vietnam",
-            note: faker.lorem.sentence(),
-        });
     }
 }
 
@@ -153,10 +74,10 @@ sequelize
         console.log("✅ Database synced");
 
         await Faculty.bulkCreate([
-            { short_name: "LAW", name: "Luật" },
-            { short_name: "ENCO", name: "Tiếng Anh thương mại" },
-            { short_name: "JPN", name: "Tiếng Nhật" },
-            { short_name: "FRA", name: "Tiếng Pháp" },
+            { facultyId: "LAW", name: "Luật" },
+            { facultyId: "ENCO", name: "Tiếng Anh thương mại" },
+            { facultyId: "JPN", name: "Tiếng Nhật" },
+            { facultyId: "FRA", name: "Tiếng Pháp" },
         ]);
 
         await Course.bulkCreate([
@@ -167,29 +88,28 @@ sequelize
         ]);
 
         await Program.bulkCreate([
-            { short_name: "CQ", name: "Chính quy" },
-            { short_name: "TT", name: "Tiên tiến" },
-            { short_name: "CLC", name: "Chất lượng cao" },
+            { programId: "CQ", name: "Chính quy" },
+            { programId: "TT", name: "Tiên tiến" },
+            { programId: "CLC", name: "Chất lượng cao" },
         ]);
 
         await StudentStatus.bulkCreate([
-            { name: "Đang học" },
-            { name: "Đã tốt nghiệp" },
-            { name: "Đã thôi học" },
-            { name: "Tạm dừng học" },
+            { statusId: "DANGHOC", name: "Đang học" },
+            { statusId: "TOTNGHIEP", name: "Đã tốt nghiệp" },
+            { statusId: "THOIHOC", name: "Đã thôi học" },
+            { statusId: "TAMDUNG", name: "Tạm dừng học" },
         ]);
 
         await Nationality.bulkCreate([
-            { name: "Vietnam", code: "VN" },
-            { name: "USA", code: "US" },
-            { name: "France", code: "FR" },
-            { name: "Japan", code: "JP" },
+            { name: "Vietnam", nationalityId: "VN" },
+            { name: "USA", nationalityId: "US" },
+            { name: "France", nationalityId: "FR" },
+            { name: "Japan", nationalityId: "JP" },
         ]);
 
         console.log("✅ Database seeded");
 
         console.log("🔄 Seeding students...");
-        await seedAddresses();
         await seedStudents();
 
         app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));

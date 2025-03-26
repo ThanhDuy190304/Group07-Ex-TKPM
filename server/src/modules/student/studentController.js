@@ -90,17 +90,7 @@ async function putStudent(req, res) {
 
 async function getStudents(req, res) {
   try {
-    const { studentId, fullName, courseId, facultyId, programId } = req.query;
-    const { page = 1, limit = 10 } = req.query;
-    const result = await StudentService.getStudents({
-      studentId,
-      fullName,
-      courseId,
-      facultyId,
-      programId,
-      page: parseInt(page),
-      limit: parseInt(limit),
-    });
+    const result = await StudentService.getStudents(req.query);
     if (!result || result.students.length === 0) {
       return res.status(200).json({ students: [], total: 0 });
     }

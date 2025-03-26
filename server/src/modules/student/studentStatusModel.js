@@ -5,23 +5,18 @@ const StudentStatus = sequelize.define(
     "StudentStatus",
     {
         statusId: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
+            type: DataTypes.STRING,
             primaryKey: true,
         },
         name: {
             type: DataTypes.STRING,
             allowNull: false,
-            unique: true, // Trạng thái không được trùng lặp
-        },
-        description: {
-            type: DataTypes.TEXT, // Thêm mô tả nếu cần
-            allowNull: true,
+            unique: true,
         },
     },
     {
         timestamps: false,
-        tableName: "student_status",
+        tableName: "student_statuses",
     }
 );
 
