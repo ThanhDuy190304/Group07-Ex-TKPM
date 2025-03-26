@@ -12,14 +12,10 @@ const StudentValidationRules = [
   body("gender")
     .isIn(["Nam", "Nữ", "Khác"])
     .withMessage("Gender must be Nam, Nữ, or Khác"),
-  body("facultyId").notEmpty().withMessage("Faculty ID is required"),
-  body("courseId").notEmpty().withMessage("Course ID is required"),
-  body("programId").notEmpty().withMessage("Program ID is required"),
   body("email").isEmail().withMessage("Invalid email format"),
   body("phoneNumber")
     .matches(/^[0-9]{10}$/)
     .withMessage("Phone number must be 10 digits"),
-  body("statusId").notEmpty().withMessage("Status ID is required"),
 ];
 
 async function deleteStudent(req, res) {
