@@ -1,42 +1,40 @@
 const FacultyService = require("./facultyService");
-const logger = require("../../logger");
 
 async function getFaculties(req, res) {
     try {
-        logger.info('getFaculties');
-        const faculties = await FacultyService.getAllFaculties();
-        return res.status(200).json(faculties);
+        const result = await FacultyService.getAllFaculties();
+        if (result.success) {
+            return res.status(200).json({ data: result.faculties });
+        }
+        return res.status(500).json({ error: "Lỗi server" });
     } catch (error) {
-        logger.error('Error getFaculties', {message: error.message, stack: error.stack});
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error });
     }
 }
 
 async function postFaculty(req, res) {
     try {
-        logger.info('postFaculty');
-        const faculty = await FacultyService.createFaculty(req.body);
-        return res.status(200).json(faculty);
+        const result = await FacultyService.createFaculty(req.body);
+        if (result.success) {
+            return res.status(201).json({ data: result.faculty });
+        }
+        return res.status(400).json({ error: result.error });
     } catch (error) {
-        logger.error('Error postFaculty', {message: error.message, stack: error.stack});
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error });
     }
 }
 
 async function putFaculty(req, res) {
     try {
-        logger.info('putFaculty');
         const facultyId = req.params.facultyId;
         const updatedData = req.body;
         const result = await FacultyService.updateFaculty(facultyId, updatedData);
-        if (!result) {
-            logger.warn('Warn putFaculty', {facultyId});
-            return res.status(404).json({ message: "Faculty not found!" });
+        if (result.success) {
+            return res.status(201).json({ data: result.faculty });
         }
-        return res.status(200).json(result);
+        return res.status(400).json({ error: result.error });
     } catch (error) {
-        logger.error('Error putFaculty', {message: error.message, stack: error.stack});
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error });
     }
 }
 

@@ -5,22 +5,17 @@ const Program = sequelize.define(
   "Program",
   {
     programId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       primaryKey: true,
-      autoIncrement: true,
-    },
-    short_name: {
-      type: DataTypes.STRING, // e.g., "CQ"
-      allowNull: false,
     },
     name: {
-      type: DataTypes.STRING, // e.g., "Chính quy"
+      type: DataTypes.STRING,
       allowNull: false,
     },
   },
   {
-    timestamps: true,
-    tableName: "program",
+    timestamps: false,
+    tableName: "programs",
   }
 );
 

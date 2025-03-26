@@ -8,45 +8,42 @@ const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
 const Nationality = require("../nationality/nationalityModel");
-const PermanentAddress = require("../address/permanentAddressModel");
-const MailAddress = require("../address/mailAddressModel");
-const TemporaryResidenceAddress = require("../address/temporaryResidenceAddressModel");
 const StudentStatus = require("./studentStatusModel");
 
 const Student = sequelize.define(
   "Student",
   {
     studentId: {
-      type: DataTypes.STRING, // Mã số sinh viên, e.g., "21120001"
+      type: DataTypes.STRING,
       primaryKey: true,
     },
     fullName: {
-      type: DataTypes.STRING, // Họ tên
+      type: DataTypes.STRING,
       allowNull: false,
     },
     dateOfBirth: {
-      type: DataTypes.DATEONLY, // Ngày tháng năm sinh
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     gender: {
-      type: DataTypes.ENUM("Nam", "Nữ", "Khác"), // Giới tính
+      type: DataTypes.ENUM("Nam", "Nữ", "Khác"),
       allowNull: false,
     },
     email: {
-      type: DataTypes.STRING, // Email
+      type: DataTypes.STRING,
       allowNull: false,
       unique: true,
       validate: { isEmail: true },
     },
     phoneNumber: {
-      type: DataTypes.STRING, // Số điện thoại liên hệ
+      type: DataTypes.STRING,
       allowNull: false,
       validate: { is: /^[0-9]{10}$/ },
     },
   },
   {
     timestamps: true,
-    tableName: "student",
+    tableName: "students",
   }
 );
 
@@ -54,10 +51,7 @@ const Student = sequelize.define(
 Student.belongsTo(Faculty, { foreignKey: "facultyId" });
 Student.belongsTo(Course, { foreignKey: "courseId" });
 Student.belongsTo(Program, { foreignKey: "programId" });
-Student.belongsTo(Nationality, { foreignKey: "nationalId", targetKey: "code" });
-Student.belongsTo(PermanentAddress, { foreignKey: "permanentAddressId" });
-Student.belongsTo(TemporaryResidenceAddress, { foreignKey: "temporaryResidenceAddressId" });
-Student.belongsTo(MailAddress, { foreignKey: "mailAddressId" });
+Student.belongsTo(Nationality, { foreignKey: "nationalityId" });
 
 Student.hasOne(OIDCard, { foreignKey: "studentId" });
 Student.hasOne(NIDCard, { foreignKey: "studentId" });
@@ -66,11 +60,7 @@ Student.hasOne(Passport, { foreignKey: "studentId" });
 Faculty.hasMany(Student, { foreignKey: "facultyId" });
 Course.hasMany(Student, { foreignKey: "courseId" });
 Program.hasMany(Student, { foreignKey: "programId" });
-Nationality.hasMany(Student, { foreignKey: "nationalId", sourceKey: "code" });
-
-PermanentAddress.hasOne(Student, { foreignKey: "permanentAddressId" });
-TemporaryResidenceAddress.hasOne(Student, { foreignKey: "temporaryResidenceAddressId" });
-MailAddress.hasOne(Student, { foreignKey: "mailAddressId" });
+Nationality.hasMany(Student, { foreignKey: "nationalityId" });
 
 Passport.belongsTo(Student, { foreignKey: "studentId" });
 NIDCard.belongsTo(Student, { foreignKey: "studentId" });

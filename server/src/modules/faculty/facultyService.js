@@ -1,36 +1,49 @@
 const Faculty = require("./facultyModel");
+const FacultyError = require("./facultyError");
 
 async function getAllFaculties() {
     try {
         const faculties = await Faculty.findAll({
-            attributes: ["facultyId", "name", "short_name"], // Chỉ lấy facultyId và name
+            attributes: ["facultyId", "name"],
         });
-        return faculties;
+        return {
+            success: true,
+            faculties: faculties,
+        };
     } catch (error) {
-        console.error("Error in facultyService.getAllFaculties:", error.message);
-        throw new Error("Error server");
+        console.error("Error in facultyService.getAllFaculties: ", error.message);
+        throw FacultyError.INTERNAL_ERROR;
     }
 }
 async function createFaculty(newFaculty) {
     try {
         const faculty = await Faculty.create(newFaculty);
-        return faculty;
+        return {
+            success: true,
+            faculty: faculty,
+        };
     } catch (error) {
         console.error("Error in facultyService.createFaculty:", error.message);
-        throw new Error("Error server");
+        throw FacultyError.INTERNAL_ERROR;
     }
 }
 async function updateFaculty(facultyId, updatedData) {
     try {
         const faculty = await Faculty.findOne({ where: { facultyId } });
         if (!faculty) {
-            return null;
+            return {
+                success: false,
+                error: FacultyError.NOT_FOUND,
+            };
         }
-        await faculty.update(updatedData);
-        return faculty;
+        const updatedFaculty = await faculty.update(updatedData);
+        return {
+            success: true,
+            faculty: updatedFaculty.get({ plain: true })
+        };
     } catch (error) {
         console.error("Error in facultyService.updateFaculty:", error.message);
-        throw new Error("Error server");
+        throw FacultyError.INTERNAL_ERROR;
     }
 }
 

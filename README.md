@@ -109,7 +109,7 @@ Mở cửa sổ Terminal
     ```bash
     cp .env.default .env
     ```
-    Sau đó, chỉnh sửa tệp .env với thông tin đăng nhập PostgreSQL và các chi tiết cấu hình khác.
+    Sau đó, chỉnh sửa tệp .env với thông tin đăng nhập PostgreSQL và các chi tiết cấu hình khác (tạo database theo cấu hình).
     Cài đặt dependencies
     ```bash
     npm install

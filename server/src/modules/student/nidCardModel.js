@@ -1,7 +1,7 @@
 // CCCD model
 
 const sequelize = require("../../config/database");
-  const { DataTypes } = require("sequelize");
+const { DataTypes } = require("sequelize");
 
 const NIDCard = sequelize.define(
   "NIDCard",
@@ -31,7 +31,7 @@ const NIDCard = sequelize.define(
   },
   {
     timestamps: true,
-    tableName: "nid_card",
+    tableName: "nid_cards",
   }
 );
 

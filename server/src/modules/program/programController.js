@@ -1,41 +1,42 @@
 const ProgramService = require("./programService")
-const logger = require('../../logger');
 
 async function getPrograms(req, res) {
     try {
-        logger.info('getPrograms');
-        const programs = await ProgramService.getAllPrograms();
-        return res.status(200).json(programs);
+        const result = await ProgramService.getAllPrograms();
+        if (result.success) {
+            return res.status(200).json(result.data);
+        }
+        return res.status(500).json({ error: "Lỗi server" });
     } catch (error) {
-        logger.error('Error getPrograms', {message: error.message, stack: error.stack});
-        return res.status(500).json({ error: error.message });
+        console.error('Error getPrograms', { message: error.message, stack: error.stack });
+        return res.status(500).json({ error: "Lỗi server" });
     }
 }
 
 async function postProgram(req, res) {
     try {
-        logger.info('postProgram');
-        const programs = await ProgramService.createProgram(req.body);
-        return res.status(200).json(programs);
+        const result = await ProgramService.createProgram(req.body);
+        if (result.success) {
+            return res.status(201).json(result.data);
+        }
+        return res.status(400).json({ error: result.error });
     } catch (error) {
-        logger.error('Error postProgram', {message: error.message, stack: error.stack});
+        console.error('Error postProgram', { message: error.message, stack: error.stack });
         return res.status(500).json({ error: error.message });
     }
 }
 
 async function putProgram(req, res) {
     try {
-        logger.info('putProgram');
         const programId = req.params.programId;
         const updatedData = req.body;
         const result = await ProgramService.updateProgram(programId, updatedData);
-        if (!result) {
-            logger.warn('Warn putProgram', {programId});
-            return res.status(404).json({ message: "Program not found!" });
+        if (result.success) {
+            return res.status(201).send();
         }
-        return res.status(200).json(result);
+        return res.status(400).json({ error: result.error });
     } catch (error) {
-        logger.error('Error putProgram', {message: error.message, stack: error.stack});
+        console.error('Error putProgram', { message: error.message, stack: error.stack });
         return res.status(500).json({ error: error.message });
     }
 }

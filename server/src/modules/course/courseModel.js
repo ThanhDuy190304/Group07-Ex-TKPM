@@ -5,18 +5,18 @@ const Course = sequelize.define(
     "Course",
     {
         courseId: {
-            type: DataTypes.STRING, // e.g., "K2020"
+            type: DataTypes.STRING,
             primaryKey: true,
             allowNull: false,
         },
         startYear: {
-            type: DataTypes.INTEGER, // e.g., 2020
+            type: DataTypes.INTEGER,
             allowNull: false,
         },
     },
     {
         timestamps: true,
-        tableName: "course",
+        tableName: "courses",
         hooks: {
             beforeCreate: (course) => {
                 // Nếu chưa có courseId, tự động tạo từ năm hiện tại

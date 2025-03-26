@@ -27,7 +27,7 @@ const OIDCard = sequelize.define(
   },
   {
     timestamps: true,
-    tableName: "oid_card",
+    tableName: "oid_cards",
   }
 );
 
