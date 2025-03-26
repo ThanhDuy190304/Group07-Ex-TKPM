@@ -94,10 +94,12 @@ async function getStudents({ studentId, fullName, courseId, facultyId, programId
         {
           model: MailAddress,
           attributes: { exclude: ["createdAt", "updatedAt"] },
+          // as: ""
         },
         {
           model: Nationality,
-          attributes: { exclude: ["createdAt", "updatedAt"] }
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+          as: "nationality"
         }
       ],
       offset: (page - 1) * limit,

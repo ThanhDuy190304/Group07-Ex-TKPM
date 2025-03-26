@@ -32,6 +32,11 @@ const Passport = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    studentId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true, // Enforces one-to-one
+    },
   },
   {
     timestamps: true,

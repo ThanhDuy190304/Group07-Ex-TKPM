@@ -28,6 +28,11 @@ const NIDCard = sequelize.define(
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
+    studentId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true, // Enforces one-to-one
+    },
   },
   {
     timestamps: true,
