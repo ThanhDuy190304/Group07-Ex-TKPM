@@ -29,6 +29,7 @@ const Passport = require("./modules/student/passportModel");
 const Nationality = require("./modules/nationality/nationalityModel");
 
 
+const NUM_ADDRESSES = 50; // Số lượng địa chỉ tạo trước
 
 
 // Fake data function
@@ -41,7 +42,7 @@ async function seedStudents() {
     const nationalities = await Nationality.findAll();
 
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < NUM_ADDRESSES; i++) {
         const fullName = faker.person.fullName();
         const dateOfBirth = faker.date.birthdate({ min: 18, max: 25, mode: "age" });
         const gender = faker.helpers.arrayElement(["Nam", "Nữ", "Khác"]);
@@ -49,6 +50,31 @@ async function seedStudents() {
         const phoneNumber = faker.string.numeric(10);
         const statusId = faker.helpers.arrayElement(statuses).statusId;
         const nationalityId = faker.helpers.arrayElement(nationalities).nationalityId;
+
+        // 🔄 Chọn địa chỉ ngẫu nhiên
+        const permanentAddress = {
+            street: faker.location.streetAddress(),
+            wards_communes: faker.location.city(),
+            district: faker.location.city(),
+            city_province: faker.location.state(),
+            nation: faker.location.country(),
+        };
+        
+        const temporaryAddress = {
+            street: faker.location.streetAddress(),
+            wards_communes: faker.location.city(),
+            district: faker.location.city(),
+            city_province: faker.location.state(),
+            nation: faker.location.country(),
+        };
+
+        const mailAddress = {
+            street: faker.location.streetAddress(),
+            wards_communes: faker.location.city(),
+            district: faker.location.city(),
+            city_province: faker.location.state(),
+            nation: faker.location.country(),
+        };
 
         // Tạo sinh viên
         const student = await Student.create({
@@ -62,6 +88,9 @@ async function seedStudents() {
             programId: faker.helpers.arrayElement(programs),
             statusId,
             nationalityId: nationalityId,
+            permanentAddress,
+            temporaryResidenceAddress: temporaryAddress,
+            mailAddress,
         });
 
     }

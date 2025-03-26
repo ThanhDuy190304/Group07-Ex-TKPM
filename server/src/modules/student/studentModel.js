@@ -40,6 +40,18 @@ const Student = sequelize.define(
       allowNull: false,
       validate: { is: /^[0-9]{10}$/ },
     },
+    mailAddress: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    permanentAddress: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    temporaryResidenceAddress: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    }
   },
   {
     timestamps: true,
