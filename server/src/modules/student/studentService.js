@@ -5,6 +5,52 @@ const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
 const { Op } = require("sequelize");
 const Nationality = require("../nationality/nationalityModel");
+const studentError = require("./studentError");
+const {body} = require("express-validator");
+
+async function validateFullName(){
+  return [
+    body("fullName").notEmpty().withMessage("Full name is required"),
+  ];
+}
+
+async function validateDateOfBirth(){
+  return[
+    body("dateOfBirth")
+        .isISO8601()
+        .withMessage("Invalid date of birth (use YYYY-MM-DD)"),
+  ];
+}
+
+async function validateGender(){
+  return [
+    body("gender")
+        .isIn(["Nam", "Nữ", "Khác"])
+        .withMessage("Gender must be Nam, Nữ, or Khác"),
+  ];
+}
+
+async function validateEmail(){
+  return [
+    body("email").isEmail().withMessage("Invalid email format"),
+  ];
+}
+
+async function validatePhoneNumber() {
+  return [
+    body("phoneNumber")
+    .matches(/^[0-9]{10}$/)
+    .withMessage("Phone number must be 10 digits"),
+  ];
+}
+
+const StudentValidationRules = [
+  validateFullName(),
+  validateDateOfBirth(),
+  validateGender(),
+  validateEmail(),
+  validatePhoneNumber(),
+]
 
 async function deleteStudent(studentId) {
   try {
@@ -12,12 +58,18 @@ async function deleteStudent(studentId) {
       where: { studentId },
     });
     if (deleted === 0) {
-      return "Unknown student";
+      return {
+        success: false,
+        message: "Unknown student",
+      }
     }
-    return null;
+    return {
+        success: true,
+        message: "",
+    }
   } catch (error) {
     console.error("Error in studentService.deleteStudent: ", error.message);
-    throw new Error("Error server");
+    throw studentError.INTERNAL_ERROR;
   }
 }
 
@@ -27,13 +79,16 @@ async function createStudent(newStudent) {
       where: { email: newStudent.email },
     });
     if (existingStudent) {
-      return { error: "Email đã tồn tại. Vui lòng chọn email khác." };
+      return { 
+        success: false,
+        error: "Email đã tồn tại. Vui lòng chọn email khác.",
+      };
     }
     const student = await Student.create(newStudent);
     return { success: true, student };
   } catch (error) {
     console.error("Error in studentService.createStudent: ", error.message);
-    throw new Error("Error server");
+    throw studentError.INTERNAL_ERROR;
   }
 }
 
@@ -41,13 +96,21 @@ async function updateStudent(studentId, updatedData) {
   try {
     const student = await Student.findOne({ where: { studentId } });
     if (!student) {
-      return null;
+      return {
+        success: false,
+        data: null,
+        message: "Sinh viên không hợp lệ!",
+      }
     }
     await student.update(updatedData);
-    return student;
+    return {
+      success: true,
+      data: student,
+      message: "",
+    };
   } catch (error) {
     console.error("Error in studentService.updateStudent:", error.message);
-    throw new Error("Error server");
+    throw studentError.INTERNAL_ERROR
   }
 }
 
@@ -99,21 +162,29 @@ async function getStudents(queryParams) {
       return Object.assign(studentData, { identityDocuments });
     });
 
-    return { students: formattedStudents, total: students.count };
+    return {
+      success: true, 
+      students: formattedStudents, 
+      total: students.count,
+     };
   } catch (error) {
     console.error("Error in studentService.getFilteredStudents:", error.message);
-    throw new Error("Error server");
+    throw studentError.INTERNAL_ERROR;
   }
 }
 
 async function getStatuses() {
   try {
-    return StudentStatus.findAll({
+    const status = StudentStatus.findAll({
       attributes: { exclude: ["createdAt", "updatedAt"] },
     });
+    return{
+      success: true,
+      data: status,
+    }
   } catch (error) {
     console.error("Error in StudentService.getStatuses:", error.message);
-    throw new Error("Error Server");
+    throw studentError.INTERNAL_ERROR;
   }
 }
 
@@ -123,22 +194,33 @@ async function updateStatus(statusId, updatedData) {
       where: { statusId }
     });
     if (affectedRows === 0) {
-      return null;
+      return {
+        success: false,
+        data: null,
+        message: "Trạng thái không hợp lệ!",
+      }
     }
-    return true;
+    return {
+      success: true,
+      data: true,
+      message: "",
+    }
   } catch (error) {
     console.error("Error in StudentService.updateStatus:", error.message);
-    throw new Error("Error server");
+    throw studentError.INTERNAL_ERROR;
   }
 }
 
 async function createStatus(newStatus) {
   try {
     const status = await StudentStatus.create(newStatus);
-    return status;
+    return {
+      success: true,
+      status: status,
+    }
   } catch (error) {
     console.error("Error in StudentService.createStatus:", error.message);
-    throw new Error("Error server");
+    throw studentError.INTERNAL_ERROR;
   }
 }
 
@@ -211,6 +293,13 @@ async function getToExportStudents(filters) {
 
 
 module.exports = {
+  validateFullName,
+  validateDateOfBirth,
+  validateGender,
+  validateEmail, 
+  validatePhoneNumber,
+  StudentValidationRules,
+
   deleteStudent,
   createStudent,
   updateStudent,
