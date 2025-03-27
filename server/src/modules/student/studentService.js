@@ -54,6 +54,23 @@ const StudentValidationRules = [
   validatePhoneNumber(),
 ]
 
+async function checkStudentData(req){
+  await Promise.all(StudentService.StudentValidationRules.map((rule) => rule.run(req)));
+  const errors = validationResult(req);
+  if(!errors.isEmpty()){
+    return {
+      success: false,
+      data: errors.array(),
+      message: "dữ liệu không hợp lệ",
+    };
+  }
+  return {
+    success: true,
+    data: null,
+    message: "",
+  }
+}
+
 async function deleteStudent(studentId) {
   try {
     const deleted = await Student.destroy({
@@ -62,7 +79,8 @@ async function deleteStudent(studentId) {
     if (deleted === 0) {
       return {
         success: false,
-        message: "Unknown student",
+        error: studentError.UNKNOWN_STUDENT,
+        message: "unknown student",
       }
     }
     return {
@@ -83,7 +101,7 @@ async function createStudent(newStudent) {
     if (existingStudent) {
       return {
         success: false,
-        error: "Email đã tồn tại. Vui lòng chọn email khác.",
+        error: studentError.EMAIL_EXIST,
       };
     }
     const student = await Student.create(newStudent);
@@ -316,6 +334,7 @@ module.exports = {
   validateEmail,
   validatePhoneNumber,
   StudentValidationRules,
+  checkStudentData,
 
   deleteStudent,
   createStudent,
