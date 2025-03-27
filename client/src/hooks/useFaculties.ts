@@ -11,7 +11,7 @@ export function useFaculties() {
     });
 
     const createFaculty = useMutation({
-        mutationFn: (newFaculty: Faculty) => postFaculty(newFaculty),
+        mutationFn: (newFaculty: Partial<Faculty>) => postFaculty(newFaculty),
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ["faculties"],

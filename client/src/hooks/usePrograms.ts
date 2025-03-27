@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getPrograms, postProgram, putProgram } from '../api/apiPrograms';
-import { Program } from '../types/program'
+import { getPrograms, postProgram, putProgram } from "../api/apiPrograms";
+import { Program } from "../types/program";
 
 export function usePrograms() {
     const queryClient = useQueryClient();
@@ -10,32 +10,28 @@ export function usePrograms() {
         queryFn: getPrograms,
     });
 
-    const updateProgram = useMutation({
-        mutationFn: ({ programId, updatedData }: { programId: string; updatedData: Partial<Program> }) =>
-            putProgram(programId, updatedData),
-        onSuccess: (updatedProgram: Program) => {
-            queryClient.setQueryData<Program[]>(["programs"], (oldPrograms) => {
-                if (!oldPrograms) return [];
-                return oldPrograms.map((program) =>
-                    program.programId === updatedProgram.programId ? updatedProgram : program
-                );
+    const createProgram = useMutation({
+        mutationFn: (newProgram: Partial<Program>) => postProgram(newProgram),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["programs"],
             });
         },
     });
 
-    const createProgram = useMutation({
-        mutationFn: (newProgram: Program) => postProgram(newProgram),
-        onSuccess: (createdProgram: Program) => {
-            queryClient.setQueryData<Program[]>(["programs"], (oldPrograms) => {
-                if (!oldPrograms) return [createdProgram];
-                return [...oldPrograms, createdProgram];
+    const updateProgram = useMutation({
+        mutationFn: ({ programId, updatedData }: { programId: string; updatedData: Partial<Program> }) =>
+            putProgram(programId, updatedData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["programs"],
             });
         },
     });
 
     return {
         programsQuery,
-        updateProgram,
         createProgram,
+        updateProgram,
     };
 }

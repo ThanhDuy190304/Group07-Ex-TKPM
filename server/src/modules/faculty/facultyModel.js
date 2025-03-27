@@ -5,11 +5,21 @@ const Faculty = sequelize.define(
     "Faculty",
     {
         facultyId: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER,
             primaryKey: true,
+            autoIncrement: true,
+            allowNull: false,
+        },
+        short_name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
+            validate: {
+                notEmpty: true
+            }
         },
         name: {
-            type: DataTypes.STRING, // e.g. "Công nghệ thông tin"
+            type: DataTypes.STRING,
             allowNull: false,
         },
     },

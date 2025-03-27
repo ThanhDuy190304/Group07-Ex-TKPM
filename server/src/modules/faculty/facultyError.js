@@ -9,6 +9,11 @@ const FacultyError = {
         message: 'Dữ liệu khoa không hợp lệ',
     },
 
+    DUPLICATE: {
+        code: 'DUPLICATE_PROGRAM',
+        message: 'Khoa đã tồn tại',
+    },
+
     INTERNAL_ERROR: {
         code: 'FACULTY_SERVER_ERROR',
         message: 'Lỗi server khi xử lý khoa',

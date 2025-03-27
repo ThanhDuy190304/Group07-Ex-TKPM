@@ -16,7 +16,7 @@ async function postFaculty(req, res) {
     try {
         const result = await FacultyService.createFaculty(req.body);
         if (result.success) {
-            return res.status(201).json({ data: result.faculty });
+            return res.status(200).json({ data: result.faculty });
         }
         return res.status(400).json({ error: result.error });
     } catch (error) {
@@ -30,7 +30,7 @@ async function putFaculty(req, res) {
         const updatedData = req.body;
         const result = await FacultyService.updateFaculty(facultyId, updatedData);
         if (result.success) {
-            return res.status(201).json({ data: result.faculty });
+            return res.status(200).json({ data: result.faculty });
         }
         return res.status(400).json({ error: result.error });
     } catch (error) {

@@ -35,8 +35,8 @@ const NUM_ADDRESSES = 50; // Số lượng địa chỉ tạo trước
 // Fake data function
 async function seedStudents() {
     const courses = ["K2020", "K2021", "K2022", "K2023"];
-    const faculties = ["LAW", "JPN", "ENCO", "FRA"];
-    const programs = ["CQ", "TT", "CLC"];
+    const faculties = [1, 2, 3, 4];
+    const programs = [1, 2, 3];
 
     const statuses = await StudentStatus.findAll();
     const nationalities = await Nationality.findAll();
@@ -59,7 +59,7 @@ async function seedStudents() {
             city_province: faker.location.state(),
             nation: faker.location.country(),
         };
-        
+
         const temporaryAddress = {
             street: faker.location.streetAddress(),
             wards_communes: faker.location.city(),
@@ -103,10 +103,10 @@ sequelize
         console.log("✅ Database synced");
 
         await Faculty.bulkCreate([
-            { facultyId: "LAW", name: "Luật" },
-            { facultyId: "ENCO", name: "Tiếng Anh thương mại" },
-            { facultyId: "JPN", name: "Tiếng Nhật" },
-            { facultyId: "FRA", name: "Tiếng Pháp" },
+            { short_name: "LAW", name: "Luật" },
+            { short_name: "ENCO", name: "Tiếng Anh thương mại" },
+            { short_name: "JPN", name: "Tiếng Nhật" },
+            { short_name: "FRA", name: "Tiếng Pháp" },
         ]);
 
         await Course.bulkCreate([
@@ -117,16 +117,16 @@ sequelize
         ]);
 
         await Program.bulkCreate([
-            { programId: "CQ", name: "Chính quy" },
-            { programId: "TT", name: "Tiên tiến" },
-            { programId: "CLC", name: "Chất lượng cao" },
+            { short_name: "CQ", name: "Chính quy" },
+            { short_name: "TT", name: "Tiên tiến" },
+            { short_name: "CLC", name: "Chất lượng cao" },
         ]);
 
         await StudentStatus.bulkCreate([
-            { statusId: "DANGHOC", name: "Đang học" },
-            { statusId: "TOTNGHIEP", name: "Đã tốt nghiệp" },
-            { statusId: "THOIHOC", name: "Đã thôi học" },
-            { statusId: "TAMDUNG", name: "Tạm dừng học" },
+            { name: "Đang học" },
+            { name: "Đã tốt nghiệp" },
+            { name: "Đã thôi học" },
+            { name: "Tạm dừng học" },
         ]);
 
         await Nationality.bulkCreate([

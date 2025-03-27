@@ -4,7 +4,7 @@ const FacultyError = require("./facultyError");
 async function getAllFaculties() {
     try {
         const faculties = await Faculty.findAll({
-            attributes: ["facultyId", "name"],
+            attributes: ["facultyId", "name", "short_name"],
         });
         return {
             success: true,
@@ -36,10 +36,19 @@ async function updateFaculty(facultyId, updatedData) {
                 error: FacultyError.NOT_FOUND,
             };
         }
-        const updatedFaculty = await faculty.update(updatedData);
+        const updateFields = {};
+        if (updatedData.name) updateFields.name = updatedData.name;
+        if (updatedData.short_name) updateFields.short_name = updatedData.short_name;
+        if (Object.keys(updateFields).length === 0) {
+            return {
+                success: false,
+                error: FacultyError.NOT_FOUND,
+            };
+        }
+        const updatedFaculty = await faculty.update(updateFields);
         return {
             success: true,
-            faculty: updatedFaculty.get({ plain: true })
+            faculty: updatedFaculty.get({ plain: true }),
         };
     } catch (error) {
         console.error("Error in facultyService.updateFaculty:", error.message);

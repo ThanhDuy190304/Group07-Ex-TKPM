@@ -15,7 +15,7 @@ export async function getFaculties(): Promise<Faculty[]> {
     }
 }
 
-export async function postFaculty(newFaculty: Faculty): Promise<Faculty> {
+export async function postFaculty(newFaculty: Partial<Faculty>): Promise<Faculty> {
     try {
         const response = await api.post<{ data: Faculty }>("/faculty", newFaculty);
         return extractData(response).data;
