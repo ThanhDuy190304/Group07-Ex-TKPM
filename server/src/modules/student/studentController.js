@@ -2,12 +2,13 @@ const { processFile } = require("../import/fileUploadService");
 const StudentService = require("./studentService");
 const { validationResult, body } = require("express-validator");
 const logger = require('../../logger');
+const { error } = require("winston");
 
 async function deleteStudent(req, res) {
   try {
     const result = await StudentService.deleteStudent(req.params.studentId);
-    if (result) {
-      return res.status(400).json({ message: result.message });
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
     }
     return res.status(204).send();
   } catch (error) {
@@ -31,24 +32,19 @@ async function postStudent(req, res) {
     if (error.response && error.response.status === 400) {
       return { error: error.response.data.error };
     }
-    return res.status(500).json({error: error}) 
+    return res.status(500).json({ error: error })
   }
 }
 
 async function putStudent(req, res) {
   try {
-    const errors = await StudentService.checkStudentData(req);
-    if (!errors.success) {
-      return res.status(400).json({ errors: errors.data });
-    }
-
     const studentId = req.params.studentId;
     const updatedData = req.body;
     const result = await StudentService.updateStudent(studentId, updatedData);
     if (!result.success) {
-      return res.status(404).json({ message: result.message });
+      return res.status(404).json({ error: result.error });
     }
-    return res.status(200).json(result.data);
+    return res.status(200).json({ data: result.error });
   } catch (error) {
     return res.status(500).json({ error: error });
   }

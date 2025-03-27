@@ -314,7 +314,15 @@ function StudentTable({ students, editingStudent, isEditingStudentId, onEdit, on
 
 }
 
-function StudentTableContainer({ students }: { students: Student[] }) {
+function StudentTableContainer({
+    students,
+    removeStudent,
+    updateStudent,
+}: {
+    students: Student[];
+    removeStudent: (studentId: string) => Promise<void>;
+    updateStudent: (data: { studentId: string; updatedData: Partial<Student> }) => Promise<Student>;
+}) {
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [isEditingStudentId, setIsEditingStudentId] = useState<string | null>(null);
 
@@ -329,18 +337,28 @@ function StudentTableContainer({ students }: { students: Student[] }) {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (editingStudent) {
-            console.log("Lưu sinh viên:", editingStudent);
-            // Gọi API để lưu sinh viên (nếu cần)
-            setEditingStudent(null);
-            setIsEditingStudentId(null);
+            try {
+                await updateStudent({
+                    studentId: editingStudent.studentId,
+                    updatedData: editingStudent,
+                });
+                console.log("Cập nhật thành công:", editingStudent);
+                setEditingStudent(null);
+                setIsEditingStudentId(null);
+            } catch (error) {
+                console.error("Lỗi khi cập nhật sinh viên:", error);
+            }
         }
     };
 
-    const handleDelete = (studentId: string) => {
-        console.log("Xóa sinh viên:", studentId);
-        // Gọi API để xóa sinh viên (nếu cần)
+    const handleDelete = async (studentId: string) => {
+        try {
+            await removeStudent(studentId);
+        } catch (error) {
+            console.error("Lỗi khi xóa sinh viên:", error);
+        }
     };
 
     return (
@@ -353,15 +371,15 @@ function StudentTableContainer({ students }: { students: Student[] }) {
             onSave={handleSave}
             onDelete={handleDelete}
         />
-
     );
 }
+
 
 function StudentPage() {
     const [page, setPage] = useState<number>(1);
     const limit = 20;
     const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
-    const { studentsQuery } = usePaginatedStudents({ page, limit, searchQuery });
+    const { studentsQuery, updateStudent, removeStudent } = usePaginatedStudents({ page, limit, searchQuery });
 
     if (studentsQuery.isLoading) return <p>Đang tải dữ liệu...</p>;
     if (studentsQuery.isError) return <p>Lỗi: {studentsQuery.error.message}</p>;
@@ -372,14 +390,17 @@ function StudentPage() {
         <main className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
             <section className="flex flex-col gap-6 items-center mt-6">
-                <StudentTableContainer students={paginatedStu?.students ?? []} />
+                <StudentTableContainer
+                    students={paginatedStu?.students ?? []}
+                    removeStudent={removeStudent.mutateAsync}
+                    updateStudent={updateStudent.mutateAsync}
+                />
                 <Pagination
                     total={paginatedStu?.total ?? 0}
                     limit={limit}
                     currentPage={page}
                     onPageChange={setPage}
                 />
-
             </section>
         </main>
     );

@@ -6,7 +6,7 @@ const studentError = {
     },
     UNKNOWN_STUDENT: {
         code: 'UNKNOWN_STUDENT',
-        message: 'unknown student',
+        message: 'Không tìm thấy sinh viên',
     },
     EMAIL_EXIST: {
         code: 'EMAIL EXIST',
