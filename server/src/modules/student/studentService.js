@@ -54,20 +54,18 @@ const StudentValidationRules = [
   validatePhoneNumber(),
 ]
 
-async function checkStudentData(req){
+async function checkStudentData(req) {
   await Promise.all(StudentService.StudentValidationRules.map((rule) => rule.run(req)));
   const errors = validationResult(req);
-  if(!errors.isEmpty()){
+  if (!errors.isEmpty()) {
     return {
       success: false,
       data: errors.array(),
-      message: "dữ liệu không hợp lệ",
     };
   }
   return {
     success: true,
     data: null,
-    message: "",
   }
 }
 
@@ -80,12 +78,10 @@ async function deleteStudent(studentId) {
       return {
         success: false,
         error: studentError.UNKNOWN_STUDENT,
-        message: "unknown student",
       }
     }
     return {
       success: true,
-      message: "",
     }
   } catch (error) {
     console.error("Error in studentService.deleteStudent: ", error.message);
@@ -118,15 +114,13 @@ async function updateStudent(studentId, updatedData) {
     if (!student) {
       return {
         success: false,
-        data: null,
-        message: "Sinh viên không hợp lệ!",
+        error: studentError.UNKNOWN_STUDENT
       }
     }
     await student.update(updatedData);
     return {
       success: true,
       data: student,
-      message: "",
     };
   } catch (error) {
     console.error("Error in studentService.updateStudent:", error.message);
@@ -232,13 +226,11 @@ async function updateStatus(statusId, updatedData) {
       return {
         success: false,
         data: null,
-        message: "Trạng thái không hợp lệ!",
       }
     }
     return {
       success: true,
       data: true,
-      message: "",
     }
   } catch (error) {
     console.error("Error in StudentService.updateStatus:", error.message);
@@ -275,6 +267,21 @@ async function getAllStudents(filters) {
       attributes: { exclude: ["createdAt", "updatedAt"] },
       include: [
         {
+          model: Faculty,
+          attributes: ['short_name', 'name'],
+          as: 'Faculty'
+        },
+        {
+          model: Program,
+          attributes: ['short_name', 'name'],
+          as: 'Program'
+        },
+        {
+          model: StudentStatus,
+          attributes: ['name'],
+          as: 'StudentStatus'
+        },
+        {
           model: NIDCard,
           attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue", "chip"],
         },
@@ -285,18 +292,6 @@ async function getAllStudents(filters) {
         {
           model: Passport,
           attributes: ["id", "dateOfIssue", "placeOfIssue", "expiryOfIssue", "country", "note"],
-        },
-        {
-          model: PermanentAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
-        },
-        {
-          model: TemporaryResidenceAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
-        },
-        {
-          model: MailAddress,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
         },
         {
           model: Nationality,
