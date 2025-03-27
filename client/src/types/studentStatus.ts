@@ -1,7 +1,6 @@
 export interface StudentStatus {
-    statusId: string,
+    studentStatusId: string,
     name: string,
-    description: string
 }
 
 export const studentStatusFields: Partial<Record<keyof StudentStatus, string>> = {

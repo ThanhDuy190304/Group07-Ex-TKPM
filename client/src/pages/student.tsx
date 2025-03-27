@@ -5,12 +5,17 @@ import {
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon,
     DocumentArrowDownIcon, DocumentArrowUpIcon
 } from "@heroicons/react/24/outline";
-import { Table, Sheet, Card, CardContent, Typography } from '@mui/joy';
+import { Table, Sheet, Card, CardContent, Typography, Select, Option } from '@mui/joy';
 import lodash from "lodash";
 
 import { usePaginatedStudents, useAllStudents } from "../hooks/useStudents"
+import { useFaculties } from "../hooks/useFaculties";
+import { usePrograms } from "../hooks/usePrograms";
 import { Student, PaginatedStudents, studentFields } from "../types/student";
-
+import { Faculty } from "../types/faculty";
+import { Program } from "../types/program";
+import { StudentStatus } from "../types/studentStatus";
+import { formatAddress } from "../types/Address";
 
 interface PaginationProps {
     total: number;
@@ -67,7 +72,21 @@ function Pagination({ total, limit, currentPage, onPageChange }: PaginationProps
     );
 }
 
+function flattenStudent(student: Student) {
+    return {
+        ...student,
+        temporaryResidenceAddress: formatAddress(student.temporaryResidenceAddress),
+        permanentAddress: formatAddress(student.permanentAddress),
+        mailAddress: formatAddress(student.mailAddress),
+        Faculty: student.Faculty?.short_name || student.Faculty?.name,
+        Program: student.Program?.short_name || student.Program?.name,
+        StudentStatus: student.StudentStatus?.name
+    };
+}
+
 function StudentDetailsCard({ student, onClose }: { student: Student; onClose: () => void }) {
+    const flatStudent = flattenStudent(student);
+    console.log(flatStudent);
     return (
         <Card variant="outlined" sx={{ width: 400, p: 2, borderRadius: "md", position: "relative" }}>
 
@@ -86,9 +105,14 @@ function StudentDetailsCard({ student, onClose }: { student: Student; onClose: (
                     {Object.entries(studentFields).map(([fieldKey, fieldLabel]) => {
                         if (fieldKey === "studentId" || fieldKey === "fullName") return null;
                         return (
-                            <Typography key={fieldKey} level="body-md">
-                                {fieldLabel}: {String(student[fieldKey as keyof Student])}
-                            </Typography>
+                            <div
+                                key={fieldKey}
+                                className="hover:bg-gray-100 p-1 rounded transition-colors" // Hiệu ứng hover
+                            >
+                                <Typography level="body-md">
+                                    <span className="font-semibold">{fieldLabel}:</span> {String(flatStudent[fieldKey as keyof typeof flatStudent])}
+                                </Typography>
+                            </div>
                         );
                     })}
                 </div>
@@ -97,17 +121,144 @@ function StudentDetailsCard({ student, onClose }: { student: Student; onClose: (
     );
 }
 
-function StudentTable({ students }: { students: Student[] }) {
-    students = lodash.orderBy(students, ["studentId"], ["asc"]);
+
+interface StudentTableRowProps {
+    student: Student;
+    isEditing: boolean;
+    isAnyEditing: boolean;
+    onEdit: () => void;
+    onChange: (key: keyof Student, value: string) => void;
+    onSave: () => void;
+    onDelete: (studentId: string) => void;
+    onSelect: () => void;
+}
+function StudentStatusRow({ student, isEditing, isAnyEditing, onEdit, onChange, onSave, onDelete, onSelect }: StudentTableRowProps) {
+    const { facultiesQuery } = useFaculties();
+    const { programsQuery } = usePrograms();
+    const faculties: Faculty[] = facultiesQuery.data || []
+    const programs: Program[] = programsQuery.data || [];
+    return (
+        <tr className="cursor-pointer hover:bg-gray-100" onClick={onSelect}>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis"> {student.studentId}</td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">{student.fullName}</td>
+
+            {/* Cột Khoa */}
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {isEditing ? (
+                    <Select
+                        value={student.facultyId}
+                        onChange={(e, newValue) => onChange("facultyId", newValue as string)}
+                        className="border rounded p-1 w-full"
+                        onClick={(e) => e.stopPropagation()}
+
+                    >
+                        {faculties.map((faculty) => (
+                            <Option
+                                key={faculty.facultyId}
+                                value={faculty.facultyId}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {faculty.name}
+                            </Option>
+                        ))}
+                    </Select>
+                ) : (
+                    student.Faculty.name || "Chưa có khoa"
+                )}
+            </td>
+
+            {/* Cột Chương Trình */}
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {isEditing ? (
+                    <Select
+                        value={student.programId}
+                        onChange={(e, newValue) => onChange("programId", newValue as string)}
+                        className="border rounded p-1 w-full"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {programs.map((program) => (
+                            <Option
+                                key={program.programId}
+                                value={program.programId}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {program.name}
+                            </Option>
+                        ))}
+                    </Select>
+                ) : (
+                    student.Program.name || "Chưa có chương trình"
+                )}
+            </td>
+
+            {/* Cột Khoá */}
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {student.courseId}
+            </td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {student.StudentStatus.name}
+            </td>
+            {/* Cột Hành Động */}
+            <td className="px-4 py-2 ">
+                {isEditing ? (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onSave();
+                        }}
+                        className="p-1 rounded text-green-500 hover:bg-green-100"
+                    >
+                        <CheckIcon className="w-5 h-5" />
+                    </button>
+                ) : (
+                    <>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit();
+                            }}
+                            disabled={isAnyEditing}
+                            className={`p-1 rounded text-blue-500 hover:bg-gray-100 ${isAnyEditing ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                                }`}
+                        >
+                            <PencilSquareIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(student.studentId);
+                            }}
+                            className="p-1 rounded text-red-500 hover:bg-red-100"
+                        >
+                            <TrashIcon className="w-5 h-5" />
+                        </button>
+                    </>
+                )}
+            </td>
+        </tr>
+    );
+}
+
+interface StudentTableProps {
+    students: Student[];
+    editingStudent: Student | null;
+    isEditingStudentId: string | null;
+    onEdit: (student: Student) => void;
+    onChange: (key: keyof Student, value: string) => void;
+    onSave: () => void;
+    onDelete: (studentId: string) => void;
+}
+function StudentTable({ students, editingStudent, isEditingStudentId, onEdit, onChange, onSave, onDelete }: StudentTableProps) {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
+    students = lodash.orderBy(students, ["studentId"], ["asc"]);
     const studentFieldWidths: Partial<Record<keyof Student, string>> = {
-        studentId: "w-16",
+        studentId: "w-12",
         fullName: "w-20",
-        facultyId: "w-12",
+        Faculty: "w-12",
+        Program: "w-16",
         courseId: "w-12",
-        programId: "w-16",
-        statusId: "w-12",
+        StudentStatus: "w-12",
     };
 
     return (
@@ -116,36 +267,35 @@ function StudentTable({ students }: { students: Student[] }) {
                 <Table>
                     <thead>
                         <tr>
-                            {Object.entries(studentFields)
-                                .filter(([key]) => key in studentFieldWidths)
-                                .map(([key, title]) => (
-                                    <th
-                                        key={key}
-                                        className={`px-4 py-2 text-left font-semibold select-text ${studentFieldWidths[key as keyof Student]}`}
-                                    >
-                                        {title}
-                                    </th>
-                                ))}
+                            {Object.keys(studentFieldWidths).map((key) => (
+                                <th
+                                    key={key}
+                                    className={`px-4 py-2 text-left font-semibold select-text ${studentFieldWidths[key as keyof Student]}`}
+                                >
+                                    {studentFields[key as keyof Student]}
+                                </th>
+                            ))}
                             <th key="action" className="w-12"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        {students.map((student) => (
-                            <tr key={student.studentId}
-                                className="bg-white hover:bg-gray-100 text-xs cursor-pointer"
-                                onClick={() => setSelectedStudent(student)}>
-                                <td className="px-4 py-2">{student.studentId}</td>
-                                <td className="px-4 py-2">{student.fullName}</td>
-                                <td className="px-4 py-2">{student.facultyId}</td>
-                                <td className="px-4 py-2">{student.courseId}</td>
-                                <td className="px-4 py-2">{student.programId}</td>
-                                <td className="px-4 py-2">{student.statusId}</td>
-                                <td className="px-4 py-2 flex gap-4">
-                                    <PencilSquareIcon className="w-5 h-5 text-blue-500" />
-                                    <TrashIcon className="w-5 h-5 text-red-500" />
-                                </td>
-                            </tr>
-                        ))}
+                        {students.map((student) => {
+                            const isEditing = isEditingStudentId === student.studentId;
+                            const currentStudent = isEditing ? editingStudent : student;
+                            return (
+                                <StudentStatusRow
+                                    key={student.studentId}
+                                    student={currentStudent!}
+                                    isEditing={isEditing}
+                                    isAnyEditing={!!isEditingStudentId}
+                                    onEdit={() => onEdit(student)}
+                                    onChange={onChange}
+                                    onSave={onSave}
+                                    onDelete={onDelete}
+                                    onSelect={() => setSelectedStudent(student)}
+                                />
+                            );
+                        })}
                     </tbody>
                 </Table>
             </Sheet >
@@ -164,11 +314,54 @@ function StudentTable({ students }: { students: Student[] }) {
 
 }
 
+function StudentTableContainer({ students }: { students: Student[] }) {
+    const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+    const [isEditingStudentId, setIsEditingStudentId] = useState<string | null>(null);
+
+    const handleEdit = (student: Student) => {
+        setEditingStudent(student);
+        setIsEditingStudentId(student.studentId);
+    };
+
+    const handleChange = (key: keyof Student, value: string) => {
+        if (editingStudent) {
+            setEditingStudent({ ...editingStudent, [key]: value });
+        }
+    };
+
+    const handleSave = () => {
+        if (editingStudent) {
+            console.log("Lưu sinh viên:", editingStudent);
+            // Gọi API để lưu sinh viên (nếu cần)
+            setEditingStudent(null);
+            setIsEditingStudentId(null);
+        }
+    };
+
+    const handleDelete = (studentId: string) => {
+        console.log("Xóa sinh viên:", studentId);
+        // Gọi API để xóa sinh viên (nếu cần)
+    };
+
+    return (
+        <StudentTable
+            students={students}
+            editingStudent={editingStudent}
+            isEditingStudentId={isEditingStudentId}
+            onEdit={handleEdit}
+            onChange={handleChange}
+            onSave={handleSave}
+            onDelete={handleDelete}
+        />
+
+    );
+}
+
 function StudentPage() {
     const [page, setPage] = useState<number>(1);
     const limit = 20;
     const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
-    const { studentsQuery, createStudent, updateStudent, removeStudent } = usePaginatedStudents({ page, limit, searchQuery });
+    const { studentsQuery } = usePaginatedStudents({ page, limit, searchQuery });
 
     if (studentsQuery.isLoading) return <p>Đang tải dữ liệu...</p>;
     if (studentsQuery.isError) return <p>Lỗi: {studentsQuery.error.message}</p>;
@@ -179,7 +372,7 @@ function StudentPage() {
         <main className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
             <section className="flex flex-col gap-6 items-center mt-6">
-                <StudentTable students={paginatedStu?.students ?? []} />
+                <StudentTableContainer students={paginatedStu?.students ?? []} />
                 <Pagination
                     total={paginatedStu?.total ?? 0}
                     limit={limit}

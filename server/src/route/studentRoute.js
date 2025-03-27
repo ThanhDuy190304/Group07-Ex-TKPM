@@ -7,9 +7,9 @@ router.get("/statuses", studentController.getStatuses);
 router.put("/statuses/:statusId", studentController.putStatus);
 router.post("/statuses", studentController.postStatus);
 
-router.get("/export", studentController.exportStudents)
+router.get("/export", studentController.getAllStudents)
 
-router.get("/", studentController.getStudents);
+router.get("/", studentController.getPaginatedStudents);
 router.post("/", studentController.postStudent);
 router.put("/:studentId", studentController.putStudent);
 router.delete("/:studentId", studentController.deleteStudent);

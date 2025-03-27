@@ -1,36 +1,38 @@
 const Student = require("./studentModel");
 const StudentStatus = require("./studentStatusModel");
+const Faculty = require("../faculty/facultyModel")
+const Program = require("../program/programModel")
 const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
 const { Op } = require("sequelize");
 const Nationality = require("../nationality/nationalityModel");
 const studentError = require("./studentError");
-const {body} = require("express-validator");
+const { body } = require("express-validator");
 
-async function validateFullName(){
+async function validateFullName() {
   return [
     body("fullName").notEmpty().withMessage("Full name is required"),
   ];
 }
 
-async function validateDateOfBirth(){
-  return[
+async function validateDateOfBirth() {
+  return [
     body("dateOfBirth")
-        .isISO8601()
-        .withMessage("Invalid date of birth (use YYYY-MM-DD)"),
+      .isISO8601()
+      .withMessage("Invalid date of birth (use YYYY-MM-DD)"),
   ];
 }
 
-async function validateGender(){
+async function validateGender() {
   return [
     body("gender")
-        .isIn(["Nam", "Nữ", "Khác"])
-        .withMessage("Gender must be Nam, Nữ, or Khác"),
+      .isIn(["Nam", "Nữ", "Khác"])
+      .withMessage("Gender must be Nam, Nữ, or Khác"),
   ];
 }
 
-async function validateEmail(){
+async function validateEmail() {
   return [
     body("email").isEmail().withMessage("Invalid email format"),
   ];
@@ -39,8 +41,8 @@ async function validateEmail(){
 async function validatePhoneNumber() {
   return [
     body("phoneNumber")
-    .matches(/^[0-9]{10}$/)
-    .withMessage("Phone number must be 10 digits"),
+      .matches(/^[0-9]{10}$/)
+      .withMessage("Phone number must be 10 digits"),
   ];
 }
 
@@ -64,8 +66,8 @@ async function deleteStudent(studentId) {
       }
     }
     return {
-        success: true,
-        message: "",
+      success: true,
+      message: "",
     }
   } catch (error) {
     console.error("Error in studentService.deleteStudent: ", error.message);
@@ -79,7 +81,7 @@ async function createStudent(newStudent) {
       where: { email: newStudent.email },
     });
     if (existingStudent) {
-      return { 
+      return {
         success: false,
         error: "Email đã tồn tại. Vui lòng chọn email khác.",
       };
@@ -114,7 +116,7 @@ async function updateStudent(studentId, updatedData) {
   }
 }
 
-async function getStudents(queryParams) {
+async function getPaginatedStudents(queryParams) {
   try {
     const { studentId, fullName, courseId, facultyId, programId, page = 1, limit = 10, } = queryParams;
     const whereClause = {};
@@ -129,6 +131,21 @@ async function getStudents(queryParams) {
       where: whereClause,
       attributes: { exclude: ["createdAt", "updatedAt"] },
       include: [
+        {
+          model: Faculty,
+          attributes: ['short_name', 'name'],
+          as: 'Faculty'
+        },
+        {
+          model: Program,
+          attributes: ['short_name', 'name'],
+          as: 'Program'
+        },
+        {
+          model: StudentStatus,
+          attributes: ['name'],
+          as: 'StudentStatus'
+        },
         {
           model: NIDCard,
           attributes: ["id", "placeOfIssue", "dateOfIssue", "expiryOfIssue", "chip"],
@@ -163,10 +180,10 @@ async function getStudents(queryParams) {
     });
 
     return {
-      success: true, 
-      students: formattedStudents, 
+      success: true,
+      students: formattedStudents,
       total: students.count,
-     };
+    };
   } catch (error) {
     console.error("Error in studentService.getFilteredStudents:", error.message);
     throw studentError.INTERNAL_ERROR;
@@ -175,12 +192,12 @@ async function getStudents(queryParams) {
 
 async function getStatuses() {
   try {
-    const status = StudentStatus.findAll({
+    const status = await StudentStatus.findAll({
       attributes: { exclude: ["createdAt", "updatedAt"] },
     });
-    return{
+    return {
       success: true,
-      data: status,
+      statuses: status,
     }
   } catch (error) {
     console.error("Error in StudentService.getStatuses:", error.message);
@@ -224,7 +241,7 @@ async function createStatus(newStatus) {
   }
 }
 
-async function getToExportStudents(filters) {
+async function getAllStudents(filters) {
   try {
     const whereClause = {};
 
@@ -296,16 +313,16 @@ module.exports = {
   validateFullName,
   validateDateOfBirth,
   validateGender,
-  validateEmail, 
+  validateEmail,
   validatePhoneNumber,
   StudentValidationRules,
 
   deleteStudent,
   createStudent,
   updateStudent,
-  getStudents,
+  getPaginatedStudents,
   getStatuses,
   createStatus,
   updateStatus,
-  getToExportStudents,
+  getAllStudents,
 };
