@@ -17,16 +17,13 @@ async function deleteStudent(req, res) {
 
 async function postStudent(req, res) {
   try {
-    // Kiểm tra validation
-    await Promise.all(StudentService.StudentValidationRules.map((rule) => rule.run(req)));
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res
-        .status(400)
-        .json({ error: "Dữ liệu không hợp lệ", details: errors.array() });
+    const errors = await StudentService.checkStudentData(req);
+    if (!errors.success) {
+      return res.status(400).json({ error: errors.message, details: errors.data });
     }
+
     const result = await StudentService.createStudent(req.body);
-    if (result.error) {
+    if (!result.success) {
       return res.status(400).json({ error: result.error });
     }
     return res.status(201).json(result.student);
@@ -34,23 +31,21 @@ async function postStudent(req, res) {
     if (error.response && error.response.status === 400) {
       return { error: error.response.data.error };
     }
-    return { error: "Lỗi server" };
+    return res.status(500).json({error: error}) 
   }
 }
 
 async function putStudent(req, res) {
-  // Kiểm tra validation ngay trong controller
-  await Promise.all(StudentService.StudentValidationRules.map((rule) => rule.run(req)));
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
   try {
+    const errors = await StudentService.checkStudentData(req);
+    if (!errors.success) {
+      return res.status(400).json({ errors: errors.data });
+    }
+
     const studentId = req.params.studentId;
     const updatedData = req.body;
     const result = await StudentService.updateStudent(studentId, updatedData);
-    if (!result) {
+    if (!result.success) {
       return res.status(404).json({ message: result.message });
     }
     return res.status(200).json(result.data);
