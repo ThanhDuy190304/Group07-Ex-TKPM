@@ -14,55 +14,30 @@ export function usePaginatedStudents({ page, limit, searchQuery }: PaginatedStud
     const studentsQuery = useQuery<PaginatedStudents>({
         queryKey: ['students', { page, limit, searchQuery }],
         queryFn: () => getPaginatedStudents({ page, limit, searchQuery }),
+        placeholderData: (previousData) => previousData
     });
 
     const createStudent = useMutation({
         mutationFn: postStudent,
-        onSuccess: (newStudent: Student) => {
-            queryClient.setQueryData<PaginatedStudents>(
-                ['students', { page, limit, searchQuery }],
-                (oldData) => {
-                    if (!oldData) return { students: [newStudent], total: 1 };
-                    return {
-                        students: [...oldData.students, newStudent],
-                        total: oldData.total + 1
-                    };
-                }
-            );
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['students'] });
         },
     });
 
+
     const updateStudent = useMutation({
-        mutationFn: ({ studentId, updatedData }: { studentId: string; updatedData: Partial<Student> }) => putStudent(studentId, updatedData),
-        onSuccess: (updatedStudent: Student) => {
-            queryClient.setQueryData<PaginatedStudents>(
-                ['students', { page, limit, searchQuery }],
-                (oldData) => {
-                    if (!oldData) return undefined;
-                    return {
-                        students: oldData.students.map(student =>
-                            student.studentId === updatedStudent.studentId ? updatedStudent : student
-                        ),
-                        total: oldData.total
-                    };
-                }
-            );
+        mutationFn: ({ studentId, updatedData }: { studentId: string; updatedData: Partial<Student> }) =>
+            putStudent(studentId, updatedData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['students'] });
         },
     });
+
 
     const removeStudent = useMutation({
         mutationFn: deleteStudent,
-        onSuccess: (_, studentId: string) => {
-            queryClient.setQueryData<PaginatedStudents>(
-                ['students', { page, limit, searchQuery }],
-                (oldData) => {
-                    if (!oldData) return undefined;
-                    return {
-                        students: oldData.students.filter(s => s.studentId !== studentId),
-                        total: oldData.total - 1
-                    };
-                }
-            );
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['students'] });
         },
     });
 

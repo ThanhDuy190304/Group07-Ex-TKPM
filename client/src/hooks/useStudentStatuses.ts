@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getStatuses, postStatus, putStatus } from "../api/apiStudents";
+import { getStatuses, postStatus, putStatus } from "../api/apiStudentStatues";
 import { StudentStatus } from "../types/studentStatus";
 
 export function useStudentStatus() {
@@ -11,11 +11,10 @@ export function useStudentStatus() {
     });
 
     const createStudentStatus = useMutation({
-        mutationFn: (newStatus: StudentStatus) => postStatus(newStatus),
-        onSuccess: (createdStatus: StudentStatus) => {
-            queryClient.setQueryData<StudentStatus[]>(["studentStatuses"], (oldStatuses) => {
-                if (!oldStatuses) return [createdStatus];
-                return [...oldStatuses, createdStatus];
+        mutationFn: (newStatus: Partial<StudentStatus>) => postStatus(newStatus),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["studentStatuses"],
             });
         },
     });
@@ -23,12 +22,9 @@ export function useStudentStatus() {
     const updateStudentStatus = useMutation({
         mutationFn: ({ statusId, updatedData }: { statusId: string; updatedData: Partial<StudentStatus> }) =>
             putStatus(statusId, updatedData),
-        onSuccess: (updatedStatus: StudentStatus) => {
-            queryClient.setQueryData<StudentStatus[]>(["studentStatuses"], (oldStatuses) => {
-                if (!oldStatuses) return [];
-                return oldStatuses.map((status) =>
-                    status.statusId === updatedStatus.statusId ? updatedStatus : status
-                );
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["studentStatuses"],
             });
         },
     });
@@ -38,5 +34,4 @@ export function useStudentStatus() {
         createStudentStatus,
         updateStudentStatus,
     };
-
 }

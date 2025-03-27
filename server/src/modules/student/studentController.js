@@ -59,13 +59,12 @@ async function putStudent(req, res) {
   }
 }
 
-async function getStudents(req, res) {
+async function getPaginatedStudents(req, res) {
   try {
-    const result = await StudentService.getStudents(req.query);
-    if (!result || result.students.length === 0) {
-      return res.status(200).json({ students: [], total: 0 });
+    const result = await StudentService.getPaginatedStudents(req.query);
+    if (result.success) {
+      return res.status(200).json({ data: { students: result.students, total: result.total } });
     }
-    return res.status(200).json(result.students, result.total);
   } catch (error) {
     return res.status(500).json({ error: error });
   }
@@ -73,8 +72,10 @@ async function getStudents(req, res) {
 
 async function getStatuses(req, res) {
   try {
-    const statuses = await StudentService.getStatuses();
-    return res.status(200).json(statuses.data);
+    const result = await StudentService.getStatuses();
+    if (result.success) {
+      return res.status(200).json({ data: result.statuses });
+    }
   } catch (error) {
     return res.status(500).json({ error: error });
   }
@@ -116,13 +117,13 @@ async function postStatus(req, res) {
   }
 }
 
-async function exportStudents(req, res) {
+async function getAllStudents(req, res) {
   try {
-    const students = await StudentService.getToExportStudents(req.query);
+    const students = await StudentService.getAllStudents(req.query);
     return res.status(200).json(students);
   } catch (error) {
     return res.status(500).json({ error: error });
   }
 }
 
-module.exports = { deleteStudent, postStudent, putStudent, getStudents, getStatuses, putStatus, postStatus, importStudents, exportStudents };
+module.exports = { deleteStudent, postStudent, putStudent, getPaginatedStudents, getStatuses, putStatus, postStatus, importStudents, getAllStudents };

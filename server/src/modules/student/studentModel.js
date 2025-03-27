@@ -78,8 +78,8 @@ Passport.belongsTo(Student, { foreignKey: "studentId" });
 NIDCard.belongsTo(Student, { foreignKey: "studentId" });
 OIDCard.belongsTo(Student, { foreignKey: "studentId" });
 
-Student.belongsTo(StudentStatus, { foreignKey: "statusId" });
-StudentStatus.hasMany(Student, { foreignKey: "statusId" });
+Student.belongsTo(StudentStatus, { foreignKey: "studentStatusId" });
+StudentStatus.hasMany(Student, { foreignKey: "studentStatusId" });
 
 // 🛠 Hook để tạo studentId dựa trên courseId
 Student.beforeCreate(async (student, options) => {
