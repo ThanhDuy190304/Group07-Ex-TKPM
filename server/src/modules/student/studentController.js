@@ -52,11 +52,13 @@ async function putStudent(req, res) {
 
 async function getPaginatedStudents(req, res) {
   try {
-    const result = await StudentService.getPaginatedStudents(req.query);
+    const { page, limit, searchQuery } = req.query;
+    const result = await StudentService.getPaginatedStudents(page, limit, searchQuery);
     if (result.success) {
       return res.status(200).json({ data: { students: result.students, total: result.total } });
     }
   } catch (error) {
+    console.error("Error in studentController.getPaginatedStudents: ", error);
     return res.status(500).json({ error: error });
   }
 }

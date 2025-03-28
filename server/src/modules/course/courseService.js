@@ -1,15 +1,17 @@
 const Course = require("./courseModel");
-
+const CourseError = require("./courseError");
 async function getAllCourses() {
     try {
         const courses = await Course.findAll({
-            attributes: ["courseId"], // Chỉ lấy courseId
+            attributes: ["courseId"],
         });
-        return courses;
+        return {
+            success: true,
+            data: courses,
+        };
     } catch (error) {
         console.error("Error in courseService.getAllCourses:", error.message);
-        throw new Error("Error server");
+        throw CourseError.INTERNAL_ERROR;
     }
 }
-
 module.exports = { getAllCourses };

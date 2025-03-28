@@ -1,7 +1,7 @@
 import { Faculty } from "./faculty";
 import { Program } from "./program";
 import { StudentStatus } from "./studentStatus";
-import { Address } from "./Address";
+import { Address } from "./address";
 
 export interface Student {
     studentId: string;
@@ -24,7 +24,7 @@ export interface Student {
     programId: string;
     Program: Program;
 
-    statusId: string;
+    studentStatusId: string;
     StudentStatus: StudentStatus;
 }
 
