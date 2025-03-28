@@ -20,6 +20,7 @@ import { Course } from "../types/course";
 import { StudentStatus } from "../types/studentStatus";
 import { formatAddress } from "../types/address";
 import { useStudentStatus } from "../hooks/useStudentStatuses";
+import { useError } from "../context/ErrorContext";
 import ImportButton from "../components/button/import";
 
 // Details Student Card
@@ -581,14 +582,19 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
     const courses: Course[] = coursesQuery.data || [];
     const studentStatuses: StudentStatus[] = studentStatusesQuery.data || [];
 
+    const { showError } = useError();
     const handleChange = (key: keyof Student, value: string) => {
         setFormData({ ...formData, [key]: value });
     };
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        onCreate(formData);
-        setOpen(false);
+        try {
+            await onCreate(formData);
+            setOpen(false);
+        } catch (error: any) {
+            showError(error.message);
+        }
     };
 
     return (
