@@ -72,8 +72,7 @@ export async function postStudent(studentData: Partial<Student>): Promise<Studen
     } catch (error: any) {
         console.error("Lỗi khi tạo sinh viên: ", error);
         throw {
-            status: error.response?.status || 503,
-            message: error.response?.data?.message || "Lỗi server",
+            message: error.response?.data?.error_vn || "Lỗi server",
         };
     }
 }

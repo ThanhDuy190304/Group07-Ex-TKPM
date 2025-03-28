@@ -137,51 +137,9 @@ Mở cửa sổ Terminal
     npm run dev
     ```
 
-## Các tính năng:
-
-1. Cho phép đổi tên & thêm mới: khoa, tình trạng sinh viên, chương trình
-
-Thay đổi khoa
-![thay đổi khoa](image/v2_thaydoikhoa.png)
-
-Thay đổi chương trình
-![Thay đổi chương trình](image/v2_thaydoichuongtrinh.png)
-
-Thay đổi tình trạng
-![Thay đổi tình trạng](image/v2_thaydoitinhtrang.png)
-
-2. Thêm chức năng tìm kiếm: tìm theo khoa, khoa + tên
-
-Mở mục tìm kiếm nâng cao:
-![tim_kiem_nang_cao](image/v2_tim_kiem_nang_cao.png)
-
-Chọn khoa
-![chon_khoa](image/v2_chon_khoa.png)
-
-Chọn khóa học
-![chon_khoa_hoc](image/v2_chon_khoa_hoc.png)
-
-Chọn chương trình
-![chọn chương trình](image/v2_chon_chuong_trinh.png)
-
-Kết quả
-![Kết quả](image/v2_ketqua_timkiem.png)
-
-3. Export dữ liệu bằng file json/xslx
-
-Export bằng file json:
-![export_file_json](image/v2_download_json.png)
-
-Export bằng file xslx
-![export_file_xslx](image/v2_download_xslx.png)
-
-4. Thêm logging mechanism để troubleshooting production issue & audit purposes
-
-![logger](image/v2_logger.png)
-
-
+## Chứng minh các tính năng: file thư mục image
 
 ## Phiên bản 
 ```bash
-v2.0
+v3.0
 ```

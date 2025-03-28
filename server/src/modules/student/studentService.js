@@ -16,64 +16,6 @@ const {
 } = require("../../util/errors");
 const { validatePhone, validateEmail } = require("../../util/validator");
 
-// async function validateFullName() {
-//   return [body("fullName").notEmpty().withMessage("Full name is required")];
-// }
-
-// async function validateDateOfBirth() {
-//   return [
-//     body("dateOfBirth")
-//       .isISO8601()
-//       .withMessage("Invalid date of birth (use YYYY-MM-DD)"),
-//   ];
-// }
-
-// async function validateGender() {
-//   return [
-//     body("gender")
-//       .isIn(["Nam", "Nữ", "Khác"])
-//       .withMessage("Gender must be Nam, Nữ, or Khác"),
-//   ];
-// }
-
-// async function validateEmail() {
-//   console.log("email");
-//   return [body("email").isEmail().withMessage("Invalid email format")];
-// }
-
-// async function validatePhoneNumber() {
-//   return [
-//     body("phoneNumber")
-//       .matches(/^[0-9]{10}$/)
-//       .withMessage("Phone number must be 10 digits"),
-//   ];
-// }
-
-// const StudentValidationRules = [
-//   validateFullName(),
-//   validateDateOfBirth(),
-//   validateGender(),
-//   validateEmail(),
-//   validatePhoneNumber(),
-// ];
-
-// async function checkStudentData(req) {
-//   await Promise.all(
-//     StudentService.StudentValidationRules.map((rule) => rule.run(req))
-//   );
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) {
-//     return {
-//       success: false,
-//       data: errors.array(),
-//     };
-//   }
-//   return {
-//     success: true,
-//     data: null,
-//   };
-// }
-
 async function deleteStudent(studentId) {
   try {
     const deleted = await Student.destroy({
@@ -101,8 +43,8 @@ async function createStudent(newStudent) {
   });
   if (existingStudent) {
     throw new DuplicateResourceError(
-      "Student already exists",
-      "Sinh viên này đã tồn tại trong hệ thống"
+      "Email already exists",
+      "Email này đã tồn tại trong hệ thống"
     );
   }
 
