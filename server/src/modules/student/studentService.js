@@ -331,7 +331,6 @@ module.exports = {
   validateGender,
   validateEmail,
   validatePhoneNumber,
-  StudentValidationRules,
   checkStudentData,
 
   deleteStudent,

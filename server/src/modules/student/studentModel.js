@@ -60,26 +60,64 @@ const Student = sequelize.define(
 );
 
 // Relationships
-Student.belongsTo(Faculty, { foreignKey: "facultyId" });
-Student.belongsTo(Course, { foreignKey: "courseId" });
-Student.belongsTo(Program, { foreignKey: "programId" });
-Student.belongsTo(Nationality, { foreignKey: "nationalityId" });
+Student.belongsTo(Faculty, { foreignKey: "facultyId", as: "faculty" });
+Student.belongsTo(Course, { foreignKey: "courseId", as: "course" });
+Student.belongsTo(Program, { foreignKey: "programId", as: "program" });
+Student.belongsTo(Nationality, {
+  foreignKey: "nationalityId",
+  targetKey: "code",
+  as: "nationality",
+});
 
-Student.hasOne(OIDCard, { foreignKey: "studentId" });
-Student.hasOne(NIDCard, { foreignKey: "studentId" });
-Student.hasOne(Passport, { foreignKey: "studentId" });
+
+Student.hasOne(OIDCard, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false, // Makes foreign key non-nullable
+  },
+  onDelete: "CASCADE", // Delete ID card when student is deleted
+});
+Student.hasOne(NIDCard, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false, // Makes foreign key non-nullable
+  },
+});
+Student.hasOne(Passport, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false, // Makes foreign key non-nullable
+  },
+  onDelete: "CASCADE",
+});
 
 Faculty.hasMany(Student, { foreignKey: "facultyId" });
 Course.hasMany(Student, { foreignKey: "courseId" });
 Program.hasMany(Student, { foreignKey: "programId" });
 Nationality.hasMany(Student, { foreignKey: "nationalityId" });
 
-Passport.belongsTo(Student, { foreignKey: "studentId" });
-NIDCard.belongsTo(Student, { foreignKey: "studentId" });
-OIDCard.belongsTo(Student, { foreignKey: "studentId" });
 
-Student.belongsTo(StudentStatus, { foreignKey: "studentStatusId" });
-StudentStatus.hasMany(Student, { foreignKey: "studentStatusId" });
+Passport.belongsTo(Student, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false,
+  },
+});
+NIDCard.belongsTo(Student, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false,
+  },
+});
+OIDCard.belongsTo(Student, {
+  foreignKey: {
+    name: "studentId",
+    allowNull: false,
+  },
+});
+
+Student.belongsTo(StudentStatus, { foreignKey: "statusId", as: "status" });
+StudentStatus.hasMany(Student, { foreignKey: "statusId" });
 
 // 🛠 Hook để tạo studentId dựa trên courseId
 Student.beforeCreate(async (student, options) => {
