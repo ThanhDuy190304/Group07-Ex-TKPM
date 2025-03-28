@@ -1,8 +1,13 @@
 const { processFile } = require("../files/fileUploadService");
 const StudentService = require("./studentService");
 const { validationResult, body } = require("express-validator");
-const logger = require('../../logger');
+const logger = require("../../logger");
 const { error } = require("winston");
+const {
+  ValidationError,
+  DuplicateResourceError,
+  BaseError,
+} = require("../../util/errors");
 
 async function deleteStudent(req, res) {
   try {
@@ -18,21 +23,16 @@ async function deleteStudent(req, res) {
 
 async function postStudent(req, res) {
   try {
-    const errors = await StudentService.checkStudentData(req);
-    if (!errors.success) {
-      return res.status(400).json({ error: errors.message, details: errors.data });
-    }
-
     const result = await StudentService.createStudent(req.body);
-    if (!result.success) {
-      return res.status(400).json({ error: result.error });
-    }
-    return res.status(201).json(result.student);
+    return res.status(201).json({ data: result.student });
   } catch (error) {
-    if (error.response && error.response.status === 400) {
-      return { error: error.response.data.error };
+    if (error instanceof BaseError) {
+      console.log(error);
+      return res
+        .status(error.statusCode)
+        .json({ error: error.message, error_vn: error.message_vi });
     }
-    return res.status(500).json({ error: error })
+    return res.status(500).json({ error: error });
   }
 }
 
@@ -41,11 +41,15 @@ async function putStudent(req, res) {
     const studentId = req.params.studentId;
     const updatedData = req.body;
     const result = await StudentService.updateStudent(studentId, updatedData);
-    if (!result.success) {
-      return res.status(404).json({ error: result.error });
-    }
+
     return res.status(200).json({ data: result.error });
   } catch (error) {
+    if (error instanceof BaseError) {
+      console.log(error);
+      return res
+        .status(error.statusCode)
+        .json({ error: error.message, error_vn: error.message_vi });
+    }
     return res.status(500).json({ error: error });
   }
 }
@@ -55,7 +59,9 @@ async function getPaginatedStudents(req, res) {
     const { page, limit, searchQuery } = req.query;
     const result = await StudentService.getPaginatedStudents(page, limit, searchQuery);
     if (result.success) {
-      return res.status(200).json({ data: { students: result.students, total: result.total } });
+      return res
+        .status(200)
+        .json({ data: { students: result.students, total: result.total } });
     }
   } catch (error) {
     console.error("Error in studentController.getPaginatedStudents: ", error);
