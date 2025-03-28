@@ -1,8 +1,6 @@
 const config = require("../config/validatorConfig");
 
-const {
-  isValidPhoneNumber,
-} = require("libphonenumber-js");
+const { isValidPhoneNumber } = require("libphonenumber-js");
 
 function validateStudentData(data) {
   if (!config.VALID_STATUSES.includes(data.status)) {
