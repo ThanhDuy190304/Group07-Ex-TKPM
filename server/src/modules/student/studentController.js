@@ -1,8 +1,13 @@
 const { processFile } = require("../import/fileUploadService");
 const StudentService = require("./studentService");
 const { validationResult, body } = require("express-validator");
-const logger = require('../../logger');
+const logger = require("../../logger");
 const { error } = require("winston");
+const {
+  ValidationError,
+  DuplicateResourceError,
+  BaseError,
+} = require("../../util/errors");
 
 async function deleteStudent(req, res) {
   try {
@@ -18,21 +23,28 @@ async function deleteStudent(req, res) {
 
 async function postStudent(req, res) {
   try {
-    const errors = await StudentService.checkStudentData(req);
-    if (!errors.success) {
-      return res.status(400).json({ error: errors.message, details: errors.data });
-    }
+    // const errors = await StudentService.checkStudentData(req);
+    // if (!errors.success) {
+    //   return res.status(400).json({ error: errors.message, details: errors.data });
+    // }
 
     const result = await StudentService.createStudent(req.body);
-    if (!result.success) {
-      return res.status(400).json({ error: result.error });
-    }
+    // if (!result.success) {
+    //   return res.status(400).json({ error: result.error });
+    // }
     return res.status(201).json(result.student);
   } catch (error) {
-    if (error.response && error.response.status === 400) {
-      return { error: error.response.data.error };
+    // if (error.response && error.response.status === 400) {
+    //   return { error: error.response.data.error };
+    // }
+
+    if (error instanceof BaseError) {
+      console.log(error);
+      return res
+        .status(error.statusCode)
+        .json({ error: error.message, error_vn: error.message_vi });
     }
-    return res.status(500).json({ error: error })
+    return res.status(500).json({ error: error });
   }
 }
 
@@ -54,7 +66,9 @@ async function getPaginatedStudents(req, res) {
   try {
     const result = await StudentService.getPaginatedStudents(req.query);
     if (result.success) {
-      return res.status(200).json({ data: { students: result.students, total: result.total } });
+      return res
+        .status(200)
+        .json({ data: { students: result.students, total: result.total } });
     }
   } catch (error) {
     return res.status(500).json({ error: error });
@@ -74,8 +88,7 @@ async function getStatuses(req, res) {
 
 async function importStudents(req, res) {
   try {
-
-    logger.info('importStudents');
+    logger.info("importStudents");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const result = await processFile(req.file);
     console.log(result);
@@ -117,4 +130,14 @@ async function getAllStudents(req, res) {
   }
 }
 
-module.exports = { deleteStudent, postStudent, putStudent, getPaginatedStudents, getStatuses, putStatus, postStatus, importStudents, getAllStudents };
+module.exports = {
+  deleteStudent,
+  postStudent,
+  putStudent,
+  getPaginatedStudents,
+  getStatuses,
+  putStatus,
+  postStatus,
+  importStudents,
+  getAllStudents,
+};
