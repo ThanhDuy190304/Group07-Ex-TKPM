@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     MagnifyingGlassIcon, TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon,
-    DocumentArrowDownIcon, DocumentArrowUpIcon
+    DocumentArrowDownIcon, DocumentArrowUpIcon, PlusIcon,
 } from "@heroicons/react/24/outline";
-import { Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button } from '@mui/joy';
-import lodash from "lodash";
-
+import {
+    Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button,
+    Modal, ModalDialog, DialogTitle, DialogContent, FormControl, Stack, FormLabel
+} from '@mui/joy';
 import { usePaginatedStudents, useAllStudents } from "../hooks/useStudents"
 import { useFaculties } from "../hooks/useFaculties";
 import { usePrograms } from "../hooks/usePrograms";
@@ -19,7 +20,7 @@ import { Course } from "../types/course";
 import { StudentStatus } from "../types/studentStatus";
 import { formatAddress } from "../types/address";
 import { useStudentStatus } from "../hooks/useStudentStatuses";
-
+import ImportButton from "../components/button/import";
 
 // Details Student Card
 function flattenStudent(student: Student) {
@@ -170,7 +171,7 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                         ))}
                     </Select>
                 ) : (
-                    student.Faculty.name || "Chưa có khoa"
+                    student.Faculty?.name || "Chưa có khoa"
                 )}
             </td>
 
@@ -194,7 +195,7 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                         ))}
                     </Select>
                 ) : (
-                    student.Program.name || "Chưa có chương trình"
+                    student.Program?.name || "Chưa có chương trình"
                 )}
             </td>
 
@@ -226,15 +227,15 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
                     <Select
-                        value={student.studentStatusId}
-                        onChange={(e, newValue) => onChange("studentStatusId", newValue as string)}
+                        value={student.statusId}
+                        onChange={(e, newValue) => onChange("statusId", newValue as string)}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {studentStatuses.map((studentStatus) => (
                             <Option
-                                key={studentStatus.studentStatusId}
-                                value={studentStatus.studentStatusId}
+                                key={studentStatus.statusId}
+                                value={studentStatus.statusId}
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {studentStatus.name}
@@ -242,7 +243,7 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                         ))}
                     </Select>
                 ) : (
-                    student.StudentStatus.name || "Chưa có trạng thái"
+                    student.StudentStatus?.name || "Chưa có trạng thái"
                 )}
             </td>
 
@@ -566,16 +567,192 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
     );
 }
 
+//Create Button
+function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial<Student>) => Promise<Student> }) {
+    const [open, setOpen] = useState(false);
+    const [formData, setFormData] = useState<Partial<Student>>({});
+
+    const { facultiesQuery } = useFaculties();
+    const { programsQuery } = usePrograms();
+    const { coursesQuery } = useCourses();
+    const { studentStatusesQuery } = useStudentStatus();
+    const faculties: Faculty[] = facultiesQuery.data || []
+    const programs: Program[] = programsQuery.data || [];
+    const courses: Course[] = coursesQuery.data || [];
+    const studentStatuses: StudentStatus[] = studentStatusesQuery.data || [];
+
+    const handleChange = (key: keyof Student, value: string) => {
+        setFormData({ ...formData, [key]: value });
+    };
+
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        onCreate(formData);
+        setOpen(false);
+    };
+
+    return (
+        <>
+            <Button
+                variant="solid"
+                color="success"
+                startDecorator={<PlusIcon className="w-5 h-5" />}
+                onClick={() => setOpen(true)}
+                className="w-fit"
+            >
+                Tạo sinh viên
+            </Button>
+            <Modal open={open} onClose={() => setOpen(false)}>
+                <ModalDialog>
+                    <DialogTitle>Tạo sinh viên mới</DialogTitle>
+                    <DialogContent>Điền đủ thông tin dưới đây.</DialogContent>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Họ tên */}
+                            <FormControl>
+                                <FormLabel>Họ và tên</FormLabel>
+                                <Input
+                                    autoFocus
+                                    required
+                                    value={formData.fullName || ""}
+                                    onChange={(e) => handleChange("fullName", e.target.value)}
+                                />
+                            </FormControl>
+
+                            {/* Ngày sinh */}
+                            <FormControl>
+                                <FormLabel>Ngày sinh</FormLabel>
+                                <Input
+                                    type="date"
+                                    required
+                                    value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split("T")[0] : ""}
+                                    onChange={(e) => handleChange("dateOfBirth", e.target.value)}
+                                />
+                            </FormControl>
+
+                            {/* Giới tính */}
+                            <FormControl>
+                                <FormLabel>Giới tính</FormLabel>
+                                <Select
+                                    value={formData.gender}
+                                    onChange={(e, newValue) => handleChange("gender", newValue as string)}
+                                    className="border rounded p-1 w-full"
+                                >
+                                    <Option value="Nam">Nam</Option>
+                                    <Option value="Nữ">Nữ</Option>
+                                    <Option value="Khác">Khác</Option>
+                                </Select>
+                            </FormControl>
+
+                            {/* Email */}
+                            <FormControl>
+                                <FormLabel>Email</FormLabel>
+                                <Input
+                                    type="email"
+                                    required
+                                    value={formData.email || ""}
+                                    onChange={(e) => handleChange("email", e.target.value)}
+                                />
+                            </FormControl>
+
+                            {/* Số điện thoại */}
+                            <FormControl>
+                                <FormLabel>Số điện thoại</FormLabel>
+                                <Input
+                                    type="tel"
+                                    required
+                                    value={formData.phoneNumber || ""}
+                                    onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                                />
+                            </FormControl>
+
+                            {/* Khoa */}
+                            <FormControl>
+                                <FormLabel>Khoa</FormLabel>
+                                <Select
+                                    value={formData.facultyId}
+                                    onChange={(e, newValue) => handleChange("facultyId", newValue as string)}
+                                    className="border rounded p-1 w-full"
+                                >
+                                    {faculties.map((faculty) => (
+                                        <Option key={faculty.facultyId} value={faculty.facultyId}>
+                                            {faculty.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            {/* Chương trình */}
+                            <FormControl>
+                                <FormLabel>Chương trình</FormLabel>
+                                <Select
+                                    value={formData.programId}
+                                    onChange={(e, newValue) => handleChange("programId", newValue as string)}
+                                    className="border rounded p-1 w-full"
+                                >
+                                    {programs.map((program) => (
+                                        <Option key={program.programId} value={program.programId}>
+                                            {program.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            {/* Khóa học */}
+                            <FormControl>
+                                <FormLabel>Khóa học</FormLabel>
+                                <Select
+                                    value={formData.courseId}
+                                    onChange={(e, newValue) => handleChange("courseId", newValue as string)}
+                                    className="border rounded p-1 w-full"
+                                >
+                                    {courses.map((course) => (
+                                        <Option key={course.courseId} value={course.courseId}>
+                                            {course.courseId}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            {/* Trạng thái */}
+                            <FormControl>
+                                <FormLabel>Trạng thái</FormLabel>
+                                <Select
+                                    value={formData.statusId}
+                                    onChange={(e, newValue) => handleChange("statusId", newValue as string)}
+                                    className="border rounded p-1 w-full"
+                                >
+                                    {studentStatuses.map((status) => (
+                                        <Option key={status.statusId} value={status.statusId}>
+                                            {status.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </div>
+
+                        {/* Nút xác nhận */}
+                        <div className="flex justify-end mt-4">
+                            <Button type="submit">Xác nhận</Button>
+                        </div>
+                    </form>
+
+                </ModalDialog>
+            </Modal>
+        </>
+    );
+}
+
+
 function StudentPage() {
     const [page, setPage] = useState<number>(1);
     const limit = 20;
     const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
-    const { studentsQuery, updateStudent, removeStudent } = usePaginatedStudents({ page, limit, searchQuery });
+    const { studentsQuery, updateStudent, removeStudent, createStudent } = usePaginatedStudents({ page, limit, searchQuery });
     useEffect(() => {
         setPage(1);
     }, [searchQuery]);
 
-    console.log("fetch");
     if (studentsQuery.isLoading) return <p>Đang tải dữ liệu...</p>;
     if (studentsQuery.isError) return <p>Lỗi: {studentsQuery.error.message}</p>;
 
@@ -584,9 +761,16 @@ function StudentPage() {
     return (
         <main className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
-            <Search
-                setSearchQuery={setSearchQuery}
-            />
+
+            <section className="flex items-center justify-between w-full gap-4">
+                <div className="flex items-center gap-2 flex-1 max-w-md">
+                    <Search setSearchQuery={setSearchQuery} />
+                    <StudentCreateModalDialog onCreate={createStudent.mutateAsync} />
+                </div>
+                <ImportButton />
+            </section>
+
+
             <section className="flex flex-col gap-6 items-center mt-6">
                 <StudentTableContainer
                     students={paginatedStu?.students ?? []}

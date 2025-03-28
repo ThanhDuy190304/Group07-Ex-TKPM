@@ -1,5 +1,5 @@
 export interface StudentStatus {
-    studentStatusId: string,
+    statusId: string,
     name: string,
 }
 

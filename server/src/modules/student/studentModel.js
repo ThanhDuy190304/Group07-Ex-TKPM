@@ -60,13 +60,13 @@ const Student = sequelize.define(
 );
 
 // Relationships
-Student.belongsTo(Faculty, { foreignKey: "facultyId", as: "faculty" });
-Student.belongsTo(Course, { foreignKey: "courseId", as: "course" });
-Student.belongsTo(Program, { foreignKey: "programId", as: "program" });
+Student.belongsTo(Faculty, { foreignKey: "facultyId", as: "Faculty" });
+Student.belongsTo(Course, { foreignKey: "courseId", as: "Course" });
+Student.belongsTo(Program, { foreignKey: "programId", as: "Program" });
 Student.belongsTo(Nationality, {
   foreignKey: "nationalityId",
-  targetKey: "code",
-  as: "nationality",
+  targetKey: "nationalityId",
+  as: "Nationality",
 });
 
 
@@ -116,7 +116,7 @@ OIDCard.belongsTo(Student, {
   },
 });
 
-Student.belongsTo(StudentStatus, { foreignKey: "statusId", as: "status" });
+Student.belongsTo(StudentStatus, { foreignKey: "statusId", as: "StudentStatus" });
 StudentStatus.hasMany(Student, { foreignKey: "statusId" });
 
 // 🛠 Hook để tạo studentId dựa trên courseId

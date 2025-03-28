@@ -4,7 +4,7 @@ const sequelize = require("../../config/database");
 const StudentStatus = sequelize.define(
     "StudentStatus",
     {
-        studentStatusId: {
+        statusId: {
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
