@@ -12,10 +12,10 @@ export function usePaginatedStudents({ page, limit, searchQuery }: PaginatedStud
     const queryClient = useQueryClient();
 
     const studentsQuery = useQuery<PaginatedStudents>({
-        queryKey: ['students', { page, limit, searchQuery }],
+        queryKey: ['students', page, limit, JSON.stringify(searchQuery)],
         queryFn: () => getPaginatedStudents({ page, limit, searchQuery }),
         placeholderData: (previousData) => previousData
-    });
+    })
 
     const createStudent = useMutation({
         mutationFn: postStudent,
@@ -29,7 +29,9 @@ export function usePaginatedStudents({ page, limit, searchQuery }: PaginatedStud
         mutationFn: ({ studentId, updatedData }: { studentId: string; updatedData: Partial<Student> }) =>
             putStudent(studentId, updatedData),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({
+                queryKey: ['students', page, limit, JSON.stringify(searchQuery)]
+            });
         },
     });
 
@@ -37,7 +39,9 @@ export function usePaginatedStudents({ page, limit, searchQuery }: PaginatedStud
     const removeStudent = useMutation({
         mutationFn: deleteStudent,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['students'] });
+            queryClient.invalidateQueries({
+                queryKey: ['students', page, limit, JSON.stringify(searchQuery)]
+            });
         },
     });
 

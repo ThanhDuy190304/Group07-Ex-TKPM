@@ -128,19 +128,21 @@ async function updateStudent(studentId, updatedData) {
   }
 }
 
-async function getPaginatedStudents(queryParams) {
+async function getPaginatedStudents(page = 1, limit = 10, queryParams = {}) {
   try {
-    const { studentId, fullName, courseId, facultyId, programId, page = 1, limit = 10, } = queryParams;
+    const { studentId, fullName, courseId, facultyId, programId,
+      sortBy = 'studentId', sortOrder = 'ASC' } = queryParams;
     const whereClause = {};
     if (studentId) whereClause.studentId = studentId;
     else {
-      if (fullName) whereClause.fullName = { [Op.like]: `%${fullName}%` };
+      if (fullName && fullName.trim() !== "") whereClause.fullName = { [Op.like]: `%${fullName.trim()}%` };
       if (courseId) whereClause.courseId = courseId;
       if (facultyId) whereClause.facultyId = facultyId;
       if (programId) whereClause.programId = programId;
     }
+    console.log(whereClause);
     const students = await Student.findAndCountAll({
-      where: whereClause,
+      where: { [Op.and]: whereClause },
       attributes: { exclude: ["createdAt", "updatedAt"] },
       include: [
         {
@@ -173,6 +175,7 @@ async function getPaginatedStudents(queryParams) {
       ],
       offset: (page - 1) * limit,
       limit: parseInt(limit),
+      order: [[sortBy, sortOrder]]
     });
 
     const formattedStudents = students.rows.map((student) => {
@@ -263,7 +266,7 @@ async function getAllStudents(filters) {
     if (filters.programId) whereClause.programId = filters.programId;
 
     const students = await Student.findAll({
-      where: whereClause,
+      where: { [Op.and]: whereClause },
       attributes: { exclude: ["createdAt", "updatedAt"] },
       include: [
         {

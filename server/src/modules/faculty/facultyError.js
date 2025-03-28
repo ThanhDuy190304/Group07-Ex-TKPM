@@ -10,7 +10,7 @@ const FacultyError = {
     },
 
     DUPLICATE: {
-        code: 'DUPLICATE_PROGRAM',
+        code: 'DUPLICATE_FACULTY',
         message: 'Khoa đã tồn tại',
     },
 

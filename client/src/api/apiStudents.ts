@@ -25,6 +25,7 @@ export async function getPaginatedStudents({ searchQuery = {}, page = 1, limit =
     limit?: number;
 }): Promise<PaginatedStudents> {
     try {
+        console.log(searchQuery);
         const response = await api.get<{ data: PaginatedStudents }>("/student", {
             params: { page, limit, searchQuery },
         });
