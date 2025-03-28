@@ -38,7 +38,6 @@ const Student = sequelize.define(
     phoneNumber: {
       type: DataTypes.STRING,
       allowNull: false,
-      validate: { is: /^[0-9]{10}$/ },
     },
     mailAddress: {
       type: DataTypes.JSONB,
@@ -51,7 +50,7 @@ const Student = sequelize.define(
     temporaryResidenceAddress: {
       type: DataTypes.JSONB,
       allowNull: true,
-    }
+    },
   },
   {
     timestamps: true,

@@ -12,6 +12,7 @@ const { body } = require("express-validator");
 const {
   DuplicateResourceError,
   ValidationError,
+  NotFoundError,
 } = require("../../util/errors");
 const { validatePhone, validateEmail } = require("../../util/validator");
 
@@ -105,15 +106,17 @@ async function createStudent(newStudent) {
     );
   }
 
-  if (!validateEmail(newStudent.email)) {
-    console.log(newStudent.email);
+  if (newStudent.email && !validateEmail(newStudent.email)) {
     throw new ValidationError(
       "Invalid Email. The email must end with @student.university.edu.vn",
       "Email không hợp lệ. Email phải kết thúc với @student.university.edu.vn"
     );
   }
 
-  if (!validatePhone(newStudent?.phoneNumber, newStudent?.nationalityId)) {
+  if (
+    newStudent.phoneNumber &&
+    !validatePhone(newStudent?.phoneNumber, newStudent?.nationalityId)
+  ) {
     throw new ValidationError(
       "Invalid phone number.",
       "Số điện thoại không hợp lệ. Vui lòng thử lại"
@@ -125,23 +128,36 @@ async function createStudent(newStudent) {
 }
 
 async function updateStudent(studentId, updatedData) {
-  try {
-    const student = await Student.findOne({ where: { studentId } });
-    if (!student) {
-      return {
-        success: false,
-        error: studentError.UNKNOWN_STUDENT,
-      };
-    }
-    await student.update(updatedData);
-    return {
-      success: true,
-      data: student,
-    };
-  } catch (error) {
-    console.error("Error in studentService.updateStudent:", error.message);
-    throw studentError.INTERNAL_ERROR;
+  const student = await Student.findOne({ where: { studentId } });
+  if (!student) {
+    throw new NotFoundError(
+      "Student not exists",
+      "Sinh viên này không tồn tại"
+    );
   }
+  if (updatedData.email && !validateEmail(updatedData.email)) {
+    
+    throw new ValidationError(
+      "Invalid Email. The email must end with @student.university.edu.vn",
+      "Email không hợp lệ. Email phải kết thúc với @student.university.edu.vn"
+    );
+  }
+
+  if (
+    updatedData.phoneNumber &&
+    !validatePhone(updatedData?.phoneNumber, updatedData?.nationalityId)
+  ) {
+    throw new ValidationError(
+      "Invalid phone number.",
+      "Số điện thoại không hợp lệ. Vui lòng thử lại"
+    );
+  }
+
+  await student.update(updatedData);
+  return {
+    success: true,
+    data: student,
+  };
 }
 
 async function getPaginatedStudents(queryParams) {
