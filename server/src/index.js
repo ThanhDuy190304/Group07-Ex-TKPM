@@ -48,7 +48,7 @@ async function seedStudents() {
         const gender = faker.helpers.arrayElement(["Nam", "Nữ", "Khác"]);
         const email = faker.internet.email({ firstName: fullName.replace(/\s+/g, "").toLowerCase() });
         const phoneNumber = faker.string.numeric(10);
-        const studentStatusId = faker.helpers.arrayElement(statuses).studentStatusId;
+        const statusId = faker.helpers.arrayElement(statuses).statusId;
         const nationalityId = faker.helpers.arrayElement(nationalities).nationalityId;
 
         // 🔄 Chọn địa chỉ ngẫu nhiên
@@ -86,7 +86,7 @@ async function seedStudents() {
             courseId: faker.helpers.arrayElement(courses),
             facultyId: faker.helpers.arrayElement(faculties),
             programId: faker.helpers.arrayElement(programs),
-            studentStatusId: studentStatusId,
+            statusId: statusId,
             nationalityId: nationalityId,
             permanentAddress,
             temporaryResidenceAddress: temporaryAddress,

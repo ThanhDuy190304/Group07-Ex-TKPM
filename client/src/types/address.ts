@@ -7,14 +7,14 @@ export interface Address {
 }
 
 
-export const formatAddress = (address: Address): string => {
-    return [
+export const formatAddress = (address: Address | null | undefined): string => {
+    if (!address) return "Chưa có địa chỉ";
+    const addressParts = [
         address.street,
         address.wards_communes,
         address.district,
         address.city_province,
         address.nation
-    ]
-        .filter(Boolean) // Bỏ qua các phần tử rỗng
-        .join(', ');     // Nối bằng dấu phẩy
+    ];
+    return addressParts.filter(Boolean).join(', ');
 };

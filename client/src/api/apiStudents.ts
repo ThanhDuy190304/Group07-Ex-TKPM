@@ -2,21 +2,21 @@ import api from "../config/axios";
 import { Student, PaginatedStudents } from "../types/student"
 import { extractData } from "./apiHelper";
 
-// export const importStudents = async (file) => {
-//     try {
-//         const formData = new FormData();
-//         formData.append("file", file);
-//         const response = await api.post("/student/import", formData, {
-//             headers: {
-//                 "Content-Type": "multipart/form-data",
-//             },
-//         });
-//         return response.data;
-//     } catch (error : any) {
-//         console.error("Lỗi khi import sinh viên:", error);
-//         return { error: error.response?.data?.message || "Lỗi server" };
-//     }
-// };
+export const importStudents = async (file: any) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await api.post("/student/import", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+        return response.data;
+    } catch (error: any) {
+        console.error("Lỗi khi import sinh viên:", error);
+        return { error: error.response?.data?.message || "Lỗi server" };
+    }
+};
 
 
 export async function getPaginatedStudents({ searchQuery = {}, page = 1, limit = 20 }: {
@@ -65,7 +65,7 @@ export async function deleteStudent(studentId: string): Promise<void> {
 }
 
 
-export async function postStudent(studentData: Omit<Student, "studentId">): Promise<Student> {
+export async function postStudent(studentData: Partial<Student>): Promise<Student> {
     try {
         const response = await api.post<{ data: Student }>("/student", studentData);
         return extractData(response).data;

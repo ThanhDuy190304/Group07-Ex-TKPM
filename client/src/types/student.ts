@@ -24,7 +24,7 @@ export interface Student {
     programId: string;
     Program: Program;
 
-    studentStatusId: string;
+    statusId: string;
     StudentStatus: StudentStatus;
 }
 

@@ -530,7 +530,7 @@ interface StudentStatusRowProps {
 }
 
 function StudentStatusRow({ index, status, isEditing, isAnyEditing, onEdit, onChange, onSave, onCancel }: StudentStatusRowProps) {
-    const fields = Object.keys(status).filter((key) => key !== "studentStatusId") as (keyof StudentStatus)[];
+    const fields = Object.keys(status).filter((key) => key !== "statusId") as (keyof StudentStatus)[];
     return (
         <tr>
             {/* Cột STT */}
@@ -607,12 +607,12 @@ function StudentStatusesTable({ studentStatuses, editingStatus, isEditingStatusI
                 </thead>
                 <tbody>
                     {studentStatuses.map((status, index) => {
-                        const isEditing = isEditingStatusId === status.studentStatusId;
+                        const isEditing = isEditingStatusId === status.statusId;
                         const currentStatus = isEditing ? editingStatus : status;
 
                         return (
                             <StudentStatusRow
-                                key={status.studentStatusId}
+                                key={status.statusId}
                                 index={index + 1} // STT bắt đầu từ 1
                                 status={currentStatus!}
                                 isEditing={isEditing}
@@ -636,7 +636,7 @@ function StudentStatusesTableContainer({ studentStatuses }: { studentStatuses: S
     const [editingStatus, setEditingStatus] = useState<StudentStatus | null>(null);
 
     const handleEdit = (status: StudentStatus) => {
-        setIsEditingStatusId(status.studentStatusId);
+        setIsEditingStatusId(status.statusId);
         setEditingStatus(status);
     };
 
