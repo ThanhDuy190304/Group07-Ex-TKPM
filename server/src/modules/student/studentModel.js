@@ -4,11 +4,11 @@ const sequelize = require("../../config/database");
 const Faculty = require("../faculty/facultyModel");
 const Course = require("../course/courseModel");
 const Program = require("../program/programModel");
+const Nationality = require("../nationality/nationalityModel");
+const StudentStatus = require("./studentStatusModel");
 const NIDCard = require("./nidCardModel");
 const OIDCard = require("./oidCardModel");
 const Passport = require("./passportModel");
-const Nationality = require("../nationality/nationalityModel");
-const StudentStatus = require("./studentStatusModel");
 
 const Student = sequelize.define(
   "Student",
@@ -68,7 +68,6 @@ Student.belongsTo(Nationality, {
   as: "Nationality",
 });
 
-
 Student.hasOne(OIDCard, {
   foreignKey: {
     name: "studentId",
@@ -95,7 +94,6 @@ Course.hasMany(Student, { foreignKey: "courseId" });
 Program.hasMany(Student, { foreignKey: "programId" });
 Nationality.hasMany(Student, { foreignKey: "nationalityId" });
 
-
 Passport.belongsTo(Student, {
   foreignKey: {
     name: "studentId",
@@ -115,10 +113,13 @@ OIDCard.belongsTo(Student, {
   },
 });
 
-Student.belongsTo(StudentStatus, { foreignKey: "statusId", as: "StudentStatus" });
+Student.belongsTo(StudentStatus, {
+  foreignKey: "statusId",
+  as: "StudentStatus",
+});
 StudentStatus.hasMany(Student, { foreignKey: "statusId" });
 
-// 🛠 Hook để tạo studentId dựa trên courseId
+🛠 Hook để tạo studentId dựa trên courseId
 Student.beforeCreate(async (student, options) => {
   try {
     if (student.studentId) {
