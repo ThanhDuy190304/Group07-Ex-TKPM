@@ -1,0 +1,26 @@
+{
+    "host": "aws-0-ap-southeast-1.pooler.supabase.com",
+    "port": 5432,
+    "database": "postgres",
+    "username": "postgres.hbhdaxfhnmpqxnceksua",
+    "password": "0iozyVbFtaN8PUpv",
+    "dialect": "postgres",
+    "schema": "public",
+    "tables": [
+        "students",
+        "classes",
+        "class_registrations",
+        "courses",
+        "faculties",
+        "identity_documents",
+        "programs"
+    ],
+    "ssl": true,
+    "dialectOptions": {
+        "ssl": {
+            "require": true,
+            "rejectUnauthorized": false
+        }
+    },
+    "output": "./src/models"
+}
