@@ -3,7 +3,7 @@ const FacultyService = require("../service/faculty.service");
 const getAll = async (req, res, next) => {
   try {
     const response = await FacultyService.getAll();
-    return res.status(200).json(response);
+    return res.status(200).json({ data: response.data });
   } catch (error) {
     next(error);
   }
@@ -12,7 +12,7 @@ const getAll = async (req, res, next) => {
 const create = async (req, res, next) => {
   try {
     const result = await FacultyService.create(req.body);
-    return res.status(201).json({ data: result });
+    return res.status(201).json({ data: result.data });
   } catch (error) {
     next(error);
   }
@@ -21,9 +21,9 @@ const create = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const facultyId = req.params.facultyId;
-    const updatedData = req.body;
-    const result = await FacultyService.update(facultyId, updatedData);
-    return res.status(200).json({ data: result });
+    const updateData = req.body;
+    const result = await FacultyService.update(facultyId, updateData);
+    return res.status(200).json({ data: result.data });
   } catch (error) {
     next(error);
   }

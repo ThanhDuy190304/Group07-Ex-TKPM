@@ -1,8 +1,8 @@
-const { faker } = require("@faker-js/faker");
-const express = require("express");
-const cors = require("cors");
-const sequelize = require("./config/database");
+const express = require('express');
+const sequelize = require('./config/db');
+const initModels = require('./models/init-models');
 const dotenv = require("dotenv");
+const cors = require("cors");
 const errorHandler = require("./middleware/error_handler");
 
 dotenv.config();
@@ -14,138 +14,32 @@ app.use(express.json());
 app.use(cors());
 app.use("/api/student", require("./route/studentRoute"));
 app.use("/api/faculty", require("./route/facultyRoute"));
-app.use("/api/course", require("./route/courseRoute"));
 app.use("/api/program", require("./route/programRoute"));
-app.use("/api/batch", require("./route/batch.route"));
+app.use("/api/enum", require("./route/enumRoute"));
 
 app.use(errorHandler);
 
-// Import models
-const Student = require("./modules/student/studentModel");
-const Faculty = require("./modules/faculty/facultyModel");
-const Course = require("./modules/course/courseModel");
-const Program = require("./modules/program/programModel");
-const StudentStatus = require("./modules/student/studentStatusModel");
-const NIDCard = require("./modules/student/nidCardModel");
-const OIDCard = require("./modules/student/oidCardModel");
-const Passport = require("./modules/student/passportModel");
 
-const Nationality = require("./modules/nationality/nationalityModel");
+// Chỉ kết nối database, KHÔNG đồng bộ
+async function startServer() {
+    try {
+        // Chỉ xác thực kết nối, không sync
+        await sequelize.authenticate();
+        console.log('✅ Đã kết nối với Supabase thành công');
 
-const NUM_ADDRESSES = 50; // Số lượng địa chỉ tạo trước
+        const models = initModels(sequelize);
+        console.log(models);
+        console.log("✅ Models đã được khởi tạo");
 
-// Fake data function
-async function seedStudents() {
-  const courses = ["K2020", "K2021", "K2022", "K2023"];
-  const faculties = [1, 2, 3, 4];
-  const programs = [1, 2, 3];
-
-  const statuses = await StudentStatus.findAll();
-  const nationalities = await Nationality.findAll();
-
-  for (let i = 0; i < NUM_ADDRESSES; i++) {
-    const fullName = faker.person.fullName();
-    const dateOfBirth = faker.date.birthdate({ min: 18, max: 25, mode: "age" });
-    const gender = faker.helpers.arrayElement(["Nam", "Nữ", "Khác"]);
-    const email = faker.internet.email({
-      firstName: fullName.replace(/\s+/g, "").toLowerCase(),
-    });
-    const phoneNumber = faker.string.numeric(10);
-    const statusId = faker.helpers.arrayElement(statuses).statusId;
-    const nationalityId =
-      faker.helpers.arrayElement(nationalities).nationalityId;
-
-    // 🔄 Chọn địa chỉ ngẫu nhiên
-    const permanentAddress = {
-      street: faker.location.streetAddress(),
-      wards_communes: faker.location.city(),
-      district: faker.location.city(),
-      city_province: faker.location.state(),
-      nation: faker.location.country(),
-    };
-
-    const temporaryAddress = {
-      street: faker.location.streetAddress(),
-      wards_communes: faker.location.city(),
-      district: faker.location.city(),
-      city_province: faker.location.state(),
-      nation: faker.location.country(),
-    };
-
-    const mailAddress = {
-      street: faker.location.streetAddress(),
-      wards_communes: faker.location.city(),
-      district: faker.location.city(),
-      city_province: faker.location.state(),
-      nation: faker.location.country(),
-    };
-
-    // Tạo sinh viên
-    const student = await Student.create({
-      fullName,
-      dateOfBirth,
-      gender,
-      email,
-      phoneNumber,
-      courseId: faker.helpers.arrayElement(courses),
-      facultyId: faker.helpers.arrayElement(faculties),
-      programId: faker.helpers.arrayElement(programs),
-      statusId: statusId,
-      nationalityId: nationalityId,
-      permanentAddress,
-      temporaryResidenceAddress: temporaryAddress,
-      mailAddress,
-    });
-  }
+        app.listen(PORT, () => {
+            console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+        });
+    } catch (error) {
+        console.error('❌ Lỗi kết nối Supabase:', error.message);
+        process.exit(1); // Thoát nếu kết nối thất bại
+    }
 }
 
-// Khởi tạo database
-sequelize
-  .sync({ force: false }) // Xóa & tạo lại database khi chạy server
-  .then(async () => {
-    console.log("✅ Database synced");
+// Khởi động server
+startServer();
 
-    // await Faculty.bulkCreate([
-    //   { short_name: "LAW", name: "Luật" },
-    //   { short_name: "ENCO", name: "Tiếng Anh thương mại" },
-    //   { short_name: "JPN", name: "Tiếng Nhật" },
-    //   { short_name: "FRA", name: "Tiếng Pháp" },
-    // ]);
-
-    // await Course.bulkCreate([
-    //   { courseId: "K2020", startYear: 2020 },
-    //   { courseId: "K2021", startYear: 2021 },
-    //   { courseId: "K2022", startYear: 2022 },
-    //   { courseId: "K2023", startYear: 2023 },
-    // ]);
-
-    // await Program.bulkCreate([
-    //   { short_name: "CQ", name: "Chính quy" },
-    //   { short_name: "TT", name: "Tiên tiến" },
-    //   { short_name: "CLC", name: "Chất lượng cao" },
-    // ]);
-
-    // await StudentStatus.bulkCreate([
-    //   { name: "Đang học" },
-    //   { name: "Đã tốt nghiệp" },
-    //   { name: "Đã thôi học" },
-    //   { name: "Tạm dừng học" },
-    // ]);
-
-    // await Nationality.bulkCreate([
-    //   { name: "Vietnam", nationalityId: "VN" },
-    //   { name: "USA", nationalityId: "US" },
-    //   { name: "France", nationalityId: "FR" },
-    //   { name: "Japan", nationalityId: "JP" },
-    // ]);
-
-    // console.log("✅ Database seeded");
-
-    // console.log("🔄 Seeding students...");
-    // await seedStudents();
-
-    app.listen(PORT, () =>
-      console.log(`🚀 Server running at http://localhost:${PORT}`)
-    );
-  })
-  .catch((err) => console.error("❌ Unable to sync database:", err));

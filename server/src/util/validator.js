@@ -1,6 +1,11 @@
 const config = require("../config/validatorConfig");
 
 const { isValidPhoneNumber } = require("libphonenumber-js");
+const validator = require("validator");
+
+function validateUUID(value) {
+  return validator.isUUID(value);
+}
 
 function validateStudentData(data) {
   if (!config.VALID_STATUSES.includes(data.status)) {
@@ -21,6 +26,7 @@ function validateStatusTransition(currentStatus, newStatus) {
 }
 
 module.exports = {
+  validateUUID,
   validateStudentData,
   validateEmail,
   validatePhone,
