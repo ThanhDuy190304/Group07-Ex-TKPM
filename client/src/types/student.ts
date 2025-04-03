@@ -1,4 +1,5 @@
 import { Address } from "./address";
+import { IdentityDocument } from "./identityDocument";
 import { Gender, StudentStatus } from "./enum";
 export interface Student {
     id: string;
@@ -16,6 +17,7 @@ export interface Student {
     programCode: string;
     status: StudentStatus
     cohortYear: string;
+    identityDocuments: IdentityDocument[]
 }
 
 export const studentFields: Partial<Record<keyof Student, string>> = {
@@ -33,5 +35,6 @@ export const studentFields: Partial<Record<keyof Student, string>> = {
     programCode: "Chương trình",
     nationality: "Quốc tịch",
     status: "Tình trạng",
+    identityDocuments: "Giấy tờ tùy thân",
 };
 

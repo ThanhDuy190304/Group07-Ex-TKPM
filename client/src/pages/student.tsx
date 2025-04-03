@@ -16,11 +16,11 @@ import { Student, studentFields } from "../types/student";
 import { Faculty } from "../types/faculty";
 import { Program } from "../types/program";
 import { formatAddress } from "../types/address";
-import { Gender, StudentStatus } from "../types/enum"
+import { identityDocumentFields, CCCDIdentityDocument, CMNDIdentityDocument, PassportIdentityDocument, formatIdentityDocument } from "../types/identityDocument";
+import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
 import { useError } from "../context/ErrorContext";
 import ImportButton from "../components/button/import";
-import { GetAllBaseResponse } from "../types/BaseResponse";
-
+import ExportButton from "../components/button/export";
 // Details Student Card
 function flattenStudent(student: Student) {
     return {
@@ -28,6 +28,7 @@ function flattenStudent(student: Student) {
         temporaryResidenceAddress: formatAddress(student.temporaryResidenceAddress),
         permanentAddress: formatAddress(student.permanentAddress),
         mailAddress: formatAddress(student.mailAddress),
+        identityDocuments: student.identityDocuments.map(formatIdentityDocument).join("; "),
     };
 }
 function StudentDetailsCard({ student, onClose }: { student: Student; onClose: () => void }) {
@@ -126,18 +127,16 @@ interface StudentTableRowProps {
     student: Student;
     isEditing: boolean;
     isAnyEditing: boolean;
+    faculties: Faculty[];
+    programs: Program[];
     onEdit: () => void;
     onChange: (key: keyof Student, value: string) => void;
     onSave: () => void;
     onDelete: (studentId: string) => void;
     onSelect: () => void;
 }
-function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, onSave, onDelete, onSelect }: StudentTableRowProps) {
-    const { facultiesQuery } = useFaculties();
-    const { programsQuery } = usePrograms();
-    const faculties: Faculty[] = facultiesQuery.data || []
-    const programs: Program[] = programsQuery.data || [];
-    const statusStudentOptions = Object.values(StudentStatus);
+function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs, onEdit, onChange, onSave, onDelete, onSelect }: StudentTableRowProps) {
+    const studentStatusOptions = Object.values(StudentStatus);
     return (
         <tr className="cursor-pointer hover:bg-gray-100" onClick={onSelect}>
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis"> {student.studentCode}</td>
@@ -153,10 +152,12 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                         onClick={(e) => e.stopPropagation()}
 
                     >
+                        <Option value={null} onClick={(e) => e.stopPropagation()}>
+                            -- Không có khoa --</Option>
                         {faculties.map((faculty) => (
                             <Option
-                                key={faculty.id}
-                                value={faculty.id}
+                                key={faculty.facultyCode}
+                                value={faculty.facultyCode}
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {faculty.facultyCode}
@@ -177,6 +178,8 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
+                        <Option value={null} onClick={(e) => e.stopPropagation()}>
+                            -- Không có chương trình --</Option>
                         {programs.map((program) => (
                             <Option
                                 key={program.programCode}
@@ -217,14 +220,14 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {statusStudentOptions.map((status) => (
+                        {studentStatusOptions.map((status) => (
                             <option key={status} value={status}>
                                 {status}
                             </option>
                         ))}
                     </select>
                 ) : (
-                    student.gender || "Chưa có giới tính"
+                    student.status || "Chưa có trạng thái"
                 )}
             </td>
 
@@ -258,7 +261,7 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                                 e.stopPropagation();
                                 onDelete(student.id);
                             }}
-                            className="p-1 rounded text-red-500 hover:bg-red-100"
+                            className="p-1 rounded text-red-500 hover:bg-red-100 cursor-pointer"
                         >
                             <TrashIcon className="w-5 h-5" />
                         </button>
@@ -273,19 +276,22 @@ interface StudentTableProps {
     students: Student[];
     editingStudent: Student | null;
     isEditingStudentId: string | null;
+    faculties: Faculty[];
+    programs: Program[];
     onEdit: (student: Student) => void;
     onChange: (key: keyof Student, value: string) => void;
     onSave: () => void;
     onDelete: (studentId: string) => void;
 }
-function StudentTable({ students, editingStudent, isEditingStudentId, onEdit, onChange, onSave, onDelete }: StudentTableProps) {
+function StudentTable({ students, editingStudent, isEditingStudentId, programs, faculties, onEdit, onChange, onSave, onDelete }: StudentTableProps) {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const studentFieldWidths: Partial<Record<keyof Student, string>> = {
-        studentCode: "w-12",
-        fullName: "w-20",
-        facultyCode: "w-12",
-        programCode: "w-16",
-        status: "w-12",
+        studentCode: "w-24",
+        fullName: "w-40",
+        facultyCode: "w-20",
+        programCode: "w-20",
+        cohortYear: "w-16",
+        status: "w-24",
     };
 
     return (
@@ -315,6 +321,8 @@ function StudentTable({ students, editingStudent, isEditingStudentId, onEdit, on
                                     student={currentStudent!}
                                     isEditing={isEditing}
                                     isAnyEditing={!!isEditingStudentId}
+                                    faculties={faculties}
+                                    programs={programs}
                                     onEdit={() => onEdit(student)}
                                     onChange={onChange}
                                     onSave={onSave}
@@ -343,10 +351,14 @@ function StudentTable({ students, editingStudent, isEditingStudentId, onEdit, on
 
 function StudentTableContainer({
     students,
+    faculties,
+    programs,
     removeStudent,
     updateStudent,
 }: {
     students: Student[];
+    faculties: Faculty[];
+    programs: Program[];
     removeStudent: (studentId: string) => Promise<void>;
     updateStudent: (data: { studentId: string; updatedData: Partial<Student> }) => Promise<Student>;
 }) {
@@ -390,6 +402,8 @@ function StudentTableContainer({
     return (
         <StudentTable
             students={students}
+            faculties={faculties}
+            programs={programs}
             editingStudent={editingStudent}
             isEditingStudentId={isEditingStudentId}
             onEdit={handleEdit}
@@ -401,7 +415,12 @@ function StudentTableContainer({
 }
 
 //Search
-function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) => void }) {
+interface SearchProps {
+    setSearchQuery: (query: Partial<Student>) => void;
+    faculties: Faculty[];
+    programs: Program[];
+}
+function Search({ setSearchQuery, faculties, programs }: SearchProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchType, setSearchType] = useState("studentCode");
     const [queryStudentCode, setQueryStudentCode] = useState("");
@@ -410,15 +429,9 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
     const [queryCohortYear, setQueryCohortYear] = useState("");
     const [queryProgramCode, setQueryProgramCode] = useState("");
 
-    const { facultiesQuery } = useFaculties();
-    const { programsQuery } = usePrograms();
-
-    const faculties: Faculty[] = facultiesQuery.data || [];
-    const programs: Program[] = programsQuery.data || [];
-
     const handleSearch = () => {
         let query = {};
-        if (searchType === "studentId") {
+        if (searchType === "studentCode") {
             query = { studentCode: queryStudentCode };
         } else {
             query = {
@@ -446,7 +459,7 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
             >
                 {options.map((option) => (
                     <Option key={option.code} value={option.code}>
-                        {option.name}
+                        {option.code}
                     </Option>
                 ))}
             </Select>
@@ -475,9 +488,9 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
                         <label className="flex items-center gap-2">
                             <input
                                 type="radio"
-                                value="studentId"
-                                checked={searchType === "studentId"}
-                                onChange={() => setSearchType("studentId")}
+                                value="studentCode"
+                                checked={searchType === "studentCode"}
+                                onChange={() => setSearchType("studentCode")}
                             />
                             Tìm theo MSSV
                         </label>
@@ -544,18 +557,17 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
 }
 
 //Create Button
-function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial<Student>) => Promise<Student> }) {
+
+interface StudentCreateModalDialogProps {
+    onCreate: (newStudent: Partial<Student>) => Promise<Student>;
+    faculties: Faculty[];
+    programs: Program[];
+}
+function StudentCreateModalDialog({ onCreate, faculties, programs }: StudentCreateModalDialogProps) {
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState<Partial<Student>>({});
 
-    const { facultiesQuery } = useFaculties();
-    const { programsQuery } = usePrograms();
-
-    const faculties: Faculty[] = facultiesQuery.data || []
-    const programs: Program[] = programsQuery.data || [];
     const genderOptions = Object.values(Gender);
-    const studentStatuseOptions = Object.values(StudentStatus);
-
     const { showError } = useError();
     const handleChange = (key: keyof Student, value: string) => {
         setFormData({ ...formData, [key]: value });
@@ -566,6 +578,8 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
         try {
             await onCreate(formData);
             setOpen(false);
+            setFormData({});
+            alert("Sinh viên đã được tạo thành công!")
         } catch (error: any) {
             showError(error.message);
         }
@@ -588,6 +602,16 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
                     <DialogContent>Điền đủ thông tin dưới đây.</DialogContent>
                     <form onSubmit={handleSubmit}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* MSSV */}
+                            <FormControl>
+                                <FormLabel>MSSV</FormLabel>
+                                <Input
+                                    autoFocus
+                                    required
+                                    value={formData.studentCode || ""}
+                                    onChange={(e) => handleChange("studentCode", e.target.value)}
+                                />
+                            </FormControl>
                             {/* Họ tên */}
                             <FormControl>
                                 <FormLabel>Họ và tên</FormLabel>
@@ -692,21 +716,7 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
                                 />
                             </FormControl>
 
-                            {/* Trạng thái */}
-                            <FormControl>
-                                <FormLabel>Trạng thái</FormLabel>
-                                <Select
-                                    value={formData.status}
-                                    onChange={(e, newValue) => handleChange("status", newValue as string)}
-                                    className="border rounded p-1 w-full"
-                                >
-                                    {studentStatuseOptions.map((status) => (
-                                        <Option key={status} value={status}>
-                                            {status}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </FormControl>
+
                         </div>
 
                         {/* Nút xác nhận */}
@@ -721,38 +731,66 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
     );
 }
 
-
 function StudentPage() {
+    const { showError } = useError();
     const [page, setPage] = useState<number>(1);
-    const limit = 20;
+    const limit = 30;
     const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
-    const { studentsQuery, updateStudent, removeStudent, createStudent } = useAllStudents(searchQuery);
 
-    if (studentsQuery.isLoading) return <p>Đang tải dữ liệu...</p>;
-    if (studentsQuery.isError) return <p>Lỗi: {studentsQuery.error.message}</p>;
+    const { studentsQuery, updateStudent, removeStudent, createStudent } = useAllStudents({
+        ...searchQuery,
+        page,
+        limit
+    });
+    const { facultiesQuery } = useFaculties();
+    const { programsQuery } = usePrograms();
 
-    const studentsReponse: GetAllBaseResponse<Student> | undefined = studentsQuery.data;
-    console.log(studentsReponse);
+
+    if (studentsQuery.isLoading || facultiesQuery.isLoading || programsQuery.isLoading) {
+        return <p>Đang tải dữ liệu...</p>;
+    }
+
+    if (studentsQuery.isError) {
+        return showError(studentsQuery.error.message);
+    }
+    if (facultiesQuery.isError || programsQuery.isError) {
+        return showError("Lỗi khi tải danh mục");
+    }
+
+    const students = studentsQuery.data.students as Student[];
+    const total = studentsQuery.data.total as number;
+    const faculties = facultiesQuery.data.faculties as Faculty[];
+    const programs = programsQuery.data.programs as Program[];
+
     return (
         <main className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
 
             <section className="flex items-center justify-between w-full gap-4">
                 <div className="flex items-center gap-2 flex-1 max-w-md">
-                    <Search setSearchQuery={setSearchQuery} />
-                    <StudentCreateModalDialog onCreate={createStudent.mutateAsync} />
+                    <Search
+                        setSearchQuery={setSearchQuery}
+                        faculties={faculties}
+                        programs={programs} />
+                    <StudentCreateModalDialog
+                        onCreate={createStudent.mutateAsync}
+                        faculties={faculties}
+                        programs={programs} />
                 </div>
                 <ImportButton />
+                <ExportButton searchQuery={searchQuery} />
             </section>
 
             <section className="flex flex-col gap-6 items-center mt-6">
                 <StudentTableContainer
-                    students={Array.isArray(studentsReponse?.data) ? studentsReponse.data : []}
+                    students={students}
+                    faculties={faculties}
+                    programs={programs}
                     removeStudent={removeStudent.mutateAsync}
                     updateStudent={updateStudent.mutateAsync}
                 />
                 <Pagination
-                    total={studentsReponse?.total ?? 0}
+                    total={total ?? 0}
                     limit={limit}
                     currentPage={page}
                     onPageChange={setPage}

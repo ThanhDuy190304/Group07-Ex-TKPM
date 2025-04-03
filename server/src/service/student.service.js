@@ -62,7 +62,7 @@ class StudentService extends BaseService {
         include
       });
       return {
-        data: rows,
+        students: rows,
         total: count,
       };
     }
@@ -96,6 +96,38 @@ class StudentService extends BaseService {
     };
   }
 
+  async create(newStudentInf) {
+    const requiredFields = [
+      "studentCode",
+      "fullName",
+      "dateOfBirth",
+      "gender",
+      "email",
+      "phoneNumber",
+      "facultyCode",
+      "programCode",
+      "cohortYear",
+    ];
+    const missingFields = requiredFields.filter((field) => !newStudentInf[field]);
+    if (missingFields.length > 0) {
+      throw new ValidationError(
+        `Missing required fields: ${missingFields.join(", ")}`,
+        `Thiếu các trường bắt buộc: ${missingFields.join(", ")}`
+      );
+    }
+
+    if (newStudentInf?.studentCode) {
+      const student = await this.model.findOne({ where: { studentCode: newStudentInf.studentCode } });
+      if (student) {
+        throw new ValidationError("Student code already exists", "Mã sinh viên này đã tồn tại");
+      }
+    }
+    StudentService.validateStudentData_noId(newStudentInf);
+    const newStudent = await this.model.create(newStudentInf);
+    return {
+      student: omit(newStudent.get({ plain: true }), ["createdAt", "updatedAt"])
+    }
+  }
   async importFile(fileBuffer, format) {
     let students;
     if (format === 'csv') {

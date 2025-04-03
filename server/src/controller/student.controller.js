@@ -1,4 +1,3 @@
-const { error } = require("winston");
 const StudentService = require("../service/student.service");
 
 const getAllStudents = async (req, res, next) => {
@@ -44,52 +43,16 @@ const importFile = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ error: "Không có file nào được upload." });
     }
-    const format = req.query.format;
-    let importResults = await StudentService.importFile(req.file.buffer, format);
-    return res.status(200).send(importResults);
+    const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+    let importResults = await StudentService.importFile(req.file.buffer, fileExtension);
+    return res.status(200).send({ data: importResults });
   }
   catch (error) {
     next(error);
   }
 }
 
-// const importFile = async (req, res, next) => {
-//   try {
-//     logger.info("importStudents");
-//     const format = req.query.format || "csv";
-//     let importResults;
 
-//     if (format === "excel") {
-//       importResults = await StudentService.importCSV(req.file.buffer);
-//     } else {
-//       const csvService = require("../files/csv/csvService");
-
-//       importResults = await StudentService.importExcel(req.file.buffer);
-//     }
-
-//     // Calculate summary stats
-//     const createdCount = importResults.filter(
-//       (r) => r.action === "created"
-//     ).length;
-//     const updatedCount = importResults.filter(
-//       (r) => r.action === "updated"
-//     ).length;
-//     const failedCount = importResults.filter((r) => !r.success).length;
-
-//     res.json({
-//       success: true,
-//       results: importResults,
-//       summary: {
-//         total: importResults.length,
-//         created: createdCount,
-//         updated: updatedCount,
-//         failed: failedCount,
-//       },
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 module.exports = {
   create,
   getAllStudents,

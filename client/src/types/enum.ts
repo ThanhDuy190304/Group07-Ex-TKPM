@@ -12,3 +12,9 @@ export enum Gender {
     Nu = "Nữ",
     Khac = "Khác"
 }
+
+export enum IdentityDocumentType {
+    CCCD = "CCCD",
+    CMND = "CMND",
+    Passport = "Passport"
+}

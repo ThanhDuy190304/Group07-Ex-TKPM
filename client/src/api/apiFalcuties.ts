@@ -1,13 +1,11 @@
 import api from "../config/axios";
 import { Faculty } from "../types/faculty";
-import { GetAllBaseResponse } from "../types/BaseResponse"
 
-import { extractData } from "./apiHelper";
 
-export async function getFaculties(): Promise<GetAllBaseResponse<Faculty>> {
+export async function getFaculties() {
     try {
-        const response = await api.get<{ data: GetAllBaseResponse<Faculty> }>("/faculty");
-        return extractData(response).data;
+        const response = await api.get("/faculty");
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi fetch faculties:", error);
         throw {
@@ -17,10 +15,10 @@ export async function getFaculties(): Promise<GetAllBaseResponse<Faculty>> {
     }
 }
 
-export async function postFaculty(newFaculty: Partial<Faculty>): Promise<Faculty> {
+export async function postFaculty(newFaculty: Partial<Faculty>) {
     try {
-        const response = await api.post<{ data: Faculty }>("/faculty", newFaculty);
-        return extractData(response).data;
+        const response = await api.post("/faculty", newFaculty);
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi tạo khoa:", error);
         throw {
@@ -30,11 +28,10 @@ export async function postFaculty(newFaculty: Partial<Faculty>): Promise<Faculty
     }
 }
 
-export async function putFaculty(facultyId: string, updateData: Partial<Faculty>): Promise<Faculty> {
+export async function putFaculty(facultyId: string, updateData: Partial<Faculty>) {
     try {
-        console.log("AAA", updateData);
-        const { data } = await api.put<Faculty>(`/faculty/${facultyId}`, updateData);
-        return data;
+        const response = await api.put(`/faculty/${facultyId}`, updateData);
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi cập nhật khoa:", error);
         throw {

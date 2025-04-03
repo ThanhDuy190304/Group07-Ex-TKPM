@@ -1,13 +1,11 @@
 import api from "../config/axios";
 import { Program } from "../types/program";
-import { GetAllBaseResponse } from "../types/BaseResponse"
 
-import { extractData } from "./apiHelper";
 
-export async function getPrograms(): Promise<GetAllBaseResponse<Program>> {
+export async function getPrograms() {
     try {
-        const response = await api.get<{ data: GetAllBaseResponse<Program> }>("/program");
-        return extractData(response).data;
+        const response = await api.get("/program");
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi fetch programs:", error);
         throw {
@@ -17,10 +15,10 @@ export async function getPrograms(): Promise<GetAllBaseResponse<Program>> {
     }
 }
 
-export async function postProgram(newProgram: Partial<Program>): Promise<Program> {
+export async function postProgram(newProgram: Partial<Program>) {
     try {
-        const response = await api.post<{ data: Program }>("/program", newProgram);
-        return extractData(response).data;
+        const response = await api.post("/program", newProgram);
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi tạo chương trình học:", error);
         throw {
@@ -30,10 +28,10 @@ export async function postProgram(newProgram: Partial<Program>): Promise<Program
     }
 }
 
-export async function putProgram(programId: string, updatedData: Partial<Program>): Promise<Program> {
+export async function putProgram(programId: string, updatedData: Partial<Program>) {
     try {
-        const { data } = await api.put<Program>(`/program/${programId}`, updatedData);
-        return data;
+        const response = await api.put(`/program/${programId}`, updatedData);
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi cập nhật chương trình học:", error);
         throw {

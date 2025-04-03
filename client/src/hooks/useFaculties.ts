@@ -1,12 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFaculties, postFaculty, putFaculty } from "../api/apiFalcuties";
 import { Faculty } from "../types/faculty";
-import { GetAllBaseResponse } from "../types/BaseResponse"
 
 export function useFaculties() {
     const queryClient = useQueryClient();
 
-    const facultiesQuery = useQuery<GetAllBaseResponse<Faculty>>({
+    const facultiesQuery = useQuery({
         queryKey: ["faculties"],
         queryFn: getFaculties,
     });

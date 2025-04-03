@@ -68,7 +68,8 @@ module.exports = function (sequelize, DataTypes) {
     status: {
       type: DataTypes.ENUM("Đang học", "Đã thôi học", "Tạm dừng học",
         "Bảo lưu", "Tốt nghiệp", "Đình chỉ"),
-      allowNull: true
+      allowNull: true,
+      defaultValue: "Đang học"
     },
     studentCode: {
       type: DataTypes.STRING,

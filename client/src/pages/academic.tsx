@@ -3,7 +3,6 @@ import { usePrograms } from '../hooks/usePrograms'
 import { useFaculties } from '../hooks/useFaculties'
 import { Faculty, facultyFields } from '../types/faculty';
 import { Program, programFields } from '../types/program';
-import { GetAllBaseResponse } from "../types/BaseResponse"
 
 import {
     Table, Sheet, Modal, Button, ModalDialog, DialogTitle, DialogContent,
@@ -486,17 +485,17 @@ function AcademicPage() {
     ) {
         return <p>Lỗi khi tải dữ liệu.</p>;
     }
-    const facultiesReponse = facultiesQuery.data as GetAllBaseResponse<Faculty>;
-    const programsReponse = programsQuery.data as GetAllBaseResponse<Program>;
+    const faculties = facultiesQuery.data.faculties as Faculty[];
+    const programs = programsQuery.data.programs as Program[];
 
     return (
         <div className="space-y-8">
             <h2 className="text-2xl font-bold">Quản lý Học Thuật</h2>
             <section className='flex flex-col gap-4'>
-                <FacultiesContainer faculties={facultiesReponse.data} />
+                <FacultiesContainer faculties={faculties} />
             </section>
             <section>
-                <ProgramsContainer programs={programsReponse.data} />
+                <ProgramsContainer programs={programs} />
             </section>
         </div>
     );

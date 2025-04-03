@@ -1,7 +1,5 @@
 import api from "../config/axios";
 import { Student } from "../types/student"
-import { GetAllBaseResponse } from "../types/BaseResponse"
-import { extractData } from "./apiHelper";
 
 export const importStudents = async (file: any) => {
     try {
@@ -12,17 +10,17 @@ export const importStudents = async (file: any) => {
                 "Content-Type": "multipart/form-data",
             },
         });
-        return response.data;
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi import sinh viên:", error);
         return { error: error.response?.data?.message || "Lỗi server" };
     }
 };
 
-export async function putStudent(studentId: string, updatedData: Partial<Student>): Promise<Student> {
+export async function putStudent(studentId: string, updatedData: Partial<Student>) {
     try {
-        const response = await api.put<{ data: Student }>(`/student/${studentId}`, updatedData);
-        return extractData(response).data;
+        const response = await api.put(`/student/${studentId}`, updatedData);
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi cập nhật sinh viên: ", error);
         throw {
@@ -32,7 +30,7 @@ export async function putStudent(studentId: string, updatedData: Partial<Student
     }
 }
 
-export async function deleteStudent(studentId: string): Promise<void> {
+export async function deleteStudent(studentId: string) {
     try {
         await api.delete(`/student/${studentId}`);
     } catch (error: any) {
@@ -44,10 +42,10 @@ export async function deleteStudent(studentId: string): Promise<void> {
     }
 }
 
-export async function postStudent(studentData: Partial<Student>): Promise<Student> {
+export async function postStudent(studentData: Partial<Student>) {
     try {
-        const response = await api.post<{ data: Student }>("/student", studentData);
-        return extractData(response).data;
+        const response = await api.post("/student", studentData);
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi tạo sinh viên: ", error);
         throw {
@@ -56,12 +54,12 @@ export async function postStudent(studentData: Partial<Student>): Promise<Studen
     }
 }
 
-export async function getAllStudents(searchQuery: Partial<Student> & { page?: number; limit?: number } = {}): Promise<GetAllBaseResponse<Student>> {
+export async function getAllStudents(searchQuery: Partial<Student> & { page?: number; limit?: number } = {}) {
     try {
-        const response = await api.get<{ data: GetAllBaseResponse<Student> }>("/student", {
+        const response = await api.get("/student", {
             params: searchQuery,
         });
-        return extractData(response).data;
+        return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi xuất mảng sinh viên:", error);
         throw {
