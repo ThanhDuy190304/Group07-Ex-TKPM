@@ -1,10 +1,10 @@
 export interface Program {
-    programId: string,
+    id: string,
     name: string,
-    short_name: string,
+    programCode: string,
 }
 
 export const programFields: Partial<Record<keyof Program, string>> = {
+    programCode: "Mã chương trình",
     name: "Tên chương trình",
-    short_name: "Mã chương trình",
 };

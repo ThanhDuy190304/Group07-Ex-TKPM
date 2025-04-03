@@ -1,19 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPaginatedStudents, postStudent, deleteStudent, putStudent, getAllStudents } from '../api/apiStudents';
-import { PaginatedStudents, Student } from '../types/student';
+import { postStudent, deleteStudent, putStudent, getAllStudents } from '../api/apiStudents';
+import { Student } from '../types/student';
+import { GetAllBaseResponse } from "../types/BaseResponse"
 
-interface PaginatedStudentsParams {
-    page: number;
-    limit: number;
-    searchQuery: Partial<Student>;
-}
 
-export function usePaginatedStudents({ page, limit, searchQuery }: PaginatedStudentsParams) {
+export function useAllStudents(searchQuery: Partial<Student> & { page?: number; limit?: number }) {
     const queryClient = useQueryClient();
 
-    const studentsQuery = useQuery<PaginatedStudents>({
-        queryKey: ['students', page, limit, JSON.stringify(searchQuery)],
-        queryFn: () => getPaginatedStudents({ page, limit, searchQuery }),
+    const studentsQuery = useQuery<GetAllBaseResponse<Student>>({
+        queryKey: ['students', JSON.stringify(searchQuery)],
+        queryFn: () => getAllStudents(searchQuery),
         placeholderData: (previousData) => previousData
     })
 
@@ -30,7 +26,7 @@ export function usePaginatedStudents({ page, limit, searchQuery }: PaginatedStud
             putStudent(studentId, updatedData),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ['students', page, limit, JSON.stringify(searchQuery)]
+                queryKey: ['students', JSON.stringify(searchQuery)]
             });
         },
     });
@@ -40,7 +36,7 @@ export function usePaginatedStudents({ page, limit, searchQuery }: PaginatedStud
         mutationFn: deleteStudent,
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ['students', page, limit, JSON.stringify(searchQuery)]
+                queryKey: ['students', JSON.stringify(searchQuery)]
             });
         },
     });
@@ -53,11 +49,3 @@ export function usePaginatedStudents({ page, limit, searchQuery }: PaginatedStud
     };
 }
 
-export function useAllStudents(searchQuery: Partial<Student> = {}) {
-    const studentsQuery = useQuery<Student[]>({
-        queryKey: ['students', searchQuery],
-        queryFn: () => getAllStudents(searchQuery),
-    });
-
-    return { studentsQuery };
-}

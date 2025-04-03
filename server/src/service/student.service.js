@@ -77,7 +77,7 @@ class StudentService extends BaseService {
       },
       include
     });
-    return { data: rows, total: count }
+    return { students: rows, total: count }
   }
 
   async update(studentId, updateData) {
@@ -92,7 +92,7 @@ class StudentService extends BaseService {
     const updateFields = omit(updateData, ['id', 'studentCode']);
     const updatedStudent = await student.update(updateFields);
     return {
-      data: omit(updatedStudent.get({ plain: true }), ["createdAt", "updatedAt"])
+      student: omit(updatedStudent.get({ plain: true }), ["createdAt", "updatedAt"])
     };
   }
 

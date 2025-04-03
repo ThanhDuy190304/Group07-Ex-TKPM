@@ -32,22 +32,22 @@ class FacultyService extends BaseService {
     if (updateData?.name) updateFields.name = updateData.name;
     const updatedFaculty = await faculty.update(updateFields);
     return {
-      data: omit(updatedFaculty.get({ plain: true }), ["createdAt", "updatedAt"])
+      faculty: omit(updatedFaculty.get({ plain: true }), ["createdAt", "updatedAt"])
     };
 
   }
 
-  async create(data) {
-    if (!data?.name || !data?.facultyCode) {
+  async create(newFacultyInf) {
+    if (!newFacultyInf?.name || !newFacultyInf?.facultyCode) {
       throw new ValidationError("Missing required fields", "Thiếu dữ liệu");
     }
-    const existingFaculty = await this.model.findOne({ where: { facultyCode: data.facultyCode.trim() } });
+    const existingFaculty = await this.model.findOne({ where: { facultyCode: newFacultyInf.facultyCode.trim() } });
     if (existingFaculty) {
       throw new DuplicateResourceError("Faculty code already exists", "Mã khoa đã tồn tại");
     }
-    const newFaculty = await this.model.create({ name: data.name, facultyCode: data.facultyCode.trim() });
+    const newFaculty = await this.model.create({ name: newFacultyInf.name, facultyCode: newFacultyInf.facultyCode.trim() });
     return {
-      data: omit(newFaculty.get({ plain: true }), ["createdAt", "updatedAt"])
+      faculty: omit(newFaculty.get({ plain: true }), ["createdAt", "updatedAt"])
     };
   }
 

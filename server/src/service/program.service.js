@@ -34,22 +34,22 @@ class ProgramService extends BaseService {
     const updatedProgram = await program.update(updateFields);
 
     return {
-      data: omit(updatedProgram.get({ plain: true }), ["createdAt", "updatedAt"])
+      program: omit(updatedProgram.get({ plain: true }), ["createdAt", "updatedAt"])
     };
 
   }
 
-  async create(data) {
-    if (!data?.name || !data?.programCode) {
+  async create(newProgramInf) {
+    if (!newProgramInf?.name || !newProgramInf?.programCode) {
       throw new ValidationError("Missing required fields", "Thiếu dữ liệu");
     }
-    const existingProgram = await this.model.findOne({ where: { programCode: data.programCode.trim() } });
+    const existingProgram = await this.model.findOne({ where: { programCode: newProgramInf.programCode.trim() } });
     if (existingProgram) {
       throw new DuplicateResourceError("Program code already exists", "Mã chương trình đã tồn tại");
     }
-    const newProgram = await this.model.create({ name: data.name, programCode: data.programCode.trim() });
+    const newProgram = await this.model.create({ name: newProgramInf.name, programCode: newProgramInf.programCode.trim() });
     return {
-      data: omit(newProgram.get({ plain: true }), ["createdAt", "updatedAt"])
+      program: omit(newProgram.get({ plain: true }), ["createdAt", "updatedAt"])
     };
   }
 

@@ -9,19 +9,17 @@ import {
     Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button,
     Modal, ModalDialog, DialogTitle, DialogContent, FormControl, Stack, FormLabel
 } from '@mui/joy';
-import { usePaginatedStudents, useAllStudents } from "../hooks/useStudents"
+import { useAllStudents } from "../hooks/useStudents"
 import { useFaculties } from "../hooks/useFaculties";
 import { usePrograms } from "../hooks/usePrograms";
-import { useCourses } from "../hooks/useCourses";
-import { Student, PaginatedStudents, studentFields } from "../types/student";
+import { Student, studentFields } from "../types/student";
 import { Faculty } from "../types/faculty";
 import { Program } from "../types/program";
-import { Course } from "../types/course";
-import { StudentStatus } from "../types/studentStatus";
 import { formatAddress } from "../types/address";
-import { useStudentStatus } from "../hooks/useStudentStatuses";
+import { Gender, StudentStatus } from "../types/enum"
 import { useError } from "../context/ErrorContext";
 import ImportButton from "../components/button/import";
+import { GetAllBaseResponse } from "../types/BaseResponse";
 
 // Details Student Card
 function flattenStudent(student: Student) {
@@ -30,9 +28,6 @@ function flattenStudent(student: Student) {
         temporaryResidenceAddress: formatAddress(student.temporaryResidenceAddress),
         permanentAddress: formatAddress(student.permanentAddress),
         mailAddress: formatAddress(student.mailAddress),
-        Faculty: student.Faculty?.short_name || student.Faculty?.name,
-        Program: student.Program?.short_name || student.Program?.name,
-        StudentStatus: student.StudentStatus?.name
     };
 }
 function StudentDetailsCard({ student, onClose }: { student: Student; onClose: () => void }) {
@@ -49,11 +44,11 @@ function StudentDetailsCard({ student, onClose }: { student: Student; onClose: (
                     {student.fullName}
                 </Typography>
                 <Typography level="body-sm" textColor="neutral.500">
-                    {studentFields.studentId}: {student.studentId}
+                    {studentFields.studentCode}: {student.studentCode}
                 </Typography>
                 <div className="mt-4 space-y-2">
                     {Object.entries(studentFields).map(([fieldKey, fieldLabel]) => {
-                        if (fieldKey === "studentId" || fieldKey === "fullName") return null;
+                        if (fieldKey === "studentCode" || fieldKey === "fullName") return null;
                         return (
                             <div
                                 key={fieldKey}
@@ -140,39 +135,36 @@ interface StudentTableRowProps {
 function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, onSave, onDelete, onSelect }: StudentTableRowProps) {
     const { facultiesQuery } = useFaculties();
     const { programsQuery } = usePrograms();
-    const { coursesQuery } = useCourses();
-    const { studentStatusesQuery } = useStudentStatus();
     const faculties: Faculty[] = facultiesQuery.data || []
     const programs: Program[] = programsQuery.data || [];
-    const courses: Course[] = coursesQuery.data || [];
-    const studentStatuses: StudentStatus[] = studentStatusesQuery.data || [];
+    const statusStudentOptions = Object.values(StudentStatus);
     return (
         <tr className="cursor-pointer hover:bg-gray-100" onClick={onSelect}>
-            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis"> {student.studentId}</td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis"> {student.studentCode}</td>
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">{student.fullName}</td>
 
             {/* Cột Khoa */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
                     <Select
-                        value={student.facultyId}
-                        onChange={(e, newValue) => onChange("facultyId", newValue as string)}
+                        value={student.facultyCode}
+                        onChange={(e, newValue) => onChange("facultyCode", newValue as string)}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
 
                     >
                         {faculties.map((faculty) => (
                             <Option
-                                key={faculty.facultyId}
-                                value={faculty.facultyId}
+                                key={faculty.id}
+                                value={faculty.id}
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                {faculty.name}
+                                {faculty.facultyCode}
                             </Option>
                         ))}
                     </Select>
                 ) : (
-                    student.Faculty?.name || "Chưa có khoa"
+                    student.facultyCode || "Chưa có khoa"
                 )}
             </td>
 
@@ -180,15 +172,15 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
                     <Select
-                        value={student.programId}
-                        onChange={(e, newValue) => onChange("programId", newValue as string)}
+                        value={student.programCode}
+                        onChange={(e, newValue) => onChange("programCode", newValue as string)}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {programs.map((program) => (
                             <Option
-                                key={program.programId}
-                                value={program.programId}
+                                key={program.programCode}
+                                value={program.programCode}
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {program.name}
@@ -196,55 +188,43 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                         ))}
                     </Select>
                 ) : (
-                    student.Program?.name || "Chưa có chương trình"
+                    student.programCode || "Chưa có chương trình"
                 )}
             </td>
 
             {/* Cột Khoá */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
-                    <Select
-                        value={student.courseId}
-                        onChange={(e, newValue) => onChange("courseId", newValue as string)}
+                    <input
+                        type="number"
+                        value={student.cohortYear || ""}
+                        onChange={(e) => onChange("cohortYear", e.target.value)}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
-                    >
-                        {courses.map((course) => (
-                            <Option
-                                key={course.courseId}
-                                value={course.courseId}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {course.courseId}
-                            </Option>
-                        ))}
-                    </Select>
+                        placeholder="Nhập năm"
+                    />
                 ) : (
-                    student.courseId || "Chưa xác nhận khóa"
+                    student.cohortYear || "Chưa xác nhận khóa"
                 )}
             </td>
 
             {/* Cột Trạng thái */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
-                    <Select
-                        value={student.statusId}
-                        onChange={(e, newValue) => onChange("statusId", newValue as string)}
+                    <select
+                        value={student.status}
+                        onChange={(e) => onChange("gender", e.target.value)}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {studentStatuses.map((studentStatus) => (
-                            <Option
-                                key={studentStatus.statusId}
-                                value={studentStatus.statusId}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {studentStatus.name}
-                            </Option>
+                        {statusStudentOptions.map((status) => (
+                            <option key={status} value={status}>
+                                {status}
+                            </option>
                         ))}
-                    </Select>
+                    </select>
                 ) : (
-                    student.StudentStatus?.name || "Chưa có trạng thái"
+                    student.gender || "Chưa có giới tính"
                 )}
             </td>
 
@@ -276,7 +256,7 @@ function StudentTableRow({ student, isEditing, isAnyEditing, onEdit, onChange, o
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onDelete(student.studentId);
+                                onDelete(student.id);
                             }}
                             className="p-1 rounded text-red-500 hover:bg-red-100"
                         >
@@ -301,12 +281,11 @@ interface StudentTableProps {
 function StudentTable({ students, editingStudent, isEditingStudentId, onEdit, onChange, onSave, onDelete }: StudentTableProps) {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const studentFieldWidths: Partial<Record<keyof Student, string>> = {
-        studentId: "w-12",
+        studentCode: "w-12",
         fullName: "w-20",
-        Faculty: "w-12",
-        Program: "w-16",
-        courseId: "w-12",
-        StudentStatus: "w-12",
+        facultyCode: "w-12",
+        programCode: "w-16",
+        status: "w-12",
     };
 
     return (
@@ -328,11 +307,11 @@ function StudentTable({ students, editingStudent, isEditingStudentId, onEdit, on
                     </thead>
                     <tbody>
                         {students.map((student) => {
-                            const isEditing = isEditingStudentId === student.studentId;
+                            const isEditing = isEditingStudentId === student.id;
                             const currentStudent = isEditing ? editingStudent : student;
                             return (
                                 <StudentTableRow
-                                    key={student.studentId}
+                                    key={student.id}
                                     student={currentStudent!}
                                     isEditing={isEditing}
                                     isAnyEditing={!!isEditingStudentId}
@@ -373,10 +352,10 @@ function StudentTableContainer({
 }) {
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [isEditingStudentId, setIsEditingStudentId] = useState<string | null>(null);
-
+    const { showError } = useError();
     const handleEdit = (student: Student) => {
         setEditingStudent(student);
-        setIsEditingStudentId(student.studentId);
+        setIsEditingStudentId(student.id);
     };
 
     const handleChange = (key: keyof Student, value: string) => {
@@ -389,14 +368,13 @@ function StudentTableContainer({
         if (editingStudent) {
             try {
                 await updateStudent({
-                    studentId: editingStudent.studentId,
+                    studentId: isEditingStudentId!,
                     updatedData: editingStudent,
                 });
-                console.log("Cập nhật thành công:", editingStudent);
                 setEditingStudent(null);
                 setIsEditingStudentId(null);
-            } catch (error) {
-                console.error("Lỗi khi cập nhật sinh viên:", error);
+            } catch (error: any) {
+                showError(error.message)
             }
         }
     };
@@ -404,8 +382,8 @@ function StudentTableContainer({
     const handleDelete = async (studentId: string) => {
         try {
             await removeStudent(studentId);
-        } catch (error) {
-            console.error("Lỗi khi xóa sinh viên:", error);
+        } catch (error: any) {
+            showError(error.message)
         }
     };
 
@@ -425,31 +403,29 @@ function StudentTableContainer({
 //Search
 function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) => void }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [searchType, setSearchType] = useState("studentId");
-    const [queryStudentId, setQueryStudentId] = useState("");
+    const [searchType, setSearchType] = useState("studentCode");
+    const [queryStudentCode, setQueryStudentCode] = useState("");
     const [queryFullName, setQueryFullName] = useState("");
-    const [queryFacultyId, setQueryFacultyId] = useState("");
-    const [queryCourseId, setQueryCourseId] = useState("");
-    const [queryProgramId, setQueryProgramId] = useState("");
+    const [queryFacultyCode, setQueryFacultyCode] = useState("");
+    const [queryCohortYear, setQueryCohortYear] = useState("");
+    const [queryProgramCode, setQueryProgramCode] = useState("");
 
     const { facultiesQuery } = useFaculties();
     const { programsQuery } = usePrograms();
-    const { coursesQuery } = useCourses();
 
     const faculties: Faculty[] = facultiesQuery.data || [];
     const programs: Program[] = programsQuery.data || [];
-    const courses: Course[] = coursesQuery.data || [];
 
     const handleSearch = () => {
         let query = {};
         if (searchType === "studentId") {
-            query = { studentId: queryStudentId };
+            query = { studentCode: queryStudentCode };
         } else {
             query = {
                 fullName: queryFullName.trim(),
-                facultyId: queryFacultyId,
-                courseId: queryCourseId,
-                programId: queryProgramId,
+                facultyCode: queryFacultyCode,
+                cohortYear: queryCohortYear.trim(),
+                programCode: queryProgramCode,
             };
         }
         setSearchQuery(query);
@@ -458,7 +434,7 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
     const SelectWithClear = ({ value, onChange, options, placeholder = "Chọn" }: {
         value: string;
         onChange: (value: string) => void;
-        options: { id: string; name: string }[];
+        options: { code: string; name: string }[];
         placeholder?: string;
     }) => (
         <div className="relative">
@@ -469,7 +445,7 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
                 placeholder={placeholder}
             >
                 {options.map((option) => (
-                    <Option key={option.id} value={option.id}>
+                    <Option key={option.code} value={option.code}>
                         {option.name}
                     </Option>
                 ))}
@@ -516,12 +492,12 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
                         </label>
                     </div>
 
-                    {searchType === "studentId" ? (
+                    {searchType === "studentCode" ? (
                         <input
                             type="text"
-                            placeholder={studentFields.studentId}
-                            value={queryStudentId}
-                            onChange={(e) => setQueryStudentId(e.target.value)}
+                            placeholder={studentFields.studentCode}
+                            value={queryStudentCode}
+                            onChange={(e) => setQueryStudentCode(e.target.value)}
                             className="w-full h-8 px-2 border rounded mb-2"
                         />
                     ) : (
@@ -533,26 +509,25 @@ function Search({ setSearchQuery }: { setSearchQuery: (query: Partial<Student>) 
                                 onChange={(e) => setQueryFullName(e.target.value)}
                                 className="w-full h-8 px-2 border rounded"
                             />
-
+                            <input
+                                type="text"
+                                placeholder={studentFields.cohortYear}
+                                value={queryCohortYear}
+                                onChange={(e) => setQueryCohortYear(e.target.value)}
+                                className="w-full h-8 px-2 border rounded"
+                            />
                             <SelectWithClear
-                                value={queryFacultyId}
-                                onChange={setQueryFacultyId}
-                                options={faculties.map(f => ({ id: f.facultyId, name: f.short_name }))}
-                                placeholder={studentFields.Faculty}
+                                value={queryFacultyCode}
+                                onChange={setQueryFacultyCode}
+                                options={faculties.map(f => ({ code: f.facultyCode, name: f.facultyCode }))}
+                                placeholder={studentFields.facultyCode}
                             />
 
                             <SelectWithClear
-                                value={queryProgramId}
-                                onChange={setQueryProgramId}
-                                options={programs.map(p => ({ id: p.programId, name: p.short_name }))}
-                                placeholder={studentFields.Program}
-                            />
-
-                            <SelectWithClear
-                                value={queryCourseId}
-                                onChange={setQueryCourseId}
-                                options={courses.map(c => ({ id: c.courseId, name: c.courseId }))}
-                                placeholder={studentFields.courseId}
+                                value={queryProgramCode}
+                                onChange={setQueryProgramCode}
+                                options={programs.map(p => ({ code: p.programCode, name: p.programCode }))}
+                                placeholder={studentFields.programCode}
                             />
                         </div>
                     )}
@@ -575,12 +550,11 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
 
     const { facultiesQuery } = useFaculties();
     const { programsQuery } = usePrograms();
-    const { coursesQuery } = useCourses();
-    const { studentStatusesQuery } = useStudentStatus();
+
     const faculties: Faculty[] = facultiesQuery.data || []
     const programs: Program[] = programsQuery.data || [];
-    const courses: Course[] = coursesQuery.data || [];
-    const studentStatuses: StudentStatus[] = studentStatusesQuery.data || [];
+    const genderOptions = Object.values(Gender);
+    const studentStatuseOptions = Object.values(StudentStatus);
 
     const { showError } = useError();
     const handleChange = (key: keyof Student, value: string) => {
@@ -644,9 +618,11 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
                                     onChange={(e, newValue) => handleChange("gender", newValue as string)}
                                     className="border rounded p-1 w-full"
                                 >
-                                    <Option value="Nam">Nam</Option>
-                                    <Option value="Nữ">Nữ</Option>
-                                    <Option value="Khác">Khác</Option>
+                                    {genderOptions.map((gender) => (
+                                        <Option key={gender} value={gender}>
+                                            {gender}
+                                        </Option>
+                                    ))}
                                 </Select>
                             </FormControl>
 
@@ -676,13 +652,13 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
                             <FormControl>
                                 <FormLabel>Khoa</FormLabel>
                                 <Select
-                                    value={formData.facultyId}
-                                    onChange={(e, newValue) => handleChange("facultyId", newValue as string)}
+                                    value={formData.facultyCode}
+                                    onChange={(e, newValue) => handleChange("facultyCode", newValue as string)}
                                     className="border rounded p-1 w-full"
                                 >
                                     {faculties.map((faculty) => (
-                                        <Option key={faculty.facultyId} value={faculty.facultyId}>
-                                            {faculty.name}
+                                        <Option key={faculty.facultyCode} value={faculty.facultyCode}>
+                                            {faculty.facultyCode}
                                         </Option>
                                     ))}
                                 </Select>
@@ -692,12 +668,12 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
                             <FormControl>
                                 <FormLabel>Chương trình</FormLabel>
                                 <Select
-                                    value={formData.programId}
-                                    onChange={(e, newValue) => handleChange("programId", newValue as string)}
+                                    value={formData.programCode}
+                                    onChange={(e, newValue) => handleChange("programCode", newValue as string)}
                                     className="border rounded p-1 w-full"
                                 >
                                     {programs.map((program) => (
-                                        <Option key={program.programId} value={program.programId}>
+                                        <Option key={program.programCode} value={program.programCode}>
                                             {program.name}
                                         </Option>
                                     ))}
@@ -707,30 +683,26 @@ function StudentCreateModalDialog({ onCreate }: { onCreate: (newStudent: Partial
                             {/* Khóa học */}
                             <FormControl>
                                 <FormLabel>Khóa học</FormLabel>
-                                <Select
-                                    value={formData.courseId}
-                                    onChange={(e, newValue) => handleChange("courseId", newValue as string)}
+                                <Input
+                                    type="number"
+                                    value={formData.cohortYear || ""}
+                                    onChange={(e) => handleChange("cohortYear", e.target.value)}
                                     className="border rounded p-1 w-full"
-                                >
-                                    {courses.map((course) => (
-                                        <Option key={course.courseId} value={course.courseId}>
-                                            {course.courseId}
-                                        </Option>
-                                    ))}
-                                </Select>
+                                    placeholder="Nhập năm khóa học"
+                                />
                             </FormControl>
 
                             {/* Trạng thái */}
                             <FormControl>
                                 <FormLabel>Trạng thái</FormLabel>
                                 <Select
-                                    value={formData.statusId}
-                                    onChange={(e, newValue) => handleChange("statusId", newValue as string)}
+                                    value={formData.status}
+                                    onChange={(e, newValue) => handleChange("status", newValue as string)}
                                     className="border rounded p-1 w-full"
                                 >
-                                    {studentStatuses.map((status) => (
-                                        <Option key={status.statusId} value={status.statusId}>
-                                            {status.name}
+                                    {studentStatuseOptions.map((status) => (
+                                        <Option key={status} value={status}>
+                                            {status}
                                         </Option>
                                     ))}
                                 </Select>
@@ -754,16 +726,13 @@ function StudentPage() {
     const [page, setPage] = useState<number>(1);
     const limit = 20;
     const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
-    const { studentsQuery, updateStudent, removeStudent, createStudent } = usePaginatedStudents({ page, limit, searchQuery });
-    useEffect(() => {
-        setPage(1);
-    }, [searchQuery]);
+    const { studentsQuery, updateStudent, removeStudent, createStudent } = useAllStudents(searchQuery);
 
     if (studentsQuery.isLoading) return <p>Đang tải dữ liệu...</p>;
     if (studentsQuery.isError) return <p>Lỗi: {studentsQuery.error.message}</p>;
 
-    const paginatedStu: PaginatedStudents | undefined = studentsQuery.data;
-
+    const studentsReponse: GetAllBaseResponse<Student> | undefined = studentsQuery.data;
+    console.log(studentsReponse);
     return (
         <main className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
@@ -776,15 +745,14 @@ function StudentPage() {
                 <ImportButton />
             </section>
 
-
             <section className="flex flex-col gap-6 items-center mt-6">
                 <StudentTableContainer
-                    students={paginatedStu?.students ?? []}
+                    students={Array.isArray(studentsReponse?.data) ? studentsReponse.data : []}
                     removeStudent={removeStudent.mutateAsync}
                     updateStudent={updateStudent.mutateAsync}
                 />
                 <Pagination
-                    total={paginatedStu?.total ?? 0}
+                    total={studentsReponse?.total ?? 0}
                     limit={limit}
                     currentPage={page}
                     onPageChange={setPage}

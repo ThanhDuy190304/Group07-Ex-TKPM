@@ -1,5 +1,6 @@
 import api from "../config/axios";
-import { Student, PaginatedStudents } from "../types/student"
+import { Student } from "../types/student"
+import { GetAllBaseResponse } from "../types/BaseResponse"
 import { extractData } from "./apiHelper";
 
 export const importStudents = async (file: any) => {
@@ -17,27 +18,6 @@ export const importStudents = async (file: any) => {
         return { error: error.response?.data?.message || "Lỗi server" };
     }
 };
-
-
-export async function getPaginatedStudents({ searchQuery = {}, page = 1, limit = 20 }: {
-    searchQuery: Partial<Student>;
-    page?: number;
-    limit?: number;
-}): Promise<PaginatedStudents> {
-    try {
-        console.log(searchQuery);
-        const response = await api.get<{ data: PaginatedStudents }>("/student", {
-            params: { page, limit, searchQuery },
-        });
-        return extractData(response).data;
-    } catch (error: any) {
-        console.error("Lỗi khi fetch students: ", error);
-        throw {
-            status: error.response?.status || 503,
-            message: error.response?.data?.message || "Lỗi server",
-        };
-    }
-}
 
 export async function putStudent(studentId: string, updatedData: Partial<Student>): Promise<Student> {
     try {
@@ -64,7 +44,6 @@ export async function deleteStudent(studentId: string): Promise<void> {
     }
 }
 
-
 export async function postStudent(studentData: Partial<Student>): Promise<Student> {
     try {
         const response = await api.post<{ data: Student }>("/student", studentData);
@@ -77,14 +56,14 @@ export async function postStudent(studentData: Partial<Student>): Promise<Studen
     }
 }
 
-export async function getAllStudents(searchQuery: Partial<Student> = {}): Promise<Student[]> {
+export async function getAllStudents(searchQuery: Partial<Student> & { page?: number; limit?: number } = {}): Promise<GetAllBaseResponse<Student>> {
     try {
-        const response = await api.get<{ data: Student[] }>("/student/export", {
+        const response = await api.get<{ data: GetAllBaseResponse<Student> }>("/student", {
             params: searchQuery,
         });
         return extractData(response).data;
     } catch (error: any) {
-        console.error("Lỗi khi xuất toàn bộ dữ liệu sinh viên:", error);
+        console.error("Lỗi khi xuất mảng sinh viên:", error);
         throw {
             status: error.response?.status || 503,
             message: error.response?.data?.message || "Lỗi server",

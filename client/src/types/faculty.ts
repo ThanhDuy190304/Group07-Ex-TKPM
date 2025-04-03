@@ -1,10 +1,10 @@
 export interface Faculty {
-    facultyId: string,
+    id: string,
     name: string
-    short_name: string,
+    facultyCode: string,
 }
 
 export const facultyFields: Partial<Record<keyof Faculty, string>> = {
+    facultyCode: "Mã khoa",
     name: "Tên khoa",
-    short_name: "Mã khoa",
 };

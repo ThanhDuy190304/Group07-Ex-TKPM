@@ -1,54 +1,37 @@
-import { Faculty } from "./faculty";
-import { Program } from "./program";
-import { StudentStatus } from "./studentStatus";
 import { Address } from "./address";
-
+import { Gender, StudentStatus } from "./enum";
 export interface Student {
-    studentId: string;
+    id: string;
+    studentCode: string;
     fullName: string;
     dateOfBirth: Date | string;
-    gender: "Nam" | "Nữ" | "Khác";
+    gender: Gender;
     email: string;
     phoneNumber: string;
-
     mailAddress: Address;
     permanentAddress: Address;
     temporaryResidenceAddress: Address;
-
-    nationalityId: string;
-    courseId: string;
-
-    facultyId: string;
-    Faculty: Faculty;
-
-    programId: string;
-    Program: Program;
-
-    statusId: string;
-    StudentStatus: StudentStatus;
-}
-
-export interface PaginatedStudents {
-    students: Student[]; // Dữ liệu theo trang
-    total: number;
+    nationality: string;
+    facultyCode: string;
+    programCode: string;
+    status: StudentStatus
+    cohortYear: string;
 }
 
 export const studentFields: Partial<Record<keyof Student, string>> = {
-    studentId: "MSSV",
+    studentCode: "MSSV",
     fullName: "Họ tên",
     dateOfBirth: "Ngày sinh",
     gender: "Giới tính",
     email: "Email",
     phoneNumber: "SĐT",
-
     mailAddress: "Địa chỉ nhận thư",
     permanentAddress: "Địa chỉ thường trú",
     temporaryResidenceAddress: "Địa chỉ tạm trú",
-
-    Faculty: "Khoa",
-    courseId: "Khóa",
-    Program: "Chương trình",
-    nationalityId: "Quốc tịch",
-    StudentStatus: "Tình trạng",
+    facultyCode: "Khoa",
+    cohortYear: "Khóa",
+    programCode: "Chương trình",
+    nationality: "Quốc tịch",
+    status: "Tình trạng",
 };
 

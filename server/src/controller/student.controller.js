@@ -4,7 +4,7 @@ const StudentService = require("../service/student.service");
 const getAllStudents = async (req, res, next) => {
   try {
     const result = await StudentService.getAll(req.query);
-    return res.status(200).json({ data: { students: result.data, count: result.total } });
+    return res.status(200).json({ data: result });
   } catch (error) {
     next(error);
   }
@@ -12,11 +12,9 @@ const getAllStudents = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    console.log(req.body);
     const result = await StudentService.create(req.body);
     return res.status(201).json({ data: result });
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
@@ -26,7 +24,7 @@ const update = async (req, res, next) => {
     const studentId = req.params.studentId;
     const updateData = req.body;
     const result = await StudentService.update(studentId, updateData);
-    return res.status(200).json({ data: result.data });
+    return res.status(200).json({ data: result });
   } catch (error) {
     next(error);
   }

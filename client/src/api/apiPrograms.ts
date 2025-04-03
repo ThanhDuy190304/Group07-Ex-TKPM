@@ -1,16 +1,18 @@
 import api from "../config/axios";
 import { Program } from "../types/program";
+import { GetAllBaseResponse } from "../types/BaseResponse"
+
 import { extractData } from "./apiHelper";
 
-export async function getPrograms(): Promise<Program[]> {
+export async function getPrograms(): Promise<GetAllBaseResponse<Program>> {
     try {
-        const response = await api.get<{ data: Program[] }>("/program");
+        const response = await api.get<{ data: GetAllBaseResponse<Program> }>("/program");
         return extractData(response).data;
     } catch (error: any) {
         console.error("Lỗi khi fetch programs:", error);
         throw {
             status: error.response?.status || 503,
-            message: error.response?.data?.message || "Không thể lấy dữ liệu chương trình học. Vui lòng thử lại sau.",
+            message: error.response?.data?.error_vn || "Không thể lấy dữ liệu chương trình học. Vui lòng thử lại sau.",
         };
     }
 }
@@ -23,7 +25,7 @@ export async function postProgram(newProgram: Partial<Program>): Promise<Program
         console.error("Lỗi khi tạo chương trình học:", error);
         throw {
             status: error.response?.status || 503,
-            message: error.response?.data?.message || "Không thể tạo chương trình học. Vui lòng thử lại sau.",
+            message: error.response?.data?.error_vn || "Không thể tạo chương trình học. Vui lòng thử lại sau.",
         };
     }
 }
@@ -36,7 +38,7 @@ export async function putProgram(programId: string, updatedData: Partial<Program
         console.error("Lỗi khi cập nhật chương trình học:", error);
         throw {
             status: error.response?.status || 503,
-            message: error.response?.data?.message || "Không thể cập nhật chương trình học. Vui lòng thử lại sau.",
+            message: error.response?.data?.error_vn || "Không thể cập nhật chương trình học. Vui lòng thử lại sau.",
         };
     }
 }

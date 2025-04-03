@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFaculties, postFaculty, putFaculty } from "../api/apiFalcuties";
 import { Faculty } from "../types/faculty";
+import { GetAllBaseResponse } from "../types/BaseResponse"
 
 export function useFaculties() {
     const queryClient = useQueryClient();
 
-    const facultiesQuery = useQuery<Faculty[]>({
+    const facultiesQuery = useQuery<GetAllBaseResponse<Faculty>>({
         queryKey: ["faculties"],
         queryFn: getFaculties,
     });
@@ -20,8 +21,8 @@ export function useFaculties() {
     });
 
     const updateFaculty = useMutation({
-        mutationFn: ({ facultyId, updatedData }: { facultyId: string; updatedData: Partial<Faculty> }) =>
-            putFaculty(facultyId, updatedData),
+        mutationFn: ({ facultyId, updateData }: { facultyId: string; updateData: Partial<Faculty> }) =>
+            putFaculty(facultyId, updateData),
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ["faculties"],

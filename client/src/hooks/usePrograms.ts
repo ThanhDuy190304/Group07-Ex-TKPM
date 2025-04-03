@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPrograms, postProgram, putProgram } from "../api/apiPrograms";
 import { Program } from "../types/program";
+import { GetAllBaseResponse } from "../types/BaseResponse"
 
 export function usePrograms() {
     const queryClient = useQueryClient();
 
-    const programsQuery = useQuery<Program[]>({
+    const programsQuery = useQuery<GetAllBaseResponse<Program>>({
         queryKey: ["programs"],
         queryFn: getPrograms,
     });

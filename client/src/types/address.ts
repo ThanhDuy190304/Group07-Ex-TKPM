@@ -2,8 +2,8 @@ export interface Address {
     nation: string;
     street: string;
     district: string;
-    city_province: string;
-    wards_communes: string;
+    cityProvince: string;
+    wardsCommunes: string;
 }
 
 
@@ -11,9 +11,9 @@ export const formatAddress = (address: Address | null | undefined): string => {
     if (!address) return "Chưa có địa chỉ";
     const addressParts = [
         address.street,
-        address.wards_communes,
+        address.wardsCommunes,
         address.district,
-        address.city_province,
+        address.cityProvince,
         address.nation
     ];
     return addressParts.filter(Boolean).join(', ');
