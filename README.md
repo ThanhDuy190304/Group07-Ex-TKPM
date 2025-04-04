@@ -3,96 +3,50 @@
 ## Cấu trúc source code
 
 ```
-project-root
-├── client
-│   ├── .env
-│   ├── .gitignore
-│   ├── eslint.config.js
-│   ├── vite.config.js
-│   ├── index.html
-│   ├── README.md
-│   ├── directory_tree.txt
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── public
-│   │   └── vite.svg
-│   └── src
-│       ├── api
-│       │   ├── useCourses.js
-│       │   ├── useFalcuties.js
-│       │   ├── usePrograms.js
-│       │   └── useStudents.js
-│       ├── assets
-│       │   └── react.svg
-│       ├── components
-│       │   └── sidebar.jsx
-│       ├── pages
-│       │   └── student.jsx
-│       ├── utils
-│       │   ├── axios.js
-│       │   ├── ErrorContext.jsx
-│       │   └── validators.js
-│       ├── App.css
-│       ├── App.jsx
-│       ├── index.css
-│       └── main.jsx
-└── server
-    ├── .env
-    ├── .env.default
-    ├── .gitignore
-    ├── README.md
-    ├── directory_tree.txt
-    ├── package-lock.json
-    ├── package.json
-    ├── data
-    │   ├── in
-    │   │   └── students.csv
-    │   └── out
-    └── src
-        ├── config
-        │   └── database.js
-        ├── middleware
-        │   └── uploadMiddleware.js
-        ├── modules
-        │   ├── address
-        │   │   ├── mailAddressModel.js
-        │   │   ├── permanentAddressModel.js
-        │   │   └── temporaryResidenceAddressModel.js
-        │   ├── course
-        │   │   ├── courseController.js
-        │   │   ├── courseModel.js
-        │   │   └── courseService.js
-        │   ├── faculty
-        │   │   ├── facultyController.js
-        │   │   ├── facultyModel.js
-        │   │   └── facultyService.js
-        │   ├── import
-        │   │   └── fileUploadService.js
-        │   ├── nationality
-        │   │   └── nationalityModel.js
-        │   ├── program
-        │   │   ├── programController.js
-        │   │   ├── programModel.js
-        │   │   └── programService.js
-        │   └── student
-        │       ├── nidCardModel.js
-        │       ├── oidCardModel.js
-        │       ├── passportModel.js
-        │       ├── studentController.js
-        │       ├── studentModel.js
-        │       ├── studentService.js
-        │       └── studentStatusModel.js
-        ── route
-        │   ├── courseRoute.js
-        │   ├── facultyRoute.js
-        │   ├── programRoute.js
-        │   ├── studentRoute.js
-        │   └── studentRoutes.js
-        │
-        ├── index.js        
-        └── logger.js
 
-25 directories, 63 files
+project-root
+client
+├── directory_tree.txt
+├── env.d.ts
+├── eslint.config.js
+├── index.html
+├── node_modules
+├── package-lock.json
+├── package.json
+├── README.md
+├── tsconfig.json
+└── vite.config.js
+└── src
+    ├── api
+    ├── App.jsx
+    ├── components
+    ├── config
+    ├── context
+    ├── data
+    ├── hooks
+    ├── main.jsx
+    ├── pages
+    ├── styles
+    ├── types
+    └── utils
+server
+├── data
+├── directory_tree.txt
+├── node_modules
+├── package-lock.json
+├── package.json
+├── README.md
+├── sequelize-auto.config.json
+└── src
+    ├── config
+    ├── controller
+    ├── index.js
+    ├── logger.js
+    ├── middleware
+    ├── models
+    ├── route
+    ├── service
+    └── util
 ```
 
 ## Hướng dẫn cài đặt và chạy chương trình
@@ -105,11 +59,6 @@ Mở cửa sổ Terminal
     ```bash
     cd server
     ```
-    Cấu hình .env
-    ```bash
-    cp .env.default .env
-    ```
-    Sau đó, chỉnh sửa tệp .env với thông tin đăng nhập PostgreSQL và các chi tiết cấu hình khác (tạo database theo cấu hình).
     Cài đặt dependencies
     ```bash
     npm install
@@ -141,5 +90,5 @@ Mở cửa sổ Terminal
 
 ## Phiên bản 
 ```bash
-v3.0
+v4.0
 ```
