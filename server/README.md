@@ -29,7 +29,8 @@ A simple student management system built with Node.js, Express, and PostgreSQL. 
    ```bash
    cp .env.default .env
    ```
-   Then edit the `.env` file with your PostgreSQL credentials and other configuration details.
+   Then edit the `.env` file with your PostgreSQL credentials and other configuration details. We suggest you using our parameters for dev purpose, this database has been ready for testing.
+   You can skip the next `Database Setup` section.
 
 ## Database Setup
 
@@ -63,49 +64,70 @@ The application includes the following API routes:
 
 - Student routes: `/api/student`
   - Additional endpoints can be found in `src/route/studentRoute.js`
+- Faculty routes: `/api/faculty`
+  - Additional endpoints can be found in `src/route/facultyRoute.js`
+- Program routes: `/api/program`
+  - Additional endpoints can be found in `src/route/programRoute.js`
+- Enum routes: `/api/enum`
+  - Additional endpoints can be found in `src/route/enumRoute.js`
 
 ## Project Structure
 
 ```
 .
-├── .env                                     # Environment variables (create from .env.default)
-├── .env.default                             # Default environment variables template
-├── .gitignore                
+├── .env.default
+├── .gitignore
 ├── README.md
+├── data
+│   ├── in
+│   │   └── students (1).csv
+│   └── out
 ├── directory_tree.txt
 ├── package-lock.json
-├── package.json                             # Dependencies and scripts
-└── src                                      # Source files
-    ├── config                               # Configuration files
-    │   └── database.js                      # Database connection setup
+├── package.json
+├── sequelize-auto.config.json
+└── src
+    ├── config
+    │   ├── config.js
+    │   ├── db.js
+    │   └── validatorConfig.js
+    ├── controller
+    │   ├── enum.controller.js
+    │   ├── faculty.controller.js
+    │   ├── program.controller.js
+    │   └── student.controller.js
+    ├── index.js
+    ├── logger.js
+    ├── middleware
+    │   ├── error_handler.js
+    │   └── uploadMiddleware.js
+    ├── models
+    │   ├── class_registrations.js
+    │   ├── classes.js
+    │   ├── courses.js
+    │   ├── faculties.js
+    │   ├── identity_documents.js
+    │   ├── init-models.js
+    │   ├── programs.js
+    │   └── students.js
     ├── modules
-    │   ├── course                           # Course folder
-    │   │   ├── courseController.js          # Course controller
-    │   │   ├── courseModel.js               # Course model
-    │   │   └── courseService.js             # Course service
-    │   ├── faculty                          # Faculty folder
-    │   │   ├── facultyController.js         # Faculty controller
-    │   │   ├── facultyModel.js              # Faculty model
-    │   │   └── facultyService.js            # Faculty service
-    │   ├── program                          # Program folder
-    │   │   ├── programController.js         # Program controller
-    │   │   ├── programModel.js              # Program model
-    │   │   └── programService.js            # Program service
-    │   └── student                          # Student folder
-    │       ├── studentController.js         # Student controller
-    │       ├── studentModel.js              # Student model
-    │       └── studentService.js            # Student service
-    ├── route                                # Routes
-    │   ├── courseRoute.js                   # Course Route
-    │   ├── facultyRoute.js                  # Faculty Route
-    │   ├── programRoute.js                  # Program Route
-    │   ├── studentRoute.js                  # Student Route
-    │   └── studentRoutes.js                 
-    │        
-    └── index.js                             # Application entry point
-
-8 directories, 26 files
-
+    │   └── files
+    │       └── excel
+    ├── route
+    │   ├── enumRoute.js
+    │   ├── facultyRoute.js
+    │   ├── programRoute.js
+    │   └── studentRoute.js
+    ├── service
+    │   ├── base.service.js
+    │   ├── csv.service.js
+    │   ├── enum.service.js
+    │   ├── faculty.service.js
+    │   ├── program.service.js
+    │   └── student.service.js
+    └── util
+        ├── errors.js
+        └── validator.js
 ```
 
 ## Available Models
@@ -113,9 +135,12 @@ The application includes the following API routes:
 The system includes the following models:
 
 - **Faculty**: Academic departments (LAW, ENCO, JPN, FRA)
-- **Course**: Student cohorts by year (K2020, K2021, etc.)
+- **Course**: Courses operated by university. (Tiếng Nhật căn bản, Văn hóa Pháp, Luật hình sự v.v...)
+- **Class**: Separated classes of each course (21_CQ1, 22_2...)
 - **Program**: Education programs (CQ, TT, CLC)
-- **Student**: Student information (linked to faculty, course, and program)
+- **Identity Document**: Student student ID document (CCCD, CMND, Passport)
+- **Class Registration**: Student details per class, including registration info, grades,...
+- **Student**: Student information (linked to faculty, identity documents, class registration, and program)
 
 ## Development Notes
 
