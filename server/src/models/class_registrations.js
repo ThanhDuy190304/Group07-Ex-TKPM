@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 module.exports = function (sequelize, DataTypes) {
-  return sequelize.define('ClassRegistrations', {
+  return sequelize.define('ClassRegistration', {
     studentCode: {
       type: DataTypes.STRING,
       allowNull: false,
