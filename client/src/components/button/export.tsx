@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Student } from "../../types/student"
 import { getAllStudents } from "../../api/apiStudents";
 import { DocumentArrowDownIcon, } from "@heroicons/react/24/outline";
 import { saveAs } from "file-saver";
 import { utils, writeFile } from "xlsx";
+import { useError } from "../../context/ErrorContext";
 
 const mapStudentToExportFormat = (student: Student) => {
     // Lấy thông tin các địa chỉ
@@ -66,40 +67,34 @@ const mapStudentToExportFormat = (student: Student) => {
     };
 };
 
-const FILETYPES = ["JSON", "XLSX"];
-function downFile(data: any, type: any) {
-    if (type === "JSON") {
-        const jsonData = JSON.stringify(data, null, 2); // Chuyển object thành chuỗi JSON
-        const blob = new Blob([jsonData], { type: "application/json" }); // Tạo file JSON dưới dạng Blob
-        saveAs(blob, "students.json"); // Gọi hộp thoại lưu file về máy
-    }
-    else if (type === "XLSX") {
-        const worksheet = utils.json_to_sheet(data);
-        const workbook = utils.book_new();
-        utils.book_append_sheet(workbook, worksheet, "Students");
-        writeFile(workbook, "students.xlsx");
-    }
+enum FileTypes {
+    XLSX = "XLSX",
+    CSV = "CSV"
 }
-function ExportButton(searchQuery: any) {
-    const [fileType, setFileType] = useState("JSON");
-    const handleExport = async () => {
-        const response = await getAllStudents(searchQuery);
-        const formattedData = mapStudentToExportFormat(response.students);
-        downFile(formattedData, fileType);
+interface ExportButtonProps {
+    handleExport: (fileType: string) => void;
+}
+function ExportButton({ handleExport }: ExportButtonProps) {
+    const [fileType, setFileType] = useState(FileTypes.XLSX);
+
+    const handleClick = () => {
+        handleExport(fileType);
     };
+
     return (
-        <div className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer"
-            onClick={handleExport}>
+        <div
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer"
+            onClick={handleClick}
+        >
             <DocumentArrowDownIcon className="w-5 h-5" />
             <span>Tải xuống</span>
-            {/* Dropdown chọn loại file */}
             <select
                 value={fileType}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => setFileType(e.target.value)}
+                onClick={(e) => e.stopPropagation()} // Ngăn sự kiện click trên select truyền vào div
+                onChange={(e) => setFileType(e.target.value as FileTypes)}
                 className="bg-blue-600 text-white border-none outline-none cursor-pointer"
             >
-                {FILETYPES.map((type) => (
+                {Object.values(FileTypes).map((type) => (
                     <option key={type} value={type} className="cursor-pointer">
                         {type}
                     </option>
@@ -109,4 +104,30 @@ function ExportButton(searchQuery: any) {
     );
 }
 
-export default ExportButton;
+export function ExportButtonStudent(searchQuery: any) {
+    const { showError } = useError();
+    const handleExport = async (fileType: string) => {
+        try {
+            const { page, limit, ...query } = searchQuery;
+            const { students }: { students: Student[] } = await getAllStudents(query);
+            const mappedStudents = students.map(mapStudentToExportFormat);
+            if (fileType === FileTypes.XLSX) {
+                const ws = utils.json_to_sheet(mappedStudents);
+                const wb = utils.book_new();
+                utils.book_append_sheet(wb, ws, "Students");
+                writeFile(wb, 'students_export.xlsx');
+            }
+            else if (fileType === FileTypes.CSV) {
+                const ws = utils.json_to_sheet(mappedStudents);
+                const csvData = utils.sheet_to_csv(ws);
+                const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+                saveAs(blob, 'students_export.csv');
+            }
+        } catch (error: any) {
+            showError(error.message)
+        }
+    }
+    return (
+        <ExportButton handleExport={handleExport} />
+    );
+}

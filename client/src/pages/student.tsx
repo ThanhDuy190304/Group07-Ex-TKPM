@@ -19,8 +19,8 @@ import { formatAddress } from "../types/address";
 import { identityDocumentFields, CCCDIdentityDocument, CMNDIdentityDocument, PassportIdentityDocument, formatIdentityDocument } from "../types/identityDocument";
 import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
 import { useError } from "../context/ErrorContext";
-import ImportButton from "../components/button/import";
-import ExportButton from "../components/button/export";
+import { ImportButtonStudent } from "../components/button/import";
+import { ExportButtonStudent } from "../components/button/export";
 // Details Student Card
 function flattenStudent(student: Student) {
     return {
@@ -777,8 +777,8 @@ function StudentPage() {
                         faculties={faculties}
                         programs={programs} />
                 </div>
-                <ImportButton />
-                <ExportButton searchQuery={searchQuery} />
+                <ImportButtonStudent />
+                <ExportButtonStudent searchQuery={searchQuery} />
             </section>
 
             <section className="flex flex-col gap-6 items-center mt-6">

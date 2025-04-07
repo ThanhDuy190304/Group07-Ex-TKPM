@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 module.exports = function (sequelize, DataTypes) {
-  return sequelize.define('IdentityDocuments', {
+  return sequelize.define('IdentityDocument', {
     id: {
       type: DataTypes.UUID,
       allowNull: false,

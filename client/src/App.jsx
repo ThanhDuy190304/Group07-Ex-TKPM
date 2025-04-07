@@ -5,7 +5,8 @@ import Sidebar from "./components/layout/sidebar";
 import Student from "./pages/student";
 import Academic from "./pages/academic";
 import { ErrorProvider } from "./context/ErrorContext";
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // Tạo QueryClient
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function App() {
                 <Route path="/student" element={<Student />} />
                 <Route path="/academic" element={<Academic />} />
               </Routes>
+              <ToastContainer position="top-right" autoClose={3000} />
             </ErrorProvider>
           </div>
         </div>
