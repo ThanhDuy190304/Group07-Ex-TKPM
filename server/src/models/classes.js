@@ -21,7 +21,7 @@ module.exports = function (sequelize, DataTypes) {
       }
     },
     semester: {
-      type: DataTypes.ENUM("Ký 1", "Kỳ 2", "Kỳ 3"),
+      type: DataTypes.ENUM("Kỳ 1", "Kỳ 2", "Kỳ 3"),
       allowNull: false,
     },
     academicYear: {
