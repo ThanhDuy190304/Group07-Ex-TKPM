@@ -16,6 +16,7 @@ app.use("/api/student", require("./route/studentRoute"));
 app.use("/api/faculty", require("./route/facultyRoute"));
 app.use("/api/program", require("./route/programRoute"));
 app.use("/api/enum", require("./route/enumRoute"));
+app.use("/api/course", require("./route/courseRoute"));
 
 app.use(errorHandler);
 
