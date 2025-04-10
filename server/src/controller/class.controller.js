@@ -15,7 +15,7 @@ const allocateStudent = async (req, res, next) => {
       req.body.classId,
       req.body.studentId
     );
-    return res.status(201).json({ data: result });
+    return res.status(201).json(result);
   } catch (error) {
     next(error);
   }
