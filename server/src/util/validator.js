@@ -13,12 +13,12 @@ function validateStudentData(data) {
   }
 }
 
-function validateEmail(email) {
+function validateStudentEmail(email) {
   return email.endsWith(config.EMAIL_DOMAIN);
 }
 
-function validatePhone(phone, country) {
-  return isValidPhoneNumber(phone, country);
+function validatePhone(phone) {
+  return isValidPhoneNumber(phone);
 }
 
 function validateStatusTransition(currentStatus, newStatus) {
@@ -28,7 +28,7 @@ function validateStatusTransition(currentStatus, newStatus) {
 module.exports = {
   validateUUID,
   validateStudentData,
-  validateEmail,
+  validateStudentEmail,
   validatePhone,
   validateStatusTransition,
 };

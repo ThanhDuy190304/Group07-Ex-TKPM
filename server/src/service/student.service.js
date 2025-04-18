@@ -1,31 +1,47 @@
 const BaseService = require("./base.service");
 const CsvImportService = require("./csv.service");
 
-
-const { validateEmail, validatePhone, validateUUID } = require("../util/validator");
+const { validateStudentEmail, validatePhone, validateUUID, validateStatusTransition } = require("../util/validator");
 const { NotFoundError, ValidationError } = require("../util/errors");
 const initModels = require("../models/init-models");
 const sequelize = require("../config/db");
+
 const { Op } = require("sequelize");
 const { omit } = require("lodash");
 
-const models = initModels(sequelize);
 
 class StudentService extends BaseService {
-  constructor() {
+
+  constructor(models = initModels(sequelize)) {
     super(models.Student);
+    this.IdentityDocument = models.IdentityDocument;
+    this.Faculty = models.Faculty;
+    this.Program = models.Program;
   }
-  static validateStudentData_noId(data) {
-    if (data?.email && !validateEmail(data.email)) {
+
+  static async #validateStudentData(studentInf) {
+    //Check student code
+    if (studentInf?.studentCode) {
+      const student = await this.model.findOne({ where: { studentCode: studentInf.studentCode } });
+      if (student) {
+        throw new ValidationError("Student code already exists", "Mã sinh viên này đã tồn tại");
+      }
+    }
+    //Check email
+    if (studentInf?.email && !validateStudentEmail(studentInf.email)) {
       throw new ValidationError(
         "Invalid Email. The email must end with @student.university.edu.vn",
         "Email không hợp lệ. Email phải kết thúc với @student.university.edu.vn"
       );
     }
-    // if (data?.phoneNumber && !validatePhone(data.phoneNumber, data?.nationalityId)) {
-    //   throw new ValidationError("Invalid phone number.", "Số điện thoại không hợp lệ");
-    // }
+    //Check number 
+    if (studentInf?.phoneNumber) {
+      if (!validatePhone(studentInf.phoneNumber)) {
+        throw new ValidationError("Phone number must match with the country code.", "Số điện thoại không khớp với mã quốc gia");
+      }
+    }
   }
+
 
   async getAll(searchQuery) {
     const whereClause = {};
@@ -43,7 +59,7 @@ class StudentService extends BaseService {
     const pageNum = searchQuery?.page ? parseInt(searchQuery?.page, 10) : 1;
     const include = [
       {
-        model: models.IdentityDocument,
+        model: this.IdentityDocument,
         as: "identityDocuments", // Alias đã định nghĩa trong quan hệ
         attributes: {
           exclude: ["studentCode", "createdAt", "updatedAt"], // Loại trừ các trường không cần thiết
@@ -88,7 +104,11 @@ class StudentService extends BaseService {
     if (!student) {
       throw new NotFoundError("Student not exists", "Sinh viên này không tồn tại");
     }
-    StudentService.validateStudentData_noId(updateData);
+    if (updateData?.status) {
+      if (!validateStatusTransition(student.status, updateData.status))
+        throw new ValidationError("Invalid status student", "Trạng thái sinh viên không hợp lệ");
+    }
+    await StudentService.#validateStudentData(updateData);
     const updateFields = omit(updateData, ['id', 'studentCode']);
     const updatedStudent = await student.update(updateFields);
     return {
@@ -97,16 +117,8 @@ class StudentService extends BaseService {
   }
 
   async create(newStudentInf) {
-    const requiredFields = [
-      "studentCode",
-      "fullName",
-      "dateOfBirth",
-      "gender",
-      "email",
-      "phoneNumber",
-      "facultyCode",
-      "programCode",
-      "cohortYear",
+    const requiredFields = ["studentCode", "fullName", "dateOfBirth", "gender", "email", "phoneNumber",
+      "facultyCode", "programCode", "cohortYear", "status", "nationality"
     ];
     const missingFields = requiredFields.filter((field) => !newStudentInf[field]);
     if (missingFields.length > 0) {
@@ -115,19 +127,13 @@ class StudentService extends BaseService {
         `Thiếu các trường bắt buộc: ${missingFields.join(", ")}`
       );
     }
-
-    if (newStudentInf?.studentCode) {
-      const student = await this.model.findOne({ where: { studentCode: newStudentInf.studentCode } });
-      if (student) {
-        throw new ValidationError("Student code already exists", "Mã sinh viên này đã tồn tại");
-      }
-    }
-    StudentService.validateStudentData_noId(newStudentInf);
+    StudentService.#validateStudentData(newStudentInf);
     const newStudent = await this.model.create(newStudentInf);
     return {
       student: omit(newStudent.get({ plain: true }), ["createdAt", "updatedAt"])
     }
   }
+
   async importFile(fileBuffer, format) {
     let students;
     if (format === 'csv') {
@@ -141,8 +147,8 @@ class StudentService extends BaseService {
 
   async #insertStudentArray(studentsData) {
     const [faculties, programs] = await Promise.all([
-      models.Faculty.findAll(),
-      models.Program.findAll(),
+      this.Faculty.findAll(),
+      this.Program.findAll(),
     ]);
     const results = [];
     for (const studentData of studentsData) {
@@ -174,8 +180,8 @@ class StudentService extends BaseService {
           permanentAddress: studentData.permanentAddress,
           mailAddress: studentData.mailAddress,
         };
-        StudentService.validateStudentData_noId(studentUpsertData);
-        const [student, created] = await models.Student.upsert(studentUpsertData, {
+        StudentService.validateStudentData(studentUpsertData);
+        const [student, created] = await this.model.upsert(studentUpsertData, {
           transaction,
           conflictFields: ["student_code"],
         });
@@ -199,4 +205,4 @@ class StudentService extends BaseService {
   }
 }
 
-module.exports = new StudentService();
+module.exports = StudentService;

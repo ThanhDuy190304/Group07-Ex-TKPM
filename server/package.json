@@ -26,7 +26,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test_having_coverage": "jest --coverage",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },
@@ -35,6 +36,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "sequelize-auto": "^0.8.8"
   }
