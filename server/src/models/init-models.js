@@ -22,8 +22,6 @@ function initModels(sequelize) {
   classes.hasMany(class_registrations, { as: "classRegistrations", foreignKey: "classCode", sourceKey: "classCode" });
   classes.belongsTo(courses, { as: "courseCodeCourse", foreignKey: "courseCode", targetKey: "courseCode" });
   courses.hasMany(classes, { as: "classes", foreignKey: "courseCode", sourceKey: "courseCode" });
-  courses.belongsTo(courses, { as: "prerequisiteCourseCodeCourse", foreignKey: "prerequisiteCourseCode", targetKey: "courseCode" });
-  courses.hasMany(courses, { as: "courses", foreignKey: "prerequisiteCourseCode", sourceKey: "courseCode" });
   courses.belongsTo(faculties, { as: "facultyCodeFaculty", foreignKey: "facultyCode", targetKey: "facultyCode" });
   faculties.hasMany(courses, { as: "courses", foreignKey: "facultyCode", sourceKey: "facultyCode" });
   students.belongsTo(faculties, { as: "facultyCodeFaculty", foreignKey: "facultyCode", targetKey: "facultyCode" });

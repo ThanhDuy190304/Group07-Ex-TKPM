@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from 'react-router-dom';
 import {
     Cog8ToothIcon, BellIcon, AcademicCapIcon, ArrowLeftIcon, ArrowRightIcon,
-    UserCircleIcon, AdjustmentsHorizontalIcon
+    UserCircleIcon, ClipboardIcon
 } from "@heroicons/react/24/outline";
 function SidebarItem({ to, icon: Icon, label }) {
     return (
@@ -37,7 +37,7 @@ function Sidebar() {
                     <SidebarItem to="/" icon={AcademicCapIcon} label="Sinh viên" />
                     <SidebarItem to="/notification" icon={BellIcon} label="Thông báo" />
                     <SidebarItem to="/settings" icon={Cog8ToothIcon} label="Cài đặt" />
-                    <SidebarItem to="/academic" icon={AdjustmentsHorizontalIcon} label="Đào tạo" />
+                    <SidebarItem to="/faculties-and-programs" icon={ClipboardIcon} label="Khoa và Chương Trình Học" />
                 </div>
             </div>
 

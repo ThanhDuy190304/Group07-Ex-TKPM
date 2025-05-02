@@ -2,8 +2,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Sidebar from "./components/layout/sidebar";
-import Student from "./pages/student";
-import Academic from "./pages/academic";
+import Student from "./pages/students";
+import FacultyAndProgram from "./pages/facultiesAndPrograms";
 import { ErrorProvider } from "./context/ErrorContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -20,8 +20,8 @@ function App() {
             <ErrorProvider>
               <Routes>
                 <Route path="/" element={<Student />} />
-                <Route path="/student" element={<Student />} />
-                <Route path="/academic" element={<Academic />} />
+                <Route path="/students" element={<Student />} />
+                <Route path="/faculties-and-programs" element={<FacultyAndProgram />} />
               </Routes>
               <ToastContainer position="top-right" autoClose={3000} />
             </ErrorProvider>

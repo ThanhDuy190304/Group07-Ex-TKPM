@@ -649,10 +649,6 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
             </FormControl>
         </>
     );
-    const studentFormLocalRaw = localStorage.getItem("student_form_cache");
-    const studentFormLocal: Partial<Student> | null = studentFormLocalRaw
-        ? JSON.parse(studentFormLocalRaw)
-        : null;
 
     const renderExtraFields = () => {
         switch (documentType) {
@@ -663,9 +659,7 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                         <Checkbox
                             label={identityDocumentFields.cccd.hasChip}
                             variant="outlined"
-                            defaultChecked={
-                                (studentFormLocal?.identityDocuments?.[0] as CCCDIdentityDocument)?.hasChip ?? false
-                            }
+
                             onChange={(e) => updateField("hasChip", e.target.checked)}
                         />
                     </FormControl>
@@ -676,7 +670,6 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                         <FormLabel>{identityDocumentFields.passport.notes}</FormLabel>
                         <Input
                             value={(documentData as PassportIdentityDocument).notes || ""}
-                            defaultValue={(studentFormLocal?.identityDocuments?.[0] as PassportIdentityDocument)?.notes || ""}
                             onChange={(e) => updateField("notes", e.target.value)}
                         />
                     </FormControl>
@@ -707,7 +700,6 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                     <Input
                                         autoFocus
                                         type="text"
-                                        defaultValue={studentFormLocal?.studentCode || ""}
                                         {...register("studentCode", isRequired ? { required: true } : {})}
                                     />
                                 </FormControl>
@@ -717,7 +709,6 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                     <FormLabel>{studentFields.fullName}</FormLabel>
                                     <Input
                                         type="text"
-                                        defaultValue={studentFormLocal?.fullName || ""}
                                         {...register("fullName", isRequired ? { required: true } : {})}
                                     />
                                 </FormControl>
@@ -726,7 +717,7 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                 <Controller
                                     name="gender"
                                     control={control}
-                                    defaultValue={studentFormLocal?.gender || Gender.Khac}
+                                    defaultValue={Gender.Khac}
                                     render={({ field }) => (
                                         <FormControl required={isRequired}>
                                             <FormLabel>{studentFields.gender}</FormLabel>
@@ -757,7 +748,6 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                     <FormLabel>{studentFields.email}</FormLabel>
                                     <Input
                                         type="email"
-                                        defaultValue={studentFormLocal?.email || ""}
                                         {...register("email", isRequired ? { required: true } : {})}
                                     />
                                 </FormControl>
@@ -770,7 +760,6 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                     <FormLabel>{studentFields.nationality}</FormLabel>
                                     <Input
                                         type="text"
-                                        defaultValue={studentFormLocal?.nationality || ""}
                                         {...register("nationality", isRequired ? { required: true } : {})}
                                     />
                                 </FormControl>
@@ -788,10 +777,6 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                                         <FormLabel>{label}</FormLabel>
                                                         <Input
                                                             type="text"
-                                                            defaultValue={
-                                                                (studentFormLocal?.[addressType as keyof Pick<Student, "mailAddress" | "permanentAddress" | "temporaryResidenceAddress">] as Address)?.[addressKey] || ""
-                                                            }
-
                                                             {...register(fieldPath, isRequired ? { required: true } : {})}
                                                         />
                                                     </FormControl>

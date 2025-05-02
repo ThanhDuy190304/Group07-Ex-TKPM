@@ -38,12 +38,8 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false
     },
     prerequisiteCourseCode: {
-      type: DataTypes.STRING,
+      type: DataTypes.ARRAY(DataTypes.TEXT),
       allowNull: true,
-      references: {
-        model: 'courses',
-        key: 'course_code'
-      }
     }
   }, {
     sequelize,
