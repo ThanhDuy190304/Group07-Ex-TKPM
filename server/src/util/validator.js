@@ -1,4 +1,4 @@
-const config = require("../config/validatorConfig");
+const studentRules = require("../businessRules/studentRules");
 
 const { isValidPhoneNumber } = require("libphonenumber-js");
 const validator = require("validator");
@@ -8,13 +8,13 @@ function validateUUID(value) {
 }
 
 function validateStudentData(data) {
-  if (!config.VALID_STATUSES.includes(data.status)) {
+  if (!studentRules.VALID_STATUSES.includes(data.status)) {
     throw new Error("Invalid status");
   }
 }
 
 function validateStudentEmail(email) {
-  return email.endsWith(config.EMAIL_DOMAIN);
+  return email.endsWith(studentRules.EMAIL_DOMAIN);
 }
 
 function validatePhone(phone) {
@@ -22,7 +22,7 @@ function validatePhone(phone) {
 }
 
 function validateStatusTransition(currentStatus, newStatus) {
-  return config.STATUS_TRANSITIONS[currentStatus].includes(newStatus);
+  return studentRules.STATUS_TRANSITIONS[currentStatus].includes(newStatus);
 }
 
 module.exports = {

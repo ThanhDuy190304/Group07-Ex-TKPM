@@ -13,8 +13,8 @@ export interface Student {
     permanentAddress: Address;
     temporaryResidenceAddress: Address;
     nationality: string;
-    facultyCode: string;
-    programCode: string;
+    facultyCode: string | null;
+    programCode: string | null;
     status: StudentStatus
     cohortYear: string;
     identityDocuments: IdentityDocument[]
@@ -22,7 +22,7 @@ export interface Student {
 
 export const studentFields: Partial<Record<keyof Student, string>> = {
     studentCode: "MSSV",
-    fullName: "Họ tên",
+    fullName: "Họ và tên",
     dateOfBirth: "Ngày sinh",
     gender: "Giới tính",
     email: "Email",

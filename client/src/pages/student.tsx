@@ -1,26 +1,32 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { Control, Controller, useForm, UseFormRegister, UseFormSetValue, FieldPath } from "react-hook-form";
 import {
     MagnifyingGlassIcon, TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon,
-    DocumentArrowDownIcon, DocumentArrowUpIcon, PlusIcon,
+    PlusIcon, ForwardIcon, UserPlusIcon
 } from "@heroicons/react/24/outline";
 import {
     Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button,
-    Modal, ModalDialog, DialogTitle, DialogContent, FormControl, Stack, FormLabel
+    Modal, ModalDialog, DialogTitle, DialogContent, FormControl, Stack, FormLabel, Checkbox
 } from '@mui/joy';
+
+import PhoneInput from "react-phone-input-2";
+import 'react-phone-input-2/lib/style.css';
+
 import { useAllStudents } from "../hooks/useStudents"
 import { useFaculties } from "../hooks/useFaculties";
 import { usePrograms } from "../hooks/usePrograms";
 import { Student, studentFields } from "../types/student";
 import { Faculty } from "../types/faculty";
 import { Program } from "../types/program";
-import { formatAddress } from "../types/address";
-import { identityDocumentFields, CCCDIdentityDocument, CMNDIdentityDocument, PassportIdentityDocument, formatIdentityDocument } from "../types/identityDocument";
+import { Address, formatAddress, addressFields } from "../types/address";
+import { IdentityDocument, identityDocumentFields, CCCDIdentityDocument, CMNDIdentityDocument, PassportIdentityDocument, formatIdentityDocument } from "../types/identityDocument";
 import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
 import { useError } from "../context/ErrorContext";
 import { ImportButtonStudent } from "../components/button/import";
 import { ExportButtonStudent } from "../components/button/export";
+import { set } from "lodash";
 // Details Student Card
 function flattenStudent(student: Student) {
     return {
@@ -130,12 +136,12 @@ interface StudentTableRowProps {
     faculties: Faculty[];
     programs: Program[];
     onEdit: () => void;
-    onChange: (key: keyof Student, value: string) => void;
     onSave: () => void;
+    register: UseFormRegister<Partial<Student>>;
     onDelete: (studentId: string) => void;
     onSelect: () => void;
 }
-function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs, onEdit, onChange, onSave, onDelete, onSelect }: StudentTableRowProps) {
+function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs, onEdit, register, onSave, onDelete, onSelect }: StudentTableRowProps) {
     const studentStatusOptions = Object.values(StudentStatus);
     return (
         <tr className="cursor-pointer hover:bg-gray-100" onClick={onSelect}>
@@ -145,25 +151,19 @@ function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs
             {/* Cột Khoa */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
-                    <Select
-                        value={student.facultyCode}
-                        onChange={(e, newValue) => onChange("facultyCode", newValue as string)}
+                    <select
+                        {...register("facultyCode")}
+                        defaultValue={student.facultyCode || ""}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
-
                     >
-                        <Option value={null} onClick={(e) => e.stopPropagation()}>
-                            -- Không có khoa --</Option>
-                        {faculties.map((faculty) => (
-                            <Option
-                                key={faculty.facultyCode}
-                                value={faculty.facultyCode}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {faculty.facultyCode}
-                            </Option>
+                        <option value="">-- Không có khoa --</option>
+                        {faculties.map((f) => (
+                            <option key={f.facultyCode} value={f.facultyCode}>
+                                {f.facultyCode}
+                            </option>
                         ))}
-                    </Select>
+                    </select>
                 ) : (
                     student.facultyCode || "Chưa có khoa"
                 )}
@@ -172,24 +172,19 @@ function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs
             {/* Cột Chương Trình */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
-                    <Select
-                        value={student.programCode}
-                        onChange={(e, newValue) => onChange("programCode", newValue as string)}
+                    <select
+                        {...register("programCode")}
+                        defaultValue={student.programCode || ""}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <Option value={null} onClick={(e) => e.stopPropagation()}>
-                            -- Không có chương trình --</Option>
-                        {programs.map((program) => (
-                            <Option
-                                key={program.programCode}
-                                value={program.programCode}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {program.name}
-                            </Option>
+                        <option value="">-- Không có chương trình --</option>
+                        {programs.map((f) => (
+                            <option key={f.programCode} value={f.programCode}>
+                                {f.programCode}
+                            </option>
                         ))}
-                    </Select>
+                    </select>
                 ) : (
                     student.programCode || "Chưa có chương trình"
                 )}
@@ -199,9 +194,9 @@ function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
                     <input
+                        {...register("cohortYear")}
+                        defaultValue={student.cohortYear}
                         type="number"
-                        value={student.cohortYear || ""}
-                        onChange={(e) => onChange("cohortYear", e.target.value)}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
                         placeholder="Nhập năm"
@@ -215,8 +210,8 @@ function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
                 {isEditing ? (
                     <select
-                        value={student.status}
-                        onChange={(e) => onChange("gender", e.target.value)}
+                        {...register("status")}
+                        defaultValue={student.status}
                         className="border rounded p-1 w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -274,16 +269,15 @@ function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs
 
 interface StudentTableProps {
     students: Student[];
-    editingStudent: Student | null;
-    isEditingStudentId: string | null;
     faculties: Faculty[];
     programs: Program[];
+    isEditingStudentId: string | null;
+    register: UseFormRegister<Partial<Student>>;
     onEdit: (student: Student) => void;
-    onChange: (key: keyof Student, value: string) => void;
     onSave: () => void;
     onDelete: (studentId: string) => void;
 }
-function StudentTable({ students, editingStudent, isEditingStudentId, programs, faculties, onEdit, onChange, onSave, onDelete }: StudentTableProps) {
+function StudentTable({ students, faculties, programs, isEditingStudentId, register, onEdit, onSave, onDelete }: StudentTableProps) {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const studentFieldWidths: Partial<Record<keyof Student, string>> = {
         studentCode: "w-24",
@@ -314,17 +308,16 @@ function StudentTable({ students, editingStudent, isEditingStudentId, programs, 
                     <tbody>
                         {students.map((student) => {
                             const isEditing = isEditingStudentId === student.id;
-                            const currentStudent = isEditing ? editingStudent : student;
                             return (
                                 <StudentTableRow
                                     key={student.id}
-                                    student={currentStudent!}
+                                    student={student}
+                                    register={register}
                                     isEditing={isEditing}
                                     isAnyEditing={!!isEditingStudentId}
                                     faculties={faculties}
                                     programs={programs}
                                     onEdit={() => onEdit(student)}
-                                    onChange={onChange}
                                     onSave={onSave}
                                     onDelete={onDelete}
                                     onSelect={() => setSelectedStudent(student)}
@@ -362,32 +355,35 @@ function StudentTableContainer({
     removeStudent: (studentId: string) => Promise<void>;
     updateStudent: (data: { studentId: string; updatedData: Partial<Student> }) => Promise<Student>;
 }) {
-    const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+    const { register, reset, handleSubmit, getValues } = useForm<Partial<Student>>();
     const [isEditingStudentId, setIsEditingStudentId] = useState<string | null>(null);
     const { showError } = useError();
-    const handleEdit = (student: Student) => {
-        setEditingStudent(student);
-        setIsEditingStudentId(student.id);
-    };
 
-    const handleChange = (key: keyof Student, value: string) => {
-        if (editingStudent) {
-            setEditingStudent({ ...editingStudent, [key]: value });
-        }
+    const handleEdit = (student: Student) => {
+        setIsEditingStudentId(student.id);
+        reset({
+            facultyCode: student.facultyCode,
+            programCode: student.programCode,
+            status: student.status,
+            cohortYear: student.cohortYear,
+        });
     };
 
     const handleSave = async () => {
-        if (editingStudent) {
-            try {
-                await updateStudent({
-                    studentId: isEditingStudentId!,
-                    updatedData: editingStudent,
-                });
-                setEditingStudent(null);
-                setIsEditingStudentId(null);
-            } catch (error: any) {
-                showError(error.message)
-            }
+        try {
+            const updatedData = {
+                facultyCode: getValues("facultyCode") || null,
+                programCode: getValues("programCode") || null,
+                status: getValues("status"),
+                cohortYear: getValues("cohortYear"),
+            };
+            await updateStudent({
+                studentId: isEditingStudentId!,
+                updatedData,
+            });
+            setIsEditingStudentId(null);
+        } catch (error: any) {
+            showError(error.message);
         }
     };
 
@@ -404,11 +400,10 @@ function StudentTableContainer({
             students={students}
             faculties={faculties}
             programs={programs}
-            editingStudent={editingStudent}
+            register={register}
             isEditingStudentId={isEditingStudentId}
             onEdit={handleEdit}
-            onChange={handleChange}
-            onSave={handleSave}
+            onSave={handleSubmit(handleSave)}
             onDelete={handleDelete}
         />
     );
@@ -556,181 +551,406 @@ function Search({ setSearchQuery, faculties, programs }: SearchProps) {
     );
 }
 
-//Create Button
+function PhoneInputSelectDropDown({ setPhoneNumber }: { setPhoneNumber: (value: string) => void }) {
+    const [isFocused, setIsFocused] = useState(false);
+    return (
+        <FormControl required>
+            <FormLabel>{studentFields.phoneNumber}</FormLabel>
+            <PhoneInput
+                country={'vn'}
+                enableSearch
+                containerStyle={{
+                    width: "100%",
+                    borderRadius: "8px",
+                    border: isFocused ? "2px solid #0b6bcb" : "2px solid #CDD7E1",
+                    boxShadow: "0 0 4px rgba(21, 21, 21, 0.08)",
+                }}
+                inputStyle={{
+                    width: "100%",
+                    height: "32px",
+                    fontSize: "16px",
+                    border: "none",
+                }}
+                buttonStyle={{
+                    border: "none",
+                    backgroundColor: "transparent",
+                }}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onChange={(value) => {
+                    if (!value.startsWith('+')) {
+                        value = `+${value}`;
+                    }
+                    setPhoneNumber(value);
+                }} />
+        </FormControl>
+    );
+}
 
-interface StudentCreateModalDialogProps {
+//Create Student Form
+interface StudentCreateFormProps {
+    faculties: Faculty[];
+    programs: Program[];
+    handleSubmit: () => void;
+    register: UseFormRegister<Partial<Student>>;
+    setValue: UseFormSetValue<Partial<Student>>;
+    control: Control<Partial<Student>>;
+    setIsOpen: (isOpen: boolean) => void;
+    isOpen: boolean
+}
+function StudentCreateForm({ faculties, programs, handleSubmit, register, setValue, control, setIsOpen, isOpen }: StudentCreateFormProps) {
+
+    const isRequired = false;
+
+    const [phoneNumber, setPhoneNumber] = useState<string>();
+    useEffect(() => {
+        if (phoneNumber) {
+            setValue("phoneNumber", phoneNumber);
+        }
+    }, [phoneNumber, setValue]);
+
+    const identityDocumentTypes = Object.values(IdentityDocumentType);
+    const [documentType, setDocumentType] = useState<IdentityDocumentType>(IdentityDocumentType.CCCD);
+    const [documentData, setDocumentData] = useState<Partial<IdentityDocument>>({});
+    const updateField = (key: string, value: any) => {
+        setDocumentData((prev) => ({
+            ...prev,
+            [key]: value,
+            type: documentType,
+        }));
+        setValue('identityDocuments', [{ ...documentData, type: documentType } as IdentityDocument]);
+    };
+
+    const renderCommonFields = () => (
+        <>
+            <FormControl required={isRequired}>
+                <FormLabel>{identityDocumentFields.common.number}</FormLabel>
+                <Input value={documentData.number || ""} onChange={(e) => updateField("number", e.target.value)} />
+            </FormControl>
+
+            <FormControl required={isRequired}>
+                <FormLabel>{identityDocumentFields.common.issueDate}</FormLabel>
+                <Input type="date" value={documentData.issueDate || ""} onChange={(e) => updateField("issueDate", e.target.value)} />
+            </FormControl>
+
+            <FormControl required={isRequired}>
+                <FormLabel>{identityDocumentFields.common.expiryDate}</FormLabel>
+                <Input type="date" value={documentData.expiryDate || ""} onChange={(e) => updateField("expiryDate", e.target.value)} />
+            </FormControl>
+
+            <FormControl required={isRequired}>
+                <FormLabel>{identityDocumentFields.common.placeOfIssue}</FormLabel>
+                <Input value={documentData.placeOfIssue || ""} onChange={(e) => updateField("placeOfIssue", e.target.value)} />
+            </FormControl>
+
+            <FormControl required={isRequired}>
+                <FormLabel>{identityDocumentFields.common.country}</FormLabel>
+                <Input value={documentData.country || ""} onChange={(e) => updateField("country", e.target.value)} />
+            </FormControl>
+        </>
+    );
+    const studentFormLocalRaw = localStorage.getItem("student_form_cache");
+    const studentFormLocal: Partial<Student> | null = studentFormLocalRaw
+        ? JSON.parse(studentFormLocalRaw)
+        : null;
+
+    const renderExtraFields = () => {
+        switch (documentType) {
+            case IdentityDocumentType.CCCD:
+                return (
+                    <FormControl>
+                        <FormLabel>{identityDocumentFields.cccd.hasChip}</FormLabel>
+                        <Checkbox
+                            label={identityDocumentFields.cccd.hasChip}
+                            variant="outlined"
+                            defaultChecked={
+                                (studentFormLocal?.identityDocuments?.[0] as CCCDIdentityDocument)?.hasChip ?? false
+                            }
+                            onChange={(e) => updateField("hasChip", e.target.checked)}
+                        />
+                    </FormControl>
+                );
+            case IdentityDocumentType.Passport:
+                return (
+                    <FormControl>
+                        <FormLabel>{identityDocumentFields.passport.notes}</FormLabel>
+                        <Input
+                            value={(documentData as PassportIdentityDocument).notes || ""}
+                            defaultValue={(studentFormLocal?.identityDocuments?.[0] as PassportIdentityDocument)?.notes || ""}
+                            onChange={(e) => updateField("notes", e.target.value)}
+                        />
+                    </FormControl>
+                );
+            default:
+                return null;
+        }
+    };
+
+    type StudentAddressPath = FieldPath<Pick<Student, "mailAddress" | "permanentAddress" | "temporaryResidenceAddress">>
+    return (
+        <Modal open={isOpen} onClose={() => setIsOpen(false)}>
+            <ModalDialog>
+                <DialogTitle>Tạo sinh viên mới</DialogTitle>
+                <DialogContent>
+                    <div className="max-h-[70vh] overflow-y-auto pr-2">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSubmit();
+                            }}
+                        >
+                            <p className="text-base mb-2">Điền thông tin cá nhân</p>
+                            <div className="m-2 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* MSSV */}
+                                <FormControl required={isRequired}>
+                                    <FormLabel>{studentFields.studentCode}</FormLabel>
+                                    <Input
+                                        autoFocus
+                                        type="text"
+                                        defaultValue={studentFormLocal?.studentCode || ""}
+                                        {...register("studentCode", isRequired ? { required: true } : {})}
+                                    />
+                                </FormControl>
+
+                                {/*Họ và tên*/}
+                                <FormControl required={isRequired}>
+                                    <FormLabel>{studentFields.fullName}</FormLabel>
+                                    <Input
+                                        type="text"
+                                        defaultValue={studentFormLocal?.fullName || ""}
+                                        {...register("fullName", isRequired ? { required: true } : {})}
+                                    />
+                                </FormControl>
+
+                                {/*Giới tính*/}
+                                <Controller
+                                    name="gender"
+                                    control={control}
+                                    defaultValue={studentFormLocal?.gender || Gender.Khac}
+                                    render={({ field }) => (
+                                        <FormControl required={isRequired}>
+                                            <FormLabel>{studentFields.gender}</FormLabel>
+                                            <Select
+                                                {...field}
+                                                value={field.value}
+                                                onChange={(e, newValue) => field.onChange(newValue)}
+                                            >
+                                                <Option value={Gender.Nam}>{Gender.Nam}</Option>
+                                                <Option value={Gender.Nu}>{Gender.Nu}</Option>
+                                                <Option value={Gender.Khac}>{Gender.Khac}</Option>
+                                            </Select>
+                                        </FormControl>
+                                    )}
+                                />
+
+                                {/* Ngày sinh */}
+                                <FormControl required={isRequired}>
+                                    <FormLabel>{studentFields.dateOfBirth}</FormLabel>
+                                    <Input
+                                        type="date"
+                                        {...register("dateOfBirth", isRequired ? { required: true } : {})}
+                                    />
+                                </FormControl>
+
+                                {/*Email*/}
+                                <FormControl required={isRequired}>
+                                    <FormLabel>{studentFields.email}</FormLabel>
+                                    <Input
+                                        type="email"
+                                        defaultValue={studentFormLocal?.email || ""}
+                                        {...register("email", isRequired ? { required: true } : {})}
+                                    />
+                                </FormControl>
+
+                                {/* Số điện thoại */}
+                                <PhoneInputSelectDropDown setPhoneNumber={setPhoneNumber} />
+
+                                {/*Quốc gia*/}
+                                <FormControl required={isRequired} className="sm:col-span-2">
+                                    <FormLabel>{studentFields.nationality}</FormLabel>
+                                    <Input
+                                        type="text"
+                                        defaultValue={studentFormLocal?.nationality || ""}
+                                        {...register("nationality", isRequired ? { required: true } : {})}
+                                    />
+                                </FormControl>
+
+                                {/* Các trường địa chỉ */}
+                                {["mailAddress", "temporaryResidenceAddress", "permanentAddress"].map((addressType) => (
+                                    <FormControl className="sm:col-span-2" key={addressType}>
+                                        <FormLabel>{studentFields[addressType as keyof Student]}</FormLabel>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+                                            {Object.entries(addressFields).map(([key, label]) => {
+                                                const addressKey = key as keyof Address;
+                                                const fieldPath = `${addressType}.${addressKey}` as StudentAddressPath;
+                                                return (
+                                                    <FormControl required={isRequired} key={fieldPath}>
+                                                        <FormLabel>{label}</FormLabel>
+                                                        <Input
+                                                            type="text"
+                                                            defaultValue={
+                                                                (studentFormLocal?.[addressType as keyof Pick<Student, "mailAddress" | "permanentAddress" | "temporaryResidenceAddress">] as Address)?.[addressKey] || ""
+                                                            }
+
+                                                            {...register(fieldPath, isRequired ? { required: true } : {})}
+                                                        />
+                                                    </FormControl>
+                                                );
+                                            })}
+                                        </div>
+                                    </FormControl>
+                                ))}
+
+                                {/*Giấy tờ tùy thân*/}
+                                <div className="sm:col-span-2">
+                                    <p>Nhập 1 trong 3 loại giấy tờ tùy thân</p>
+                                    <Select value={documentType} onChange={(e, val) => {
+                                        setDocumentType(val as IdentityDocumentType);
+                                        setDocumentData({ type: val as IdentityDocumentType });
+                                    }}>
+                                        {identityDocumentTypes.map((type) => (
+                                            <Option key={type} value={type}>
+                                                {type}
+                                            </Option>
+                                        ))}
+                                    </Select>
+
+                                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        {renderCommonFields()}
+                                        {renderExtraFields()}
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <p className="text-base mb-2">Điền thông tin học vụ</p>
+                            <div className="m-2 sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {/* Khoa */}
+                                <FormControl required={isRequired}>
+                                    <FormLabel>{studentFields.facultyCode}</FormLabel>
+                                    <Select
+                                        {...register("facultyCode", isRequired ? { required: true } : {})}
+                                        onChange={(e, newValue) => setValue("facultyCode", newValue as string)}
+                                    >
+                                        {faculties.map((faculty) => (
+                                            <Option key={faculty.facultyCode} value={faculty.facultyCode}>
+                                                {faculty.facultyCode}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+
+                                {/* Chương trình */}
+                                <FormControl required={isRequired}>
+                                    <FormLabel>{studentFields.programCode}</FormLabel>
+                                    <Select
+                                        {...register("programCode", isRequired ? { required: true } : {})}
+                                        onChange={(e, newValue) => setValue("programCode", newValue as string)}
+                                    >
+                                        {programs.map((program) => (
+                                            <Option key={program.programCode} value={program.programCode}>
+                                                {program.name}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+
+                                {/* Khóa học */}
+                                <FormControl>
+                                    <FormLabel>{studentFields.cohortYear}</FormLabel>
+                                    <Input
+                                        type="number"
+                                        defaultValue={new Date().getFullYear()}
+                                        {...register("cohortYear", {
+                                            required: isRequired,
+                                            valueAsNumber: true,
+                                        })}
+                                    />
+                                </FormControl>
+                            </div>
+
+
+                            <div className="flex justify-center mt-8">
+                                <Button
+                                    variant="solid"
+                                    color="primary"
+                                    type="submit"
+                                    className="w-1/2"
+                                >
+                                    Xác nhận
+                                </Button>
+                            </div>
+
+                        </form>
+                    </div>
+                </DialogContent>
+
+            </ModalDialog>
+        </Modal>
+    );
+}
+
+
+interface StudentCreateFormContainerProps {
     onCreate: (newStudent: Partial<Student>) => Promise<Student>;
     faculties: Faculty[];
     programs: Program[];
 }
-function StudentCreateModalDialog({ onCreate, faculties, programs }: StudentCreateModalDialogProps) {
-    const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState<Partial<Student>>({});
-
-    const genderOptions = Object.values(Gender);
+function StudentCreateFormContainer({ onCreate, faculties, programs }: StudentCreateFormContainerProps) {
+    const { register, reset, getValues, setValue, control } = useForm<Partial<Student>>();
     const { showError } = useError();
-    const handleChange = (key: keyof Student, value: string) => {
-        setFormData({ ...formData, [key]: value });
-    };
+    const [isOpen, setIsOpen] = useState(false);
 
-    const handleSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
+    const handleCreate = async () => {
         try {
-            await onCreate(formData);
-            setOpen(false);
-            setFormData({});
-            alert("Sinh viên đã được tạo thành công!")
+            const newStudent: Partial<Student> = {
+                studentCode: getValues('studentCode'),
+                fullName: getValues('fullName'),
+                dateOfBirth: getValues('dateOfBirth'),
+                gender: getValues('gender'),
+                email: getValues('email'),
+                mailAddress: getValues('mailAddress'),
+                permanentAddress: getValues('permanentAddress'),
+                temporaryResidenceAddress: getValues('temporaryResidenceAddress'),
+                phoneNumber: getValues('phoneNumber'),
+                nationality: getValues('nationality'),
+                facultyCode: getValues('facultyCode') || null,
+                programCode: getValues('programCode') || null,
+                cohortYear: getValues('cohortYear') || '',
+                identityDocuments: getValues('identityDocuments') || [],
+            }
+            localStorage.setItem('student_form_cache', JSON.stringify(getValues()));
+            await onCreate(newStudent)
+            reset();
+            setIsOpen(false);
         } catch (error: any) {
             showError(error.message);
         }
-    };
-
+    }
     return (
         <>
             <Button
                 variant="solid"
                 color="success"
-                startDecorator={<PlusIcon className="w-5 h-5" />}
-                onClick={() => setOpen(true)}
+                startDecorator={<UserPlusIcon className="w-5 h-5" />}
+                onClick={() => setIsOpen(true)}
                 className="w-fit"
             >
                 Tạo sinh viên
             </Button>
-            <Modal open={open} onClose={() => setOpen(false)}>
-                <ModalDialog>
-                    <DialogTitle>Tạo sinh viên mới</DialogTitle>
-                    <DialogContent>Điền đủ thông tin dưới đây.</DialogContent>
-                    <form onSubmit={handleSubmit}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* MSSV */}
-                            <FormControl>
-                                <FormLabel>MSSV</FormLabel>
-                                <Input
-                                    autoFocus
-                                    required
-                                    value={formData.studentCode || ""}
-                                    onChange={(e) => handleChange("studentCode", e.target.value)}
-                                />
-                            </FormControl>
-                            {/* Họ tên */}
-                            <FormControl>
-                                <FormLabel>Họ và tên</FormLabel>
-                                <Input
-                                    autoFocus
-                                    required
-                                    value={formData.fullName || ""}
-                                    onChange={(e) => handleChange("fullName", e.target.value)}
-                                />
-                            </FormControl>
-
-                            {/* Ngày sinh */}
-                            <FormControl>
-                                <FormLabel>Ngày sinh</FormLabel>
-                                <Input
-                                    type="date"
-                                    required
-                                    value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString().split("T")[0] : ""}
-                                    onChange={(e) => handleChange("dateOfBirth", e.target.value)}
-                                />
-                            </FormControl>
-
-                            {/* Giới tính */}
-                            <FormControl>
-                                <FormLabel>Giới tính</FormLabel>
-                                <Select
-                                    value={formData.gender}
-                                    onChange={(e, newValue) => handleChange("gender", newValue as string)}
-                                    className="border rounded p-1 w-full"
-                                >
-                                    {genderOptions.map((gender) => (
-                                        <Option key={gender} value={gender}>
-                                            {gender}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            {/* Email */}
-                            <FormControl>
-                                <FormLabel>Email</FormLabel>
-                                <Input
-                                    type="email"
-                                    required
-                                    value={formData.email || ""}
-                                    onChange={(e) => handleChange("email", e.target.value)}
-                                />
-                            </FormControl>
-
-                            {/* Số điện thoại */}
-                            <FormControl>
-                                <FormLabel>Số điện thoại</FormLabel>
-                                <Input
-                                    type="tel"
-                                    required
-                                    value={formData.phoneNumber || ""}
-                                    onChange={(e) => handleChange("phoneNumber", e.target.value)}
-                                />
-                            </FormControl>
-
-                            {/* Khoa */}
-                            <FormControl>
-                                <FormLabel>Khoa</FormLabel>
-                                <Select
-                                    value={formData.facultyCode}
-                                    onChange={(e, newValue) => handleChange("facultyCode", newValue as string)}
-                                    className="border rounded p-1 w-full"
-                                >
-                                    {faculties.map((faculty) => (
-                                        <Option key={faculty.facultyCode} value={faculty.facultyCode}>
-                                            {faculty.facultyCode}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            {/* Chương trình */}
-                            <FormControl>
-                                <FormLabel>Chương trình</FormLabel>
-                                <Select
-                                    value={formData.programCode}
-                                    onChange={(e, newValue) => handleChange("programCode", newValue as string)}
-                                    className="border rounded p-1 w-full"
-                                >
-                                    {programs.map((program) => (
-                                        <Option key={program.programCode} value={program.programCode}>
-                                            {program.name}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            {/* Khóa học */}
-                            <FormControl>
-                                <FormLabel>Khóa học</FormLabel>
-                                <Input
-                                    type="number"
-                                    value={formData.cohortYear || ""}
-                                    onChange={(e) => handleChange("cohortYear", e.target.value)}
-                                    className="border rounded p-1 w-full"
-                                    placeholder="Nhập năm khóa học"
-                                />
-                            </FormControl>
-
-
-                        </div>
-
-                        {/* Nút xác nhận */}
-                        <div className="flex justify-end mt-4">
-                            <Button type="submit">Xác nhận</Button>
-                        </div>
-                    </form>
-
-                </ModalDialog>
-            </Modal>
+            <StudentCreateForm
+                faculties={faculties}
+                programs={programs}
+                register={register}
+                setValue={setValue}
+                control={control}
+                setIsOpen={setIsOpen}
+                isOpen={isOpen}
+                handleSubmit={handleCreate} />
         </>
     );
-}
 
+}
 function StudentPage() {
     const { showError } = useError();
     const [page, setPage] = useState<number>(1);
@@ -772,11 +992,14 @@ function StudentPage() {
                         setSearchQuery={setSearchQuery}
                         faculties={faculties}
                         programs={programs} />
-                    <StudentCreateModalDialog
-                        onCreate={createStudent.mutateAsync}
+
+                    <StudentCreateFormContainer
                         faculties={faculties}
-                        programs={programs} />
+                        programs={programs}
+                        onCreate={createStudent.mutateAsync}
+                    />
                 </div>
+
                 <ImportButtonStudent />
                 <ExportButtonStudent searchQuery={searchQuery} />
             </section>

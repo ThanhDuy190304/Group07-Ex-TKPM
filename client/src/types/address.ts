@@ -7,6 +7,15 @@ export interface Address {
 }
 
 
+export const addressFields: Partial<Record<keyof Address, string>> = {
+    nation: "Quốc gia",
+    cityProvince: "Thành phố",
+    district: "Huyện",
+    wardsCommunes: "Phường/Xã",
+    street: "Đường",
+};
+
+
 export const formatAddress = (address: Address | null | undefined): string => {
     if (!address) return "Chưa có địa chỉ";
     const addressParts = [

@@ -13,7 +13,7 @@ export const importStudents = async (file: any) => {
         return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi import sinh viên:", error);
-        return { error: error.response?.data?.message || "Lỗi server" };
+        return { error: error.response.data.message };
     }
 };
 
@@ -24,8 +24,8 @@ export async function putStudent(studentId: string, updatedData: Partial<Student
     } catch (error: any) {
         console.error("Lỗi khi cập nhật sinh viên: ", error);
         throw {
-            status: error.response?.status || 503,
-            message: error.response?.data?.message || "Lỗi server",
+            status: error.response.status,
+            message: error.response.data.error_vn,
         };
     }
 }
@@ -36,8 +36,8 @@ export async function deleteStudent(studentId: string) {
     } catch (error: any) {
         console.error("Lỗi khi xóa sinh viên: ", error);
         throw {
-            status: error.response?.status || 503,
-            message: error.response?.data?.message || "Lỗi server",
+            status: error.response.status,
+            message: error.response.data.error_vn,
         };
     }
 }
@@ -49,7 +49,8 @@ export async function postStudent(studentData: Partial<Student>) {
     } catch (error: any) {
         console.error("Lỗi khi tạo sinh viên: ", error);
         throw {
-            message: error.response?.data?.error_vn || "Lỗi server",
+            status: error.response.status,
+            message: error.response.data.error_vn,
         };
     }
 }
@@ -63,8 +64,8 @@ export async function getAllStudents(searchQuery: Partial<Student> & { page?: nu
     } catch (error: any) {
         console.error("Lỗi khi xuất mảng sinh viên:", error);
         throw {
-            status: error.response?.status || 503,
-            message: error.response?.data?.message || "Lỗi server",
+            status: error.response.status,
+            message: error.response.data.error_vn,
         };
     }
 }

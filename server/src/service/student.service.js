@@ -19,7 +19,7 @@ class StudentService extends BaseService {
     this.Program = models.Program;
   }
 
-  static async #validateStudentData(studentInf) {
+  async #validateStudentData(studentInf) {
     //Check student code
     if (studentInf?.studentCode) {
       const student = await this.model.findOne({ where: { studentCode: studentInf.studentCode } });
@@ -98,7 +98,7 @@ class StudentService extends BaseService {
 
   async update(studentId, updateData) {
     if (!validateUUID(studentId)) {
-      throw new ValidationError();
+      throw new ValidationError("Invalid id", "UUID sinh viên không hợp lệ");
     }
     const student = await this.model.findOne({ where: { id: studentId } });
     if (!student) {
@@ -108,7 +108,7 @@ class StudentService extends BaseService {
       if (!validateStatusTransition(student.status, updateData.status))
         throw new ValidationError("Invalid status student", "Trạng thái sinh viên không hợp lệ");
     }
-    await StudentService.#validateStudentData(updateData);
+    await this.#validateStudentData(updateData);
     const updateFields = omit(updateData, ['id', 'studentCode']);
     const updatedStudent = await student.update(updateFields);
     return {
@@ -118,7 +118,7 @@ class StudentService extends BaseService {
 
   async create(newStudentInf) {
     const requiredFields = ["studentCode", "fullName", "dateOfBirth", "gender", "email", "phoneNumber",
-      "facultyCode", "programCode", "cohortYear", "status", "nationality"
+      "facultyCode", "programCode", "cohortYear", "nationality", 'identityDocuments'
     ];
     const missingFields = requiredFields.filter((field) => !newStudentInf[field]);
     if (missingFields.length > 0) {
@@ -127,8 +127,17 @@ class StudentService extends BaseService {
         `Thiếu các trường bắt buộc: ${missingFields.join(", ")}`
       );
     }
-    StudentService.#validateStudentData(newStudentInf);
+    await this.#validateStudentData(newStudentInf);
+
+    //Create before student
     const newStudent = await this.model.create(newStudentInf);
+    //Create one indentity document
+    const docWithStudentCode = {
+      ...newStudentInf.identityDocuments[0],
+      studentCode: newStudent.studentCode,
+    };
+
+    await this.IdentityDocument.create(docWithStudentCode);
     return {
       student: omit(newStudent.get({ plain: true }), ["createdAt", "updatedAt"])
     }

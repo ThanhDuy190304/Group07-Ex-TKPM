@@ -14,15 +14,11 @@ module.exports = {
   EMAIL_DOMAIN: '@student.university.edu.vn',
   // Các chuyển trạng thái hợp lệ
   STATUS_TRANSITIONS: {
-    'Đang học': ['Tạm dừng học', 'Đã tốt nghiệp', 'Đã thôi học', 'Bảo lưu', 'Đình chỉ'
-    ],
-    'Tạm dừng học': ['Đang học', 'Đã thôi học'
-    ],
-    'Đã tốt nghiệp': [],
-    'Đã thôi học': [],
-    'Bảo lưu': ['Đang học', 'Đã thôi học'
-    ],
-    'Đình chỉ': ['Đang học', 'Đã thôi học'
-    ]
+    'Đang học': ['Đang học', 'Tạm dừng học', 'Đã tốt nghiệp', 'Đã thôi học', 'Bảo lưu', 'Đình chỉ'],
+    'Tạm dừng học': ['Đang học', 'Đã thôi học', 'Tạm dừng học'],
+    'Tốt nghiệp': ['Tốt nghiệp'],
+    'Đã thôi học': ['Đã thôi học'],
+    'Bảo lưu': ['Đang học', 'Đã thôi học', 'Bảo lưu'],
+    'Đình chỉ': ['Đang học', 'Đã thôi học', 'Đình chỉ']
   }
 };
