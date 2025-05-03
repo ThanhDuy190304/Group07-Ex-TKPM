@@ -9,8 +9,8 @@ export async function getFaculties() {
     } catch (error: any) {
         console.error("Lỗi khi fetch faculties:", error);
         throw {
-            status: error.response?.status || 503,
-            message: error.response?.data?.error_vn || "Không thể lấy dữ liệu khoa. Vui lòng thử lại sau.",
+            status: error.response.status,
+            message: error.response.data.error_vn,
         };
     }
 }
@@ -22,8 +22,8 @@ export async function postFaculty(newFaculty: Partial<Faculty>) {
     } catch (error: any) {
         console.error("Lỗi khi tạo khoa:", error);
         throw {
-            status: error.response?.status || 503,
-            message: error.response?.data?.error_vn || "Không thể tạo khoa. Vui lòng thử lại sau.",
+            status: error.response.status,
+            message: error.response.data.error_vn,
         };
     }
 }
@@ -35,8 +35,8 @@ export async function putFaculty(facultyId: string, updateData: Partial<Faculty>
     } catch (error: any) {
         console.error("Lỗi khi cập nhật khoa:", error);
         throw {
-            status: error.response?.status || 503,
-            message: error.response?.data?.error_vn || "Không thể cập nhật khoa. Vui lòng thử lại sau.",
+            status: error.response.status,
+            message: error.response.data.error_vn,
         };
     }
 }

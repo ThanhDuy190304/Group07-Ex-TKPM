@@ -468,7 +468,7 @@ function ProgramsContainer({ programs }: { programs: Program[] }) {
 }
 
 
-function AcademicPage() {
+function FacultyAndProgramPage() {
     const { facultiesQuery } = useFaculties();
     const { programsQuery } = usePrograms();
 
@@ -502,4 +502,4 @@ function AcademicPage() {
 
 }
 
-export default AcademicPage;
+export default FacultyAndProgramPage;

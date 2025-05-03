@@ -4,11 +4,11 @@ import {
     MagnifyingGlassIcon, TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon,
-    PlusIcon, ForwardIcon, UserPlusIcon
+    UserPlusIcon
 } from "@heroicons/react/24/outline";
 import {
     Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button,
-    Modal, ModalDialog, DialogTitle, DialogContent, FormControl, Stack, FormLabel, Checkbox
+    Modal, ModalDialog, DialogTitle, DialogContent, FormControl, FormLabel, Checkbox
 } from '@mui/joy';
 
 import PhoneInput from "react-phone-input-2";
@@ -26,7 +26,6 @@ import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
 import { useError } from "../context/ErrorContext";
 import { ImportButtonStudent } from "../components/button/import";
 import { ExportButtonStudent } from "../components/button/export";
-import { set } from "lodash";
 // Details Student Card
 function flattenStudent(student: Student) {
     return {
@@ -600,8 +599,6 @@ interface StudentCreateFormProps {
 }
 function StudentCreateForm({ faculties, programs, handleSubmit, register, setValue, control, setIsOpen, isOpen }: StudentCreateFormProps) {
 
-    const isRequired = false;
-
     const [phoneNumber, setPhoneNumber] = useState<string>();
     useEffect(() => {
         if (phoneNumber) {
@@ -623,27 +620,27 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
 
     const renderCommonFields = () => (
         <>
-            <FormControl required={isRequired}>
+            <FormControl required>
                 <FormLabel>{identityDocumentFields.common.number}</FormLabel>
                 <Input value={documentData.number || ""} onChange={(e) => updateField("number", e.target.value)} />
             </FormControl>
 
-            <FormControl required={isRequired}>
+            <FormControl required>
                 <FormLabel>{identityDocumentFields.common.issueDate}</FormLabel>
                 <Input type="date" value={documentData.issueDate || ""} onChange={(e) => updateField("issueDate", e.target.value)} />
             </FormControl>
 
-            <FormControl required={isRequired}>
+            <FormControl required>
                 <FormLabel>{identityDocumentFields.common.expiryDate}</FormLabel>
                 <Input type="date" value={documentData.expiryDate || ""} onChange={(e) => updateField("expiryDate", e.target.value)} />
             </FormControl>
 
-            <FormControl required={isRequired}>
+            <FormControl required>
                 <FormLabel>{identityDocumentFields.common.placeOfIssue}</FormLabel>
                 <Input value={documentData.placeOfIssue || ""} onChange={(e) => updateField("placeOfIssue", e.target.value)} />
             </FormControl>
 
-            <FormControl required={isRequired}>
+            <FormControl required>
                 <FormLabel>{identityDocumentFields.common.country}</FormLabel>
                 <Input value={documentData.country || ""} onChange={(e) => updateField("country", e.target.value)} />
             </FormControl>
@@ -654,7 +651,7 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
         switch (documentType) {
             case IdentityDocumentType.CCCD:
                 return (
-                    <FormControl>
+                    <FormControl required>
                         <FormLabel>{identityDocumentFields.cccd.hasChip}</FormLabel>
                         <Checkbox
                             label={identityDocumentFields.cccd.hasChip}
@@ -666,7 +663,7 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                 );
             case IdentityDocumentType.Passport:
                 return (
-                    <FormControl>
+                    <FormControl required>
                         <FormLabel>{identityDocumentFields.passport.notes}</FormLabel>
                         <Input
                             value={(documentData as PassportIdentityDocument).notes || ""}
@@ -695,21 +692,21 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                             <p className="text-base mb-2">Điền thông tin cá nhân</p>
                             <div className="m-2 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* MSSV */}
-                                <FormControl required={isRequired}>
+                                <FormControl required>
                                     <FormLabel>{studentFields.studentCode}</FormLabel>
                                     <Input
                                         autoFocus
                                         type="text"
-                                        {...register("studentCode", isRequired ? { required: true } : {})}
+                                        {...register("studentCode", { required: true })}
                                     />
                                 </FormControl>
 
                                 {/*Họ và tên*/}
-                                <FormControl required={isRequired}>
+                                <FormControl required>
                                     <FormLabel>{studentFields.fullName}</FormLabel>
                                     <Input
                                         type="text"
-                                        {...register("fullName", isRequired ? { required: true } : {})}
+                                        {...register("fullName", { required: true })}
                                     />
                                 </FormControl>
 
@@ -719,7 +716,7 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                     control={control}
                                     defaultValue={Gender.Khac}
                                     render={({ field }) => (
-                                        <FormControl required={isRequired}>
+                                        <FormControl required>
                                             <FormLabel>{studentFields.gender}</FormLabel>
                                             <Select
                                                 {...field}
@@ -735,20 +732,20 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                 />
 
                                 {/* Ngày sinh */}
-                                <FormControl required={isRequired}>
+                                <FormControl required>
                                     <FormLabel>{studentFields.dateOfBirth}</FormLabel>
                                     <Input
                                         type="date"
-                                        {...register("dateOfBirth", isRequired ? { required: true } : {})}
+                                        {...register("dateOfBirth", { required: true })}
                                     />
                                 </FormControl>
 
                                 {/*Email*/}
-                                <FormControl required={isRequired}>
+                                <FormControl required>
                                     <FormLabel>{studentFields.email}</FormLabel>
                                     <Input
                                         type="email"
-                                        {...register("email", isRequired ? { required: true } : {})}
+                                        {...register("email", { required: true })}
                                     />
                                 </FormControl>
 
@@ -756,11 +753,11 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                 <PhoneInputSelectDropDown setPhoneNumber={setPhoneNumber} />
 
                                 {/*Quốc gia*/}
-                                <FormControl required={isRequired} className="sm:col-span-2">
+                                <FormControl required className="sm:col-span-2">
                                     <FormLabel>{studentFields.nationality}</FormLabel>
                                     <Input
                                         type="text"
-                                        {...register("nationality", isRequired ? { required: true } : {})}
+                                        {...register("nationality", { required: true })}
                                     />
                                 </FormControl>
 
@@ -773,11 +770,11 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                                 const addressKey = key as keyof Address;
                                                 const fieldPath = `${addressType}.${addressKey}` as StudentAddressPath;
                                                 return (
-                                                    <FormControl required={isRequired} key={fieldPath}>
+                                                    <FormControl required key={fieldPath}>
                                                         <FormLabel>{label}</FormLabel>
                                                         <Input
                                                             type="text"
-                                                            {...register(fieldPath, isRequired ? { required: true } : {})}
+                                                            {...register(fieldPath, { required: true })}
                                                         />
                                                     </FormControl>
                                                 );
@@ -811,10 +808,10 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                             <p className="text-base mb-2">Điền thông tin học vụ</p>
                             <div className="m-2 sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 {/* Khoa */}
-                                <FormControl required={isRequired}>
+                                <FormControl required>
                                     <FormLabel>{studentFields.facultyCode}</FormLabel>
                                     <Select
-                                        {...register("facultyCode", isRequired ? { required: true } : {})}
+                                        {...register("facultyCode", { required: true })}
                                         onChange={(e, newValue) => setValue("facultyCode", newValue as string)}
                                     >
                                         {faculties.map((faculty) => (
@@ -826,10 +823,10 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                 </FormControl>
 
                                 {/* Chương trình */}
-                                <FormControl required={isRequired}>
+                                <FormControl required>
                                     <FormLabel>{studentFields.programCode}</FormLabel>
                                     <Select
-                                        {...register("programCode", isRequired ? { required: true } : {})}
+                                        {...register("programCode", { required: true })}
                                         onChange={(e, newValue) => setValue("programCode", newValue as string)}
                                     >
                                         {programs.map((program) => (
@@ -841,13 +838,13 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                                 </FormControl>
 
                                 {/* Khóa học */}
-                                <FormControl>
+                                <FormControl required>
                                     <FormLabel>{studentFields.cohortYear}</FormLabel>
                                     <Input
                                         type="number"
                                         defaultValue={new Date().getFullYear()}
                                         {...register("cohortYear", {
-                                            required: isRequired,
+                                            required: true,
                                             valueAsNumber: true,
                                         })}
                                     />
@@ -904,7 +901,6 @@ function StudentCreateFormContainer({ onCreate, faculties, programs }: StudentCr
                 cohortYear: getValues('cohortYear') || '',
                 identityDocuments: getValues('identityDocuments') || [],
             }
-            localStorage.setItem('student_form_cache', JSON.stringify(getValues()));
             await onCreate(newStudent)
             reset();
             setIsOpen(false);

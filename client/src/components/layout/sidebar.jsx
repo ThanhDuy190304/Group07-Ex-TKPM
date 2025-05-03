@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from 'react-router-dom';
 import {
     Cog8ToothIcon, BellIcon, AcademicCapIcon, ArrowLeftIcon, ArrowRightIcon,
-    UserCircleIcon, ClipboardIcon
+    UserCircleIcon, ClipboardIcon, ClipboardDocumentIcon
 } from "@heroicons/react/24/outline";
 function SidebarItem({ to, icon: Icon, label }) {
     return (
@@ -36,8 +36,9 @@ function Sidebar() {
                 <div className="flex flex-col gap-2 bg-black mt-8">
                     <SidebarItem to="/" icon={AcademicCapIcon} label="Sinh viên" />
                     <SidebarItem to="/notification" icon={BellIcon} label="Thông báo" />
-                    <SidebarItem to="/settings" icon={Cog8ToothIcon} label="Cài đặt" />
+                    <SidebarItem to="/setting" icon={Cog8ToothIcon} label="Cài đặt" />
                     <SidebarItem to="/faculties-and-programs" icon={ClipboardIcon} label="Khoa và Chương Trình Học" />
+                    <SidebarItem to="/course" icon={ClipboardDocumentIcon} label="Khóa học"></SidebarItem>
                 </div>
             </div>
 
