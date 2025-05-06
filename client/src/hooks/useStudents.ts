@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { postStudent, deleteStudent, putStudent, getAllStudents } from '../api/apiStudents';
+import { postStudent, deleteStudent, putStudent, getAllStudents, deleteStudents } from '../api/apiStudents';
 import { Student } from '../types/student';
 
 
 export function useAllStudents(searchQuery: Partial<Student> & { page?: number; limit?: number }) {
+
     const queryClient = useQueryClient();
 
     const studentsQuery = useQuery({
-        queryKey: ['students', JSON.stringify(searchQuery)],
+        queryKey: ['students', searchQuery],
         queryFn: () => getAllStudents(searchQuery),
         placeholderData: (previousData) => previousData
     })
@@ -32,7 +33,16 @@ export function useAllStudents(searchQuery: Partial<Student> & { page?: number; 
 
 
     const removeStudent = useMutation({
-        mutationFn: deleteStudent,
+        mutationFn: (studentId: string) => deleteStudent(studentId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['students', JSON.stringify(searchQuery)]
+            });
+        },
+    });
+
+    const removeStudents = useMutation({
+        mutationFn: deleteStudents,
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ['students', JSON.stringify(searchQuery)]
@@ -45,6 +55,7 @@ export function useAllStudents(searchQuery: Partial<Student> & { page?: number; 
         updateStudent,
         createStudent,
         removeStudent,
+        removeStudents
     };
 }
 

@@ -2,7 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Sidebar from "./components/layout/sidebar";
-import StudentPage from "./pages/students";
+import StudentPageContainer from "./pages/students";
 import FacultyAndProgramPage from "./pages/facultiesAndPrograms";
 import CoursePage from "./pages/courses";
 import { ErrorProvider } from "./context/ErrorContext";
@@ -20,8 +20,8 @@ function App() {
           <div className="flex-1 m-2 px-8 py-8 bg-white rounded-md overflow-auto">
             <ErrorProvider>
               <Routes>
-                <Route path="/" element={<StudentPage />} />
-                <Route path="/students" element={<StudentPage />} />
+                <Route path="/" element={<StudentPageContainer />} />
+                <Route path="/students" element={<StudentPageContainer />} />
                 <Route path="/faculties-and-programs" element={<FacultyAndProgramPage />} />
                 <Route path="/course" element={<CoursePage />} />
               </Routes>

@@ -10,7 +10,7 @@ import { useError } from "../context/ErrorContext";
 
 import {
     Sheet, Table, Modal, Button, ModalDialog, DialogTitle, DialogContent,
-    FormControl, FormLabel, Input, Select, Option
+    FormControl, FormLabel, Input, Select, Option, RadioGroup, Radio
 } from '@mui/joy';
 import { PencilSquareIcon, CheckIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 
@@ -29,8 +29,6 @@ interface CourseCreateProps {
 }
 
 function CourseCreateFormModal({ courses, faculties, onCreate, register, control, isOpen, setIsOpen }: CourseCreateProps & { isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
-
-
     return (
         <Modal open={isOpen} onClose={() => setIsOpen(false)}>
             <ModalDialog>
@@ -160,7 +158,8 @@ function CourseCreateButton({ courses, faculties, register, control, onCreate }:
                 color="success"
                 startDecorator={<PlusIcon className="w-5 h-5" />}
                 onClick={() => setIsOpen(true)}
-                className="w-fit">
+                className="w-fit "
+            >
                 Tạo khóa học mới
             </Button>
             <CourseCreateFormModal
@@ -208,18 +207,35 @@ function CourseCreateContainer({ courses, faculties, createCourse }: CourseCreat
     );
 }
 
+interface CourseRemoveContainerProps {
+    onRemove: () => Promise<void>;
+}
+function CourseRemoveContainer({ onRemove }: CourseRemoveContainerProps) {
+    return (
+        <Button
+            variant="solid"
+            color="danger"
+            startDecorator={<TrashIcon className="w-5 h-5" />}
+            onClick={onRemove}
+            className="w-fit "
+        >
+            Xoá
+        </Button>
+    );
+}
+
+
 interface CourseRowProps {
     index: number;
     course: Course;
-    removeCourse: (courseId: string) => void;
 }
-function CourseRow({ index, course, removeCourse }: CourseRowProps) {
+function CourseRow({ index, course }: CourseRowProps) {
     const keyNames = Object.keys(KeyNameOfCourse) as (keyof Course)[];
     const handleToggleActive = async () => {
         console.log(`Toggling active for course ${course.id}`);
     };
     return (
-        <tr>
+        <>
             <td className="px-4 py-2">{index + 1}</td>
             {keyNames.map((key) => (
                 <td key={key} className="px-4 py-2 whitespace-nowrap">
@@ -230,42 +246,75 @@ function CourseRow({ index, course, removeCourse }: CourseRowProps) {
                     )}
                 </td>
             ))}
-            <td className="px-4 py-2">
-                <button
-                    className="p-1 rounded text-red-500 hover:bg-red-100 cursor-pointer"
-                    onClick={() => removeCourse(course.id)}
-                >
-                    <TrashIcon className="w-5 h-5" />
-                </button>
-            </td>
-        </tr>
-
+        </>
     );
 }
 
 interface CourseTableProps {
     courses: Course[];
-    removeCourse: (courseId: string) => void;
+    selectedId: null | string;
+    setSelectedId: (selectedId: null | string) => void;
 }
-function CourseTable({ courses, removeCourse }: CourseTableProps) {
+function CourseTable({ courses, selectedId, setSelectedId }: CourseTableProps) {
     const headers = ["STT", ...Object.values(KeyNameOfCourse)];
-
     return (
-        <Table className="!table-auto !border-separate border border-slate-200 !rounded-lg w-full overflow-hidden">
-            <thead>
-                <tr>
-                    {headers.map((header, index) => (
-                        <th key={index} className="capitalize">{header}</th>
-                    ))}
-                    <th className="w-12"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {courses.map((course, index) => (
-                    <CourseRow key={course.id} index={index} course={course} removeCourse={removeCourse} />
-                ))}
-            </tbody>
-        </Table>
+        <RadioGroup
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+        >
+            <Table className="!table-auto !border-separate border border-slate-200 !rounded-lg w-full overflow-hidden">
+                <thead>
+                    <tr>
+                        <th className="w-12"></th>
+                        {headers.map((header, index) => (
+                            <th key={index} className="capitalize">{header}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {courses.map((course, index) => (
+                        <tr key={course.id}>
+                            <td >
+                                <Radio
+                                    value={course.id}
+                                    checked={selectedId === course.id}
+                                    onClick={() => {
+                                        setSelectedId(selectedId === course.id ? null : course.id);
+                                    }}
+                                    slots={{
+                                        radio: (props) => {
+                                            const { ownerState, ...domProps } = props;
+                                            return (
+                                                <span
+                                                    {...domProps}
+                                                    className={`relative w-5 h-5 cursor-pointer rounded border flex items-center justify-center transition-all duration-200 ease-in-out
+                                                         ${ownerState?.checked
+                                                            ? "border-blue-500 bg-blue-500/10"
+                                                            : "border-gray-400 hover:border-blue-400"}`}
+                                                />
+                                            );
+                                        },
+                                        icon: (props) => {
+                                            const { ownerState } = props;
+                                            return ownerState.checked ? (
+                                                <CheckIcon className={`absolute w-3.5 h-3.5 text-blue-700 transition-all duration-200 ease-in-out
+                                                 ${ownerState?.checked ? "scale-100 opacity-100" : "scale-75 opacity-0"}`}
+                                                />
+                                            ) : null;
+                                        },
+                                    }}
+                                />
+
+                            </td>
+                            <CourseRow
+                                index={index}
+                                course={course}
+                            />
+                        </tr>))}
+                </tbody>
+            </Table>
+        </RadioGroup >
+
     );
 }
 
@@ -277,14 +326,18 @@ interface CourseContainerProps {
 }
 function CourseContainer({ courses, faculties, createCourse, removeCourse }: CourseContainerProps) {
     const { showError } = useError();
+    const [selectedId, setSelectedId] = useState<string | null>(null);
 
-    const handleRemoveCourse = async (courseId: string) => {
+    const handleRemoveCourse = async () => {
+        if (!selectedId) return;
         try {
-            await removeCourse(courseId);
+            await removeCourse(selectedId);
+            setSelectedId(null); // Reset selection sau khi xóa
         } catch (error: any) {
             showError(error.message);
         }
     }
+
 
     const handleCreateCourse = async (newCourse: Partial<Course>) => {
         try {
@@ -296,13 +349,18 @@ function CourseContainer({ courses, faculties, createCourse, removeCourse }: Cou
 
     return (
         <section className='flex flex-col gap-4'>
-            <CourseCreateContainer
-                courses={courses}
-                faculties={faculties}
-                createCourse={handleCreateCourse} />
+            <div className="flex gap-2">
+                <CourseRemoveContainer
+                    onRemove={handleRemoveCourse} />
+                <CourseCreateContainer
+                    courses={courses}
+                    faculties={faculties}
+                    createCourse={handleCreateCourse} />
+            </div>
             <CourseTable
                 courses={courses}
-                removeCourse={handleRemoveCourse} />
+                selectedId={selectedId}
+                setSelectedId={setSelectedId} />
         </section>
     );
 

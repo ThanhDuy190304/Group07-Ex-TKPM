@@ -7,7 +7,6 @@ export async function getFaculties() {
         const response = await api.get("/faculty");
         return response.data?.data;
     } catch (error: any) {
-        console.error("Lỗi khi fetch faculties:", error);
         throw {
             status: error.response.status,
             message: error.response.data.error_vn,

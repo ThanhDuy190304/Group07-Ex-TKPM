@@ -18,7 +18,7 @@ export function MultiSelect({ options, onChange, placeholder = "" }: MultiSelect
     const focusRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         onChange(selectedOptions);
-    }, [selectedOptions, onChange]);
+    }, [selectedOptions]);
 
     const optionRefs = useRef<(HTMLLabelElement | null)[]>([]);
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, useContext, createContext, ReactNode } from "react";
 import { Control, Controller, useForm, UseFormRegister, UseFormSetValue, FieldPath } from "react-hook-form";
 import {
     MagnifyingGlassIcon, TrashIcon,
@@ -26,6 +26,167 @@ import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
 import { useError } from "../context/ErrorContext";
 import { ImportButtonStudent } from "../components/button/import";
 import { ExportButtonStudent } from "../components/button/export";
+
+
+const StudentContext = createContext<{
+    students: Student[];
+    total: number;
+    page: number;
+    limit: number;
+    handleDeleteManyStudents: (studentIds: string[]) => Promise<boolean>;
+    handleUpdate: (studentId: string, updatedData: Partial<Student>) => Promise<boolean>;
+    handleCreate: (newStudent: Partial<Student>) => Promise<boolean>;
+    handlePageChange: (newPage: number) => void;
+    handleSearch: (query: Partial<Student>) => void;
+} | null>(null);
+
+const FacultyContext = createContext<{
+    faculties: Faculty[];
+} | null>(null);
+
+const ProgramContext = createContext<{
+    programs: Program[];
+} | null>(null);
+
+const StudentSelectionContext = createContext<{
+    selectedStudentIds: string[];
+    setSelectedStudentIds: React.Dispatch<React.SetStateAction<string[]>>;
+} | null>(null);
+
+function StudentProvider({ children }: { children: ReactNode }) {
+    const { showError } = useError();
+    const [page, setPage] = useState<number>(1);
+    const limit = 30;
+    const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
+    const { studentsQuery, updateStudent, removeStudents, createStudent } = useAllStudents({
+        ...searchQuery,
+        page,
+        limit
+    });
+    const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+    const { facultiesQuery } = useFaculties();
+    const { programsQuery } = usePrograms();
+    // Handlers
+    const handleDeleteManyStudents = useCallback(async (studentIds: string[]): Promise<boolean> => {
+        try {
+            await removeStudents.mutateAsync(studentIds);
+            setSelectedStudentIds([]);
+            return true; // Clear selection after delete
+        } catch (error: any) {
+            showError(error.message);
+            return false;
+        }
+    }, [removeStudents]);
+
+    const handleCreate = useCallback(async (newStudent: Partial<Student>): Promise<boolean> => {
+        try {
+            await createStudent.mutateAsync(newStudent);
+            return true;
+        } catch (error: any) {
+            showError(error.message);
+            return false;
+        }
+    }, [createStudent]);
+
+    const handleUpdate = useCallback(async (studentId: string, updatedData: Partial<Student>): Promise<boolean> => {
+        try {
+            await updateStudent.mutateAsync({ studentId, updatedData });
+            return true;
+        } catch (error: any) {
+            showError(error.message);
+            return false;
+        }
+    }, [updateStudent]);
+
+    const handlePageChange = useCallback((newPage: number) => {
+        setPage(newPage);
+    }, []);
+
+    const handleSearch = useCallback((query: Partial<Student>) => {
+        setSearchQuery(query);
+        setPage(1);
+    }, []);
+
+    useEffect(() => {
+        setSelectedStudentIds([]);
+    }, [studentsQuery.data]);
+
+    const studentContextValue = useMemo(() => ({
+        students: studentsQuery.data?.students || [],
+        total: studentsQuery.data?.total || 0,
+        page,
+        limit,
+        handleDeleteManyStudents,
+        handleCreate,
+        handleUpdate,
+        handlePageChange,
+        handleSearch
+    }), [studentsQuery.data]);
+
+    const facultyContextValue = useMemo(() => ({
+        faculties: facultiesQuery.data?.faculties || []
+    }), [[facultiesQuery.data]]);
+
+    const programContextValue = useMemo(() => ({
+        programs: programsQuery.data?.programs || []
+    }), [[programsQuery.data]]);
+
+
+    const selectionValue = useMemo(() => ({
+        selectedStudentIds,
+        setSelectedStudentIds
+    }), [selectedStudentIds]);
+
+
+    if (studentsQuery.isLoading || facultiesQuery.isLoading || programsQuery.isLoading) {
+        return <p>Đang tải dữ liệu...</p>;
+    }
+
+    if (studentsQuery.isError) {
+        return <p>{studentsQuery.error.message}</p>
+    }
+    if (facultiesQuery.isError || programsQuery.isError) {
+        return <p>Hệ thống lỗi, vui lòng thử lại sau</p>
+    }
+
+
+    return (
+        <StudentContext.Provider value={studentContextValue}>
+            <FacultyContext.Provider value={facultyContextValue}>
+                <ProgramContext.Provider value={programContextValue}>
+                    <StudentSelectionContext.Provider value={selectionValue}>
+                        {children}
+                    </StudentSelectionContext.Provider>
+                </ProgramContext.Provider>
+            </FacultyContext.Provider>
+        </StudentContext.Provider>
+    );
+}
+// Custom hooks
+function useStudentsContext() {
+    const context = useContext(StudentContext);
+    if (!context) throw new Error('useStudentsContext must be used within StudentProvider');
+    return context;
+}
+
+function useFacultiesContext() {
+    const context = useContext(FacultyContext);
+    if (!context) throw new Error('useFacultiesContext must be used within StudentProvider');
+    return context;
+}
+
+function useProgramsContext() {
+    const context = useContext(ProgramContext);
+    if (!context) throw new Error('useProgramsContext must be used within StudentProvider');
+    return context;
+}
+
+function useStudentSelectionContext() {
+    const context = useContext(StudentSelectionContext);
+    if (!context) throw new Error('useStudentSelectionContext must be used within StudentProvider');
+    return context;
+}
+
 // Details Student Card
 function flattenStudent(student: Student) {
     return {
@@ -71,7 +232,6 @@ function StudentDetailsCard({ student, onClose }: { student: Student; onClose: (
         </Card>
     );
 }
-
 // Student Table
 interface PaginationProps {
     total: number;
@@ -128,156 +288,37 @@ function Pagination({ total, limit, currentPage, onPageChange }: PaginationProps
     );
 }
 
-interface StudentTableRowProps {
-    student: Student;
-    isEditing: boolean;
-    isAnyEditing: boolean;
-    faculties: Faculty[];
-    programs: Program[];
-    onEdit: () => void;
-    onSave: () => void;
-    register: UseFormRegister<Partial<Student>>;
-    onDelete: (studentId: string) => void;
-    onSelect: () => void;
-}
-function StudentTableRow({ student, isEditing, isAnyEditing, faculties, programs, onEdit, register, onSave, onDelete, onSelect }: StudentTableRowProps) {
-    const studentStatusOptions = Object.values(StudentStatus);
+function StudentTableRow({ student }: { student: Student }) {
     return (
-        <tr className="cursor-pointer hover:bg-gray-100" onClick={onSelect}>
+        <>
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis"> {student.studentCode}</td>
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">{student.fullName}</td>
 
             {/* Cột Khoa */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                {isEditing ? (
-                    <select
-                        {...register("facultyCode")}
-                        defaultValue={student.facultyCode || ""}
-                        className="border rounded p-1 w-full"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <option value="">-- Không có khoa --</option>
-                        {faculties.map((f) => (
-                            <option key={f.facultyCode} value={f.facultyCode}>
-                                {f.facultyCode}
-                            </option>
-                        ))}
-                    </select>
-                ) : (
-                    student.facultyCode || "Chưa có khoa"
-                )}
+                {student.facultyCode || "Chưa có khoa"}
             </td>
-
             {/* Cột Chương Trình */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                {isEditing ? (
-                    <select
-                        {...register("programCode")}
-                        defaultValue={student.programCode || ""}
-                        className="border rounded p-1 w-full"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <option value="">-- Không có chương trình --</option>
-                        {programs.map((f) => (
-                            <option key={f.programCode} value={f.programCode}>
-                                {f.programCode}
-                            </option>
-                        ))}
-                    </select>
-                ) : (
-                    student.programCode || "Chưa có chương trình"
-                )}
+                {student.programCode || "Chưa có chương trình"}
             </td>
 
             {/* Cột Khoá */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                {isEditing ? (
-                    <input
-                        {...register("cohortYear")}
-                        defaultValue={student.cohortYear}
-                        type="number"
-                        className="border rounded p-1 w-full"
-                        onClick={(e) => e.stopPropagation()}
-                        placeholder="Nhập năm"
-                    />
-                ) : (
-                    student.cohortYear || "Chưa xác nhận khóa"
-                )}
+                {student.cohortYear || "Chưa xác nhận khóa"}
             </td>
 
             {/* Cột Trạng thái */}
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                {isEditing ? (
-                    <select
-                        {...register("status")}
-                        defaultValue={student.status}
-                        className="border rounded p-1 w-full"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {studentStatusOptions.map((status) => (
-                            <option key={status} value={status}>
-                                {status}
-                            </option>
-                        ))}
-                    </select>
-                ) : (
-                    student.status || "Chưa có trạng thái"
-                )}
+                {student.status || "Chưa có trạng thái"}
             </td>
-
-            {/* Cột Hành Động */}
-            <td className="px-4 py-2 ">
-                {isEditing ? (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onSave();
-                        }}
-                        className="p-1 rounded text-green-500 hover:bg-green-100"
-                    >
-                        <CheckIcon className="w-5 h-5" />
-                    </button>
-                ) : (
-                    <>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit();
-                            }}
-                            disabled={isAnyEditing}
-                            className={`p-1 rounded text-blue-500 hover:bg-gray-100 ${isAnyEditing ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-                                }`}
-                        >
-                            <PencilSquareIcon className="w-5 h-5" />
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(student.id);
-                            }}
-                            className="p-1 rounded text-red-500 hover:bg-red-100 cursor-pointer"
-                        >
-                            <TrashIcon className="w-5 h-5" />
-                        </button>
-                    </>
-                )}
-            </td>
-        </tr>
+        </>
     );
 }
 
-interface StudentTableProps {
-    students: Student[];
-    faculties: Faculty[];
-    programs: Program[];
-    isEditingStudentId: string | null;
-    register: UseFormRegister<Partial<Student>>;
-    onEdit: (student: Student) => void;
-    onSave: () => void;
-    onDelete: (studentId: string) => void;
-}
-function StudentTable({ students, faculties, programs, isEditingStudentId, register, onEdit, onSave, onDelete }: StudentTableProps) {
-    const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+function StudentTable() {
+    const { students } = useStudentsContext()
+    const { selectedStudentIds, setSelectedStudentIds } = useStudentSelectionContext()
     const studentFieldWidths: Partial<Record<keyof Student, string>> = {
         studentCode: "w-24",
         fullName: "w-40",
@@ -286,13 +327,38 @@ function StudentTable({ students, faculties, programs, isEditingStudentId, regis
         cohortYear: "w-16",
         status: "w-24",
     };
-
     return (
         <div className="flex flex-row gap-2">
             <Sheet className="flex-2" variant="outlined" sx={{ borderRadius: "md", overflow: "auto" }}>
                 <Table>
                     <thead>
                         <tr>
+                            <th className="w-12">
+                                <Checkbox
+                                    checked={selectedStudentIds.length === students.length && students.length > 0}
+                                    indeterminate={selectedStudentIds.length > 0 && selectedStudentIds.length < students.length}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setSelectedStudentIds(students.map(student => student.id));
+                                        } else {
+                                            setSelectedStudentIds([]);
+                                        }
+                                    }}
+                                    slots={{
+                                        checkbox: (props) => {
+                                            const { ownerState, ...domProps } = props;
+                                            return (
+                                                <span
+                                                    {...domProps}
+                                                    className={`relative w-5 h-5 cursor-pointer rounded border flex items-center justify-center transition-all duration-200 ease-in-out
+                                                         ${ownerState?.checked
+                                                            ? "border-blue-500 bg-blue-500/10"
+                                                            : "border-gray-400 hover:border-blue-400"}`}
+                                                />
+                                            );
+                                        },
+                                    }} />
+                            </th>
                             {Object.keys(studentFieldWidths).map((key) => (
                                 <th
                                     key={key}
@@ -301,120 +367,54 @@ function StudentTable({ students, faculties, programs, isEditingStudentId, regis
                                     {studentFields[key as keyof Student]}
                                 </th>
                             ))}
-                            <th key="action" className="w-12"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        {students.map((student) => {
-                            const isEditing = isEditingStudentId === student.id;
-                            return (
-                                <StudentTableRow
-                                    key={student.id}
-                                    student={student}
-                                    register={register}
-                                    isEditing={isEditing}
-                                    isAnyEditing={!!isEditingStudentId}
-                                    faculties={faculties}
-                                    programs={programs}
-                                    onEdit={() => onEdit(student)}
-                                    onSave={onSave}
-                                    onDelete={onDelete}
-                                    onSelect={() => setSelectedStudent(student)}
-                                />
-                            );
-                        })}
+                        {students.map((student) => (
+                            <tr key={student.id} className="cursor-pointer hover:bg-gray-100" >
+                                <td >
+                                    <Checkbox
+                                        checked={selectedStudentIds.includes(student.id)}
+                                        value={student.id}
+                                        onChange={(e) => {
+                                            setSelectedStudentIds(prev =>
+                                                prev.includes(student.id)
+                                                    ? prev.filter(id => id !== student.id)
+                                                    : [...prev, student.id]
+                                            );
+                                        }}
+                                        slots={{
+                                            checkbox: (props) => {
+                                                const { ownerState, ...domProps } = props;
+                                                return (
+                                                    <span
+                                                        {...domProps}
+                                                        className={`relative w-5 h-5 cursor-pointer rounded border flex items-center justify-center transition-all duration-200 ease-in-out
+                                                         ${ownerState?.checked
+                                                                ? "border-blue-500 bg-blue-500/10"
+                                                                : "border-gray-400 hover:border-blue-400"}`}
+                                                    />
+                                                );
+                                            },
+                                        }} />
+                                </td>
+                                <StudentTableRow student={student} />
+                            </tr>
+                        ))}
                     </tbody>
                 </Table>
             </Sheet >
-            {/* Thông tin chi tiết sinh viên */}
-            {selectedStudent && (
-                <div className="flex-shrink-0">
-                    <StudentDetailsCard
-                        student={selectedStudent}
-                        onClose={() => setSelectedStudent(null)}
-                    />
-                </div>
-            )}
-        </div>
+        </div >
 
     );
 
-}
-
-function StudentTableContainer({
-    students,
-    faculties,
-    programs,
-    removeStudent,
-    updateStudent,
-}: {
-    students: Student[];
-    faculties: Faculty[];
-    programs: Program[];
-    removeStudent: (studentId: string) => Promise<void>;
-    updateStudent: (data: { studentId: string; updatedData: Partial<Student> }) => Promise<Student>;
-}) {
-    const { register, reset, handleSubmit, getValues } = useForm<Partial<Student>>();
-    const [isEditingStudentId, setIsEditingStudentId] = useState<string | null>(null);
-    const { showError } = useError();
-
-    const handleEdit = (student: Student) => {
-        setIsEditingStudentId(student.id);
-        reset({
-            facultyCode: student.facultyCode,
-            programCode: student.programCode,
-            status: student.status,
-            cohortYear: student.cohortYear,
-        });
-    };
-
-    const handleSave = async () => {
-        try {
-            const updatedData = {
-                facultyCode: getValues("facultyCode") || null,
-                programCode: getValues("programCode") || null,
-                status: getValues("status"),
-                cohortYear: getValues("cohortYear"),
-            };
-            await updateStudent({
-                studentId: isEditingStudentId!,
-                updatedData,
-            });
-            setIsEditingStudentId(null);
-        } catch (error: any) {
-            showError(error.message);
-        }
-    };
-
-    const handleDelete = async (studentId: string) => {
-        try {
-            await removeStudent(studentId);
-        } catch (error: any) {
-            showError(error.message)
-        }
-    };
-
-    return (
-        <StudentTable
-            students={students}
-            faculties={faculties}
-            programs={programs}
-            register={register}
-            isEditingStudentId={isEditingStudentId}
-            onEdit={handleEdit}
-            onSave={handleSubmit(handleSave)}
-            onDelete={handleDelete}
-        />
-    );
 }
 
 //Search
-interface SearchProps {
-    setSearchQuery: (query: Partial<Student>) => void;
-    faculties: Faculty[];
-    programs: Program[];
-}
-function Search({ setSearchQuery, faculties, programs }: SearchProps) {
+function Search() {
+    const { faculties } = useFacultiesContext();
+    const { programs } = useProgramsContext();
+    const { handleSearch } = useStudentsContext();
     const [isOpen, setIsOpen] = useState(false);
     const [searchType, setSearchType] = useState("studentCode");
     const [queryStudentCode, setQueryStudentCode] = useState("");
@@ -423,7 +423,7 @@ function Search({ setSearchQuery, faculties, programs }: SearchProps) {
     const [queryCohortYear, setQueryCohortYear] = useState("");
     const [queryProgramCode, setQueryProgramCode] = useState("");
 
-    const handleSearch = () => {
+    const onSearch = () => {
         let query = {};
         if (searchType === "studentCode") {
             query = { studentCode: queryStudentCode };
@@ -435,7 +435,7 @@ function Search({ setSearchQuery, faculties, programs }: SearchProps) {
                 programCode: queryProgramCode,
             };
         }
-        setSearchQuery(query);
+        handleSearch(query);
     };
 
     const SelectWithClear = ({ value, onChange, options, placeholder = "Chọn" }: {
@@ -540,7 +540,7 @@ function Search({ setSearchQuery, faculties, programs }: SearchProps) {
                     )}
 
                     <div className="flex justify-end mt-3">
-                        <Button onClick={handleSearch} size="md">
+                        <Button onClick={onSearch} size="md">
                             Tìm kiếm
                         </Button>
                     </div>
@@ -585,19 +585,18 @@ function PhoneInputSelectDropDown({ setPhoneNumber }: { setPhoneNumber: (value: 
         </FormControl>
     );
 }
-
 //Create Student Form
 interface StudentCreateFormProps {
-    faculties: Faculty[];
-    programs: Program[];
-    handleSubmit: () => void;
+    onCreate: () => void;
     register: UseFormRegister<Partial<Student>>;
     setValue: UseFormSetValue<Partial<Student>>;
     control: Control<Partial<Student>>;
     setIsOpen: (isOpen: boolean) => void;
     isOpen: boolean
 }
-function StudentCreateForm({ faculties, programs, handleSubmit, register, setValue, control, setIsOpen, isOpen }: StudentCreateFormProps) {
+function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, isOpen }: StudentCreateFormProps) {
+    const { faculties } = useFacultiesContext();
+    const { programs } = useProgramsContext();
 
     const [phoneNumber, setPhoneNumber] = useState<string>();
     useEffect(() => {
@@ -651,7 +650,7 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
         switch (documentType) {
             case IdentityDocumentType.CCCD:
                 return (
-                    <FormControl required>
+                    <FormControl>
                         <FormLabel>{identityDocumentFields.cccd.hasChip}</FormLabel>
                         <Checkbox
                             label={identityDocumentFields.cccd.hasChip}
@@ -686,8 +685,9 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                handleSubmit();
+                                onCreate();
                             }}
+                            autoComplete="on"
                         >
                             <p className="text-base mb-2">Điền thông tin cá nhân</p>
                             <div className="m-2 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -871,41 +871,32 @@ function StudentCreateForm({ faculties, programs, handleSubmit, register, setVal
         </Modal>
     );
 }
-
-
-interface StudentCreateFormContainerProps {
-    onCreate: (newStudent: Partial<Student>) => Promise<Student>;
-    faculties: Faculty[];
-    programs: Program[];
-}
-function StudentCreateFormContainer({ onCreate, faculties, programs }: StudentCreateFormContainerProps) {
+function StudentCreateFormContainer() {
+    const { handleCreate } = useStudentsContext();
     const { register, reset, getValues, setValue, control } = useForm<Partial<Student>>();
-    const { showError } = useError();
     const [isOpen, setIsOpen] = useState(false);
 
-    const handleCreate = async () => {
-        try {
-            const newStudent: Partial<Student> = {
-                studentCode: getValues('studentCode'),
-                fullName: getValues('fullName'),
-                dateOfBirth: getValues('dateOfBirth'),
-                gender: getValues('gender'),
-                email: getValues('email'),
-                mailAddress: getValues('mailAddress'),
-                permanentAddress: getValues('permanentAddress'),
-                temporaryResidenceAddress: getValues('temporaryResidenceAddress'),
-                phoneNumber: getValues('phoneNumber'),
-                nationality: getValues('nationality'),
-                facultyCode: getValues('facultyCode') || null,
-                programCode: getValues('programCode') || null,
-                cohortYear: getValues('cohortYear') || '',
-                identityDocuments: getValues('identityDocuments') || [],
-            }
-            await onCreate(newStudent)
+    const onCreate = async () => {
+        const newStudent: Partial<Student> = {
+            studentCode: getValues('studentCode'),
+            fullName: getValues('fullName'),
+            dateOfBirth: getValues('dateOfBirth'),
+            gender: getValues('gender'),
+            email: getValues('email'),
+            mailAddress: getValues('mailAddress'),
+            permanentAddress: getValues('permanentAddress'),
+            temporaryResidenceAddress: getValues('temporaryResidenceAddress'),
+            phoneNumber: getValues('phoneNumber'),
+            nationality: getValues('nationality'),
+            facultyCode: getValues('facultyCode') || null,
+            programCode: getValues('programCode') || null,
+            cohortYear: getValues('cohortYear') || '',
+            identityDocuments: getValues('identityDocuments') || [],
+        }
+        const result = await handleCreate(newStudent);
+        if (result) {
             reset();
             setIsOpen(false);
-        } catch (error: any) {
-            showError(error.message);
         }
     }
     return (
@@ -920,88 +911,64 @@ function StudentCreateFormContainer({ onCreate, faculties, programs }: StudentCr
                 Tạo sinh viên
             </Button>
             <StudentCreateForm
-                faculties={faculties}
-                programs={programs}
                 register={register}
                 setValue={setValue}
                 control={control}
                 setIsOpen={setIsOpen}
                 isOpen={isOpen}
-                handleSubmit={handleCreate} />
+                onCreate={onCreate} />
         </>
     );
 
 }
+
+function StudentsRemoveButton({ onRemove }: { onRemove: () => void }) {
+    return (
+        <Button
+            variant="solid"
+            color="danger"
+            startDecorator={<TrashIcon className="w-5 h-5" />}
+            onClick={onRemove}
+            className="w-fit "
+        >
+            Xoá
+        </Button>
+    );
+}
+
 function StudentPage() {
-    const { showError } = useError();
-    const [page, setPage] = useState<number>(1);
-    const limit = 30;
-    const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
-
-    const { studentsQuery, updateStudent, removeStudent, createStudent } = useAllStudents({
-        ...searchQuery,
-        page,
-        limit
-    });
-    const { facultiesQuery } = useFaculties();
-    const { programsQuery } = usePrograms();
-
-
-    if (studentsQuery.isLoading || facultiesQuery.isLoading || programsQuery.isLoading) {
-        return <p>Đang tải dữ liệu...</p>;
-    }
-
-    if (studentsQuery.isError) {
-        return showError(studentsQuery.error.message);
-    }
-    if (facultiesQuery.isError || programsQuery.isError) {
-        return showError("Lỗi khi tải danh mục");
-    }
-
-    const students = studentsQuery.data.students as Student[];
-    const total = studentsQuery.data.total as number;
-    const faculties = facultiesQuery.data.faculties as Faculty[];
-    const programs = programsQuery.data.programs as Program[];
-
+    const { page, limit, total, handlePageChange } = useStudentsContext()
     return (
         <main className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
 
             <section className="flex items-center justify-between w-full gap-4">
                 <div className="flex items-center gap-2 flex-1 max-w-md">
-                    <Search
-                        setSearchQuery={setSearchQuery}
-                        faculties={faculties}
-                        programs={programs} />
+                    <Search />
 
-                    <StudentCreateFormContainer
-                        faculties={faculties}
-                        programs={programs}
-                        onCreate={createStudent.mutateAsync}
-                    />
+                    <StudentCreateFormContainer />
                 </div>
-
                 <ImportButtonStudent />
-                <ExportButtonStudent searchQuery={searchQuery} />
+                {/* <ExportButtonStudent searchQuery={searchQuery} /> */}
             </section>
 
             <section className="flex flex-col gap-6 items-center mt-6">
-                <StudentTableContainer
-                    students={students}
-                    faculties={faculties}
-                    programs={programs}
-                    removeStudent={removeStudent.mutateAsync}
-                    updateStudent={updateStudent.mutateAsync}
-                />
+                <StudentTable />
                 <Pagination
-                    total={total ?? 0}
+                    total={total}
                     limit={limit}
                     currentPage={page}
-                    onPageChange={setPage}
+                    onPageChange={handlePageChange}
                 />
             </section>
         </main>
     );
 }
-
-export default StudentPage;
+function StudentPageContainer() {
+    return (
+        <StudentProvider>
+            <StudentPage />
+        </StudentProvider>
+    );
+}
+export default StudentPageContainer;

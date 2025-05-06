@@ -40,6 +40,16 @@ const remove = async (req, res, next) => {
   }
 };
 
+const removeStudents = async (req, res, next) => {
+  try {
+    const { studentIds } = req.body
+    await studentService.deleteStudents(studentIds)
+    return res.status(204).send();
+  } catch (error) {
+    next(error)
+  }
+}
+
 const importFile = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -60,5 +70,6 @@ module.exports = {
   getAllStudents,
   update,
   remove,
+  removeStudents,
   importFile,
 };

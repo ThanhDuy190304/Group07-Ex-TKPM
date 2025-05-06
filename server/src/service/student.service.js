@@ -143,6 +143,10 @@ class StudentService extends BaseService {
     }
   }
 
+  async deleteStudents(studentIds) {
+    await this.model.destroy({ where: { id: studentIds } });
+  }
+
   async importFile(fileBuffer, format) {
     let students;
     if (format === 'csv') {
@@ -212,6 +216,8 @@ class StudentService extends BaseService {
     }
     return results;
   }
+
+
 }
 
 module.exports = StudentService;
