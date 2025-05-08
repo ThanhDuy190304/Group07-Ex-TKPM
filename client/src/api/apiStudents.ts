@@ -68,6 +68,7 @@ export async function getAllStudents(searchQuery: Partial<Student> & { page?: nu
 
 export async function deleteStudents(studentIds: string[]) {
     try {
+        console.log(studentIds)
         await api.delete('/student/delete-many', {
             data: { studentIds },
         });

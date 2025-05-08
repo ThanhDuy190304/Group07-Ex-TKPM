@@ -44,6 +44,7 @@ class StudentService extends BaseService {
 
 
   async getAll(searchQuery) {
+    console.log(searchQuery);
     const whereClause = {};
     if (searchQuery?.studentCode) whereClause.studentCode = searchQuery?.studentCode;
     else {
@@ -127,21 +128,41 @@ class StudentService extends BaseService {
         `Thiếu các trường bắt buộc: ${missingFields.join(", ")}`
       );
     }
+
     await this.#validateStudentData(newStudentInf);
 
-    //Create before student
-    const newStudent = await this.model.create(newStudentInf);
-    //Create one indentity document
-    const docWithStudentCode = {
-      ...newStudentInf.identityDocuments[0],
-      studentCode: newStudent.studentCode,
-    };
+    const transaction = await this.model.sequelize.transaction();
 
-    await this.IdentityDocument.create(docWithStudentCode);
-    return {
-      student: omit(newStudent.get({ plain: true }), ["createdAt", "updatedAt"])
+    try {
+      const newStudent = await this.model.create(newStudentInf, { transaction });
+
+      const docWithStudentCode = {
+        ...newStudentInf.identityDocuments[0],
+        studentCode: newStudent.studentCode,
+      };
+      const existingDoc = await this.IdentityDocument.findOne({
+        where: { number: docWithStudentCode.number },
+      });
+
+      if (existingDoc) {
+        throw new ValidationError(
+          "Identity document number already exists.",
+          "Số của giấy tờ tùy thân đã tồn tại."
+        );
+      }
+      await this.IdentityDocument.create(docWithStudentCode, { transaction });
+
+      await transaction.commit();
+
+      return {
+        student: omit(newStudent.get({ plain: true }), ["createdAt", "updatedAt"])
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
   }
+
 
   async deleteStudents(studentIds) {
     await this.model.destroy({ where: { id: studentIds } });

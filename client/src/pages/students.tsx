@@ -1,15 +1,23 @@
-import { useState, useEffect, useMemo, useCallback, useContext, createContext, ReactNode } from "react";
+import { Fragment, useState, useEffect, useMemo, useCallback, useContext, createContext, ReactNode } from "react";
 import { Control, Controller, useForm, UseFormRegister, UseFormSetValue, FieldPath } from "react-hook-form";
 import {
     MagnifyingGlassIcon, TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon,
-    UserPlusIcon
+    UserPlusIcon, XCircleIcon, CakeIcon, PhoneIcon, MapPinIcon, EnvelopeIcon, AcademicCapIcon,
+    GlobeAsiaAustraliaIcon
 } from "@heroicons/react/24/outline";
 import {
     Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button,
-    Modal, ModalDialog, DialogTitle, DialogContent, FormControl, FormLabel, Checkbox
+    Modal, ModalDialog, DialogTitle, DialogContent, FormControl, FormLabel, Checkbox,
+    Tab, Tabs, TabList, TabPanel, RadioGroup, Radio, Stack,
 } from '@mui/joy';
+
+import FemaleIcon from '@mui/icons-material/Female';
+import MaleIcon from '@mui/icons-material/Male';
+import TransgenderIcon from '@mui/icons-material/Transgender';
+import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
+import PermIdentityIcon from '@mui/icons-material/PermIdentity';
 
 import PhoneInput from "react-phone-input-2";
 import 'react-phone-input-2/lib/style.css';
@@ -26,14 +34,19 @@ import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
 import { useError } from "../context/ErrorContext";
 import { ImportButtonStudent } from "../components/button/import";
 import { ExportButtonStudent } from "../components/button/export";
+import { FunctionsOutlined } from "@mui/icons-material";
 
 
-const StudentContext = createContext<{
+const StudentDataContext = createContext<{
     students: Student[];
     total: number;
     page: number;
     limit: number;
-    handleDeleteManyStudents: (studentIds: string[]) => Promise<boolean>;
+    searchQuery: Partial<Student>
+} | null>(null);
+
+const StudentActionContext = createContext<{
+    handleRemoveStudents: (studentIds: string[]) => Promise<boolean>;
     handleUpdate: (studentId: string, updatedData: Partial<Student>) => Promise<boolean>;
     handleCreate: (newStudent: Partial<Student>) => Promise<boolean>;
     handlePageChange: (newPage: number) => void;
@@ -64,19 +77,21 @@ function StudentProvider({ children }: { children: ReactNode }) {
         limit
     });
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+
     const { facultiesQuery } = useFaculties();
     const { programsQuery } = usePrograms();
     // Handlers
-    const handleDeleteManyStudents = useCallback(async (studentIds: string[]): Promise<boolean> => {
+
+    const handleRemoveStudents = useCallback(async (studentIds: string[]) => {
         try {
             await removeStudents.mutateAsync(studentIds);
-            setSelectedStudentIds([]);
-            return true; // Clear selection after delete
+            setSelectedStudentIds([]); // Clear selection after delete
+            return true;
         } catch (error: any) {
             showError(error.message);
             return false;
         }
-    }, [removeStudents]);
+    }, [removeStudents, selectedStudentIds]);
 
     const handleCreate = useCallback(async (newStudent: Partial<Student>): Promise<boolean> => {
         try {
@@ -109,19 +124,23 @@ function StudentProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         setSelectedStudentIds([]);
-    }, [studentsQuery.data]);
+    }, [page])
 
-    const studentContextValue = useMemo(() => ({
+    const studentDataContextValue = useMemo(() => ({
         students: studentsQuery.data?.students || [],
         total: studentsQuery.data?.total || 0,
         page,
         limit,
-        handleDeleteManyStudents,
+        searchQuery
+    }), [studentsQuery.data]);
+
+    const studentActionContextValue = useMemo(() => ({
+        handleRemoveStudents,
         handleCreate,
         handleUpdate,
         handlePageChange,
         handleSearch
-    }), [studentsQuery.data]);
+    }), [])
 
     const facultyContextValue = useMemo(() => ({
         faculties: facultiesQuery.data?.faculties || []
@@ -132,7 +151,7 @@ function StudentProvider({ children }: { children: ReactNode }) {
     }), [[programsQuery.data]]);
 
 
-    const selectionValue = useMemo(() => ({
+    const selectionContextValue = useMemo(() => ({
         selectedStudentIds,
         setSelectedStudentIds
     }), [selectedStudentIds]);
@@ -151,21 +170,29 @@ function StudentProvider({ children }: { children: ReactNode }) {
 
 
     return (
-        <StudentContext.Provider value={studentContextValue}>
-            <FacultyContext.Provider value={facultyContextValue}>
-                <ProgramContext.Provider value={programContextValue}>
-                    <StudentSelectionContext.Provider value={selectionValue}>
-                        {children}
-                    </StudentSelectionContext.Provider>
-                </ProgramContext.Provider>
-            </FacultyContext.Provider>
-        </StudentContext.Provider>
+        <StudentDataContext.Provider value={studentDataContextValue}>
+            <StudentActionContext.Provider value={studentActionContextValue}>
+                <FacultyContext.Provider value={facultyContextValue}>
+                    <ProgramContext.Provider value={programContextValue}>
+                        <StudentSelectionContext.Provider value={selectionContextValue}>
+                            {children}
+                        </StudentSelectionContext.Provider>
+                    </ProgramContext.Provider>
+                </FacultyContext.Provider>
+            </StudentActionContext.Provider>
+        </StudentDataContext.Provider >
     );
 }
 // Custom hooks
-function useStudentsContext() {
-    const context = useContext(StudentContext);
-    if (!context) throw new Error('useStudentsContext must be used within StudentProvider');
+function useStudentsDataContext() {
+    const context = useContext(StudentDataContext);
+    if (!context) throw new Error('useStudentsDataContext must be used within StudentProvider');
+    return context;
+}
+
+function useStudentsActionContext() {
+    const context = useContext(StudentActionContext);
+    if (!context) throw new Error('useStudentsActionContext must be used within StudentProvider');
     return context;
 }
 
@@ -197,41 +224,7 @@ function flattenStudent(student: Student) {
         identityDocuments: student.identityDocuments.map(formatIdentityDocument).join("; "),
     };
 }
-function StudentDetailsCard({ student, onClose }: { student: Student; onClose: () => void }) {
-    const flatStudent = flattenStudent(student);
-    return (
-        <Card variant="outlined" sx={{ width: 400, p: 2, borderRadius: "md", position: "relative" }}>
 
-            <XMarkIcon
-                onClick={onClose}
-                className="absolute top-4 right-4 w-6 h-6 z-2 text-gray-500 hover:text-red-500 cursor-pointer"
-            />
-            <CardContent>
-                <Typography component="h5" fontWeight="bold">
-                    {student.fullName}
-                </Typography>
-                <Typography level="body-sm" textColor="neutral.500">
-                    {studentFields.studentCode}: {student.studentCode}
-                </Typography>
-                <div className="mt-4 space-y-2">
-                    {Object.entries(studentFields).map(([fieldKey, fieldLabel]) => {
-                        if (fieldKey === "studentCode" || fieldKey === "fullName") return null;
-                        return (
-                            <div
-                                key={fieldKey}
-                                className="hover:bg-gray-100 p-1 rounded transition-colors" // Hiệu ứng hover
-                            >
-                                <Typography level="body-md">
-                                    <span className="font-semibold">{fieldLabel}:</span> {String(flatStudent[fieldKey as keyof typeof flatStudent])}
-                                </Typography>
-                            </div>
-                        );
-                    })}
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
 // Student Table
 interface PaginationProps {
     total: number;
@@ -288,6 +281,255 @@ function Pagination({ total, limit, currentPage, onPageChange }: PaginationProps
     );
 }
 
+function StudentPersonalInfoDisplay({ student }: { student: Student }) {
+    const flattedStudent = flattenStudent(student);
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center">
+                <PermIdentityIcon className="w-6 h-6 mr-2" />
+                <span>{flattedStudent.fullName}</span>
+            </div>
+            <div className="flex items-center">
+                <EnvelopeIcon className="w-6 h-6 mr-2" />
+                <span>{flattedStudent.email}</span>
+            </div>
+            <div className="flex items-center">
+                <CakeIcon className="w-6 h-6 mr-2" />
+                <span>{flattedStudent.dateOfBirth}</span>
+            </div>
+            <div className="flex items-center">
+                {flattedStudent.gender === "Nam" ? (
+                    <MaleIcon className="w-6 h-6 mr-2" />
+                ) : flattedStudent.gender === "Nữ" ? (
+                    <FemaleIcon className="w-6 h-6 mr-2" />
+                ) : (
+                    <TransgenderIcon className="w-6 h-6 mr-2" />
+                )}
+                <span>{flattedStudent.gender}</span>
+            </div>
+            <div className="flex items-center">
+                <PhoneIcon className="w-6 h-6 mr-2" />
+                <span>{flattedStudent.phoneNumber}</span>
+            </div>
+            <div className="flex items-center">
+                <MapPinIcon className="w-6 h-6 mr-2" />
+                <span className="whitespace-nowrap">
+                    Địa chỉ nhận thư: {flattedStudent.mailAddress || "Chưa có"}
+                </span>
+            </div>
+            <div className="flex items-center">
+                <MapPinIcon className="w-6 h-6 mr-2" />
+                <span className="whitespace-nowrap">
+                    Địa chỉ thường trú: {flattedStudent.permanentAddress || "Chưa có"}
+                </span>
+            </div>
+            <div className="flex items-center">
+                <MapPinIcon className="w-6 h-6 mr-2" />
+                <span className="whitespace-nowrap">
+                    Địa chỉ tạm trú: {flattedStudent.temporaryResidenceAddress || "Chưa có"}
+                </span>
+            </div>
+            <div className="flex items-center">
+                <GlobeAsiaAustraliaIcon className="w-6 h-6 mr-2" />
+                <span>{flattedStudent.nationality}</span>
+            </div>
+            <div className="flex items-center">
+                <BrandingWatermarkIcon className="w-6 h-6 mr-2" />
+                <span>{flattedStudent.identityDocuments}</span>
+            </div>
+        </div>
+    );
+}
+
+interface StudentPersonalInfoUpdate {
+    student: Student
+    register: UseFormRegister<Partial<Student>>
+    setValue: UseFormSetValue<Partial<Student>>
+    control: Control<Partial<Student>, any, Partial<Student>>
+    onUpdateSubmit: () => Promise<void>
+}
+function StudentPersonalInfoUpdate({ student, register, setValue, control, onUpdateSubmit }: StudentPersonalInfoUpdate) {
+    const [phoneNumber, setPhoneNumber] = useState<string>(student.phoneNumber);
+    useEffect(() => {
+        setValue("fullName", student.fullName);
+        setValue("dateOfBirth", student.dateOfBirth);
+        setValue("email", student.email);
+        setValue("nationality", student.nationality);
+        setValue("gender", student.gender);
+        setValue("phoneNumber", student.phoneNumber);
+    }, [student, setValue]);
+
+    useEffect(() => {
+        if (phoneNumber) {
+            setValue("phoneNumber", phoneNumber);
+        }
+    }, [phoneNumber, setValue]);
+    return (
+        <form
+            onSubmit={(e) => {
+                onUpdateSubmit()
+            }}
+        >
+            {/*Họ và tên*/}
+            <FormControl required>
+                <FormLabel>{studentFields.fullName}</FormLabel>
+                <Input
+                    type="text"
+                    {...register("fullName", { required: true })}
+                />
+            </FormControl>
+
+            {/*Giới tính*/}
+            <Controller
+                name="gender"
+                control={control}
+                defaultValue={Gender.Khac}
+                render={({ field }) => (
+                    <FormControl required>
+                        <FormLabel>{studentFields.gender}</FormLabel>
+                        <Select
+                            {...field}
+                            value={field.value}
+                            onChange={(e, newValue) => field.onChange(newValue)}
+                        >
+                            <Option value={Gender.Nam}>{Gender.Nam}</Option>
+                            <Option value={Gender.Nu}>{Gender.Nu}</Option>
+                            <Option value={Gender.Khac}>{Gender.Khac}</Option>
+                        </Select>
+                    </FormControl>
+                )}
+            />
+
+            {/* Ngày sinh */}
+            <FormControl required>
+                <FormLabel>{studentFields.dateOfBirth}</FormLabel>
+                <Input
+                    type="date"
+                    {...register("dateOfBirth", { required: true })}
+                />
+            </FormControl>
+
+            {/*Email*/}
+            <FormControl required>
+                <FormLabel>{studentFields.email}</FormLabel>
+                <Input
+                    type="email"
+                    {...register("email", { required: true })}
+                />
+            </FormControl>
+
+            {/* Số điện thoại */}
+            <PhoneInputSelectDropDown phoneNumber={phoneNumber} setPhoneNumber={setPhoneNumber} />
+
+            {/*Quốc gia*/}
+            <FormControl required>
+                <FormLabel>{studentFields.nationality}</FormLabel>
+                <Input
+                    type="text"
+                    {...register("nationality", { required: true })}
+                />
+            </FormControl>
+
+        </form>
+    );
+}
+
+function StudentDetailModal({ studentId, isOpen, setIsOpen }: { studentId: string, isOpen: boolean, setIsOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
+    const { students } = useStudentsDataContext();
+    const { handleUpdate } = useStudentsActionContext();
+    const student = (students.find(s => s.id === studentId)) as Student;
+    const [isUpdateOpen, setIsUpdateOpen] = useState<boolean>(false);
+    const { register, getValues, setValue, control, reset } = useForm<Partial<Student>>();
+    const onUpdateSubmit = async () => {
+        const updatedData = getValues();
+        const result = await handleUpdate(studentId, updatedData);
+        if (result) {
+            setIsUpdateOpen(false);
+        }
+    }
+    if (!isOpen) return null;
+    return (
+        <Modal
+            open={isOpen}
+            onClose={(event, reason) => {
+                if (reason !== 'backdropClick') {
+                    setIsOpen(false);
+                }
+            }}
+        >
+            <ModalDialog className="w-[1000px] h-[90vh] max-w-full md:max-w-[90%] mx-auto overflow-x-auto overflow-y-auto">
+                <button
+                    onClick={() => setIsOpen(false)}
+                    className="absolute top-3 right-3 text-gray-500 hover:text-red-500 cursor-pointer"
+                >
+                    <XCircleIcon className="w-8 h-8" />
+                </button>
+                <Typography level="h4">{studentFields.studentCode}: {student.studentCode}</Typography>
+                <Tabs defaultValue={0}>
+                    <TabList >
+                        <Tab>Thông tin cá nhân</Tab>
+                        <Tab>Thông tin học vụ</Tab>
+                    </TabList>
+                    <TabPanel value={0}>
+                        {isUpdateOpen ? (
+                            <StudentPersonalInfoUpdate
+                                student={student}
+                                register={register}
+                                setValue={setValue}
+                                control={control}
+                                onUpdateSubmit={onUpdateSubmit}
+                            />
+                        ) : (
+                            <StudentPersonalInfoDisplay student={student} />
+                        )}
+                    </TabPanel>
+                    <TabPanel value={1}>
+                        <Typography>Khoa: {student.facultyCode}</Typography>
+                        <Typography>Chương trình: {student.programCode}</Typography>
+                        <Typography>Khóa: {student.cohortYear}</Typography>
+                    </TabPanel>
+                    {!isUpdateOpen && (
+                        <div className="flex justify-end mt-2">
+                            <Button
+                                variant="solid"
+                                color="neutral"
+                                startDecorator={<PencilSquareIcon className="w-5 h-5" />}
+                                onClick={() => setIsUpdateOpen(true)}
+                            >
+                                Chỉnh sửa thông tin
+                            </Button>
+                        </div>
+                    )}
+                    {
+                        isUpdateOpen && (
+                            <div className="flex gap-2 justify-end mt-2">
+                                <Button
+                                    variant="solid"
+                                    color="danger"
+                                    startDecorator={<XMarkIcon className="w-5 h-5" />}
+                                    onClick={() => setIsUpdateOpen(false)}
+                                    className="w-fit"
+                                >
+                                    Hủy
+                                </Button>
+                                <Button
+                                    variant="solid"
+                                    color="primary"
+                                    startDecorator={<CheckIcon className="w-5 h-5" />}
+                                    onClick={() => onUpdateSubmit()}
+                                    className="w-fit"
+                                >
+                                    Xác nhận
+                                </Button>
+                            </div>
+                        )
+                    }
+                </Tabs>
+            </ModalDialog>
+        </Modal>
+    );
+}
+
 function StudentTableRow({ student }: { student: Student }) {
     return (
         <>
@@ -317,8 +559,12 @@ function StudentTableRow({ student }: { student: Student }) {
 }
 
 function StudentTable() {
-    const { students } = useStudentsContext()
+    const { students } = useStudentsDataContext()
     const { selectedStudentIds, setSelectedStudentIds } = useStudentSelectionContext()
+
+    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState<boolean>(false);
+
     const studentFieldWidths: Partial<Record<keyof Student, string>> = {
         studentCode: "w-24",
         fullName: "w-40",
@@ -335,7 +581,7 @@ function StudentTable() {
                         <tr>
                             <th className="w-12">
                                 <Checkbox
-                                    checked={selectedStudentIds.length === students.length && students.length > 0}
+                                    checked={selectedStudentIds.length > 0 && selectedStudentIds.length == students.length}
                                     indeterminate={selectedStudentIds.length > 0 && selectedStudentIds.length < students.length}
                                     onChange={(e) => {
                                         if (e.target.checked) {
@@ -370,193 +616,230 @@ function StudentTable() {
                         </tr>
                     </thead>
                     <tbody>
-                        {students.map((student) => (
-                            <tr key={student.id} className="cursor-pointer hover:bg-gray-100" >
-                                <td >
-                                    <Checkbox
-                                        checked={selectedStudentIds.includes(student.id)}
-                                        value={student.id}
-                                        onChange={(e) => {
-                                            setSelectedStudentIds(prev =>
-                                                prev.includes(student.id)
-                                                    ? prev.filter(id => id !== student.id)
-                                                    : [...prev, student.id]
-                                            );
-                                        }}
-                                        slots={{
-                                            checkbox: (props) => {
-                                                const { ownerState, ...domProps } = props;
-                                                return (
-                                                    <span
-                                                        {...domProps}
-                                                        className={`relative w-5 h-5 cursor-pointer rounded border flex items-center justify-center transition-all duration-200 ease-in-out
-                                                         ${ownerState?.checked
-                                                                ? "border-blue-500 bg-blue-500/10"
-                                                                : "border-gray-400 hover:border-blue-400"}`}
-                                                    />
+                        {students.map((student: Student) => (
+                            <Fragment key={student.id} >
+                                <tr className="cursor-pointer hover:bg-gray-100"
+                                    onClick={() => {
+                                        setSelectedStudentId(student.id);
+                                        setIsDetailOpen(true);
+                                    }}
+                                >
+                                    <td onClick={(e) => { e.stopPropagation(); }}>
+                                        <Checkbox
+                                            checked={selectedStudentIds.includes(student.id)}
+                                            value={student.id}
+                                            onChange={(e) => {
+                                                setSelectedStudentIds(prev =>
+                                                    prev.includes(student.id)
+                                                        ? prev.filter(id => id !== student.id)
+                                                        : [...prev, student.id]
                                                 );
-                                            },
-                                        }} />
-                                </td>
-                                <StudentTableRow student={student} />
-                            </tr>
+                                            }}
+                                            slots={{
+                                                checkbox: (props) => {
+                                                    const { ownerState, ...domProps } = props;
+                                                    return (
+                                                        <span
+                                                            {...domProps}
+                                                            className={`relative w-5 h-5 cursor-pointer rounded border flex items-center justify-center transition-all duration-200 ease-in-out
+                                                         ${ownerState?.checked
+                                                                    ? "border-blue-500 bg-blue-500/10"
+                                                                    : "border-gray-400 hover:border-blue-400"}`}
+                                                        />
+                                                    );
+                                                },
+                                            }} />
+                                    </td>
+                                    <StudentTableRow student={student} />
+                                </tr>
+                            </Fragment>
                         ))}
                     </tbody>
                 </Table>
             </Sheet >
+            {selectedStudentId && (
+                <StudentDetailModal
+                    studentId={selectedStudentId}
+                    isOpen={isDetailOpen}
+                    setIsOpen={setIsDetailOpen}
+                />
+            )}
         </div >
-
     );
-
 }
 
 //Search
 function Search() {
+    const { handleSearch } = useStudentsActionContext()
     const { faculties } = useFacultiesContext();
     const { programs } = useProgramsContext();
-    const { handleSearch } = useStudentsContext();
-    const [isOpen, setIsOpen] = useState(false);
     const [searchType, setSearchType] = useState("studentCode");
-    const [queryStudentCode, setQueryStudentCode] = useState("");
-    const [queryFullName, setQueryFullName] = useState("");
-    const [queryFacultyCode, setQueryFacultyCode] = useState("");
-    const [queryCohortYear, setQueryCohortYear] = useState("");
-    const [queryProgramCode, setQueryProgramCode] = useState("");
+    const { register, getValues, control, watch, reset, resetField, unregister } = useForm<Partial<Student>>();
+    const fullNameWatch = watch("fullName");
+    const cohortYearWatch = watch("cohortYear");
+    useEffect(() => {
+        reset();
+    }, [searchType]);
 
     const onSearch = () => {
-        let query = {};
-        if (searchType === "studentCode") {
-            query = { studentCode: queryStudentCode };
-        } else {
-            query = {
-                fullName: queryFullName.trim(),
-                facultyCode: queryFacultyCode,
-                cohortYear: queryCohortYear.trim(),
-                programCode: queryProgramCode,
-            };
-        }
-        handleSearch(query);
-    };
-
-    const SelectWithClear = ({ value, onChange, options, placeholder = "Chọn" }: {
-        value: string;
-        onChange: (value: string) => void;
-        options: { code: string; name: string }[];
-        placeholder?: string;
-    }) => (
-        <div className="relative">
-            <Select
-                value={value}
-                onChange={(_, newValue) => onChange(newValue as string)}
-                className="w-full h-8 px-2 border rounded"
-                placeholder={placeholder}
-            >
-                {options.map((option) => (
-                    <Option key={option.code} value={option.code}>
-                        {option.code}
-                    </Option>
-                ))}
-            </Select>
-            {value && (
-                <XMarkIcon
-                    className="absolute right-8 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 cursor-pointer"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onChange("");
-                    }}
-                />
-            )}
-        </div>
-    );
+        console.log(getValues())
+        handleSearch(getValues())
+    }
 
     return (
-        <div className="relative">
-            <MagnifyingGlassIcon
-                onClick={() => setIsOpen(!isOpen)}
-                className="box-content w-5 h-5 p-2 cursor-pointer bg-white border border-black rounded-md"
-            />
-
-            {isOpen && (
-                <div className="absolute flex flex-col w-96 p-4 bg-white shadow-xl rounded-md border top-12 left-0 z-50">
-                    <div className="flex gap-4 mb-2">
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="radio"
-                                value="studentCode"
-                                checked={searchType === "studentCode"}
-                                onChange={() => setSearchType("studentCode")}
-                            />
-                            Tìm theo MSSV
-                        </label>
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="radio"
-                                value="advanced"
-                                checked={searchType === "advanced"}
-                                onChange={() => setSearchType("advanced")}
-                            />
-                            Tìm nâng cao
-                        </label>
-                    </div>
-
-                    {searchType === "studentCode" ? (
-                        <input
-                            type="text"
-                            placeholder={studentFields.studentCode}
-                            value={queryStudentCode}
-                            onChange={(e) => setQueryStudentCode(e.target.value)}
-                            className="w-full h-8 px-2 border rounded mb-2"
+        <Stack spacing={2} className="border shadow-md rounded-md p-2">
+            <RadioGroup
+                orientation="horizontal"
+                value={searchType}
+                onChange={(event) => setSearchType(event.target.value)}
+            >
+                <Radio value="studentCode" label="Tìm theo MSSV" />
+                <Radio value="advanced" label="Tìm kiếm nâng cao" />
+            </RadioGroup>
+            <div className="flex flex-col md:flex-row gap-2 ">
+                {searchType === 'studentCode' && (
+                    <>
+                        <Input
+                            className="flex-5/6"
+                            placeholder="VD: 22120081"
+                            {...register("studentCode")}
                         />
-                    ) : (
-                        <div className="grid grid-cols-2 gap-2">
-                            <input
-                                type="text"
-                                placeholder={studentFields.fullName}
-                                value={queryFullName}
-                                onChange={(e) => setQueryFullName(e.target.value)}
-                                className="w-full h-8 px-2 border rounded"
-                            />
-                            <input
-                                type="text"
-                                placeholder={studentFields.cohortYear}
-                                value={queryCohortYear}
-                                onChange={(e) => setQueryCohortYear(e.target.value)}
-                                className="w-full h-8 px-2 border rounded"
-                            />
-                            <SelectWithClear
-                                value={queryFacultyCode}
-                                onChange={setQueryFacultyCode}
-                                options={faculties.map(f => ({ code: f.facultyCode, name: f.facultyCode }))}
-                                placeholder={studentFields.facultyCode}
-                            />
+                    </>
+                )}
 
-                            <SelectWithClear
-                                value={queryProgramCode}
-                                onChange={setQueryProgramCode}
-                                options={programs.map(p => ({ code: p.programCode, name: p.programCode }))}
-                                placeholder={studentFields.programCode}
-                            />
-                        </div>
-                    )}
+                {searchType === "advanced" && (
+                    <div className="flex gap-4 flex-5/6 flex-col md:flex-row">
 
-                    <div className="flex justify-end mt-3">
-                        <Button onClick={onSearch} size="md">
-                            Tìm kiếm
-                        </Button>
+                        {/*fullName*/}
+                        <FormControl>
+                            <div className="relative">
+                                <Input
+                                    className="w-full"
+                                    placeholder="Nhập tên"
+                                    type="text"
+                                    {...register("fullName")}
+                                />
+                                {
+                                    fullNameWatch && (
+                                        <XMarkIcon
+                                            className="absolute w-4 h-4 right-2 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-black"
+                                            onClick={() => {
+                                                resetField("fullName");
+                                            }}
+                                        />
+                                    )
+                                }
+                            </div>
+                        </FormControl>
+
+                        {/*facultyCode*/}
+                        <Controller
+                            name="facultyCode"
+                            control={control}
+                            render={({ field }) => (
+                                <div className="relative w-full">
+                                    <Select
+                                        {...field}
+                                        value={field.value ?? null}
+                                        onChange={(e, newValue) => field.onChange(newValue)}
+                                        placeholder="-- Chọn khoa --"
+                                        className="w-full"
+                                    >
+                                        {faculties.map((faculty) => (
+                                            <Option key={faculty.facultyCode} value={faculty.facultyCode}>
+                                                {faculty.facultyCode}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                    {field.value && (
+                                        <XMarkIcon
+                                            className="absolute w-4 h-4 right-8 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-black"
+                                            onClick={() => {
+                                                unregister("facultyCode");
+                                            }}
+                                        />
+                                    )}
+                                </div>
+                            )}
+                        />
+
+                        {/*programCode*/}
+                        <Controller
+                            name="programCode"
+                            control={control}
+                            render={({ field }) => (
+                                <div className="relative w-full">
+                                    <Select
+                                        {...field}
+                                        value={field.value ?? null}
+                                        onChange={(e, newValue) => field.onChange(newValue)}
+                                        placeholder="-- Chọn CTĐT --"
+                                        className="w-full"
+                                    >
+                                        {programs.map((program) => (
+                                            <Option key={program.programCode} value={program.programCode}>
+                                                {program.programCode}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                    {field.value && (
+                                        <XMarkIcon
+                                            className="absolute w-4 h-4 right-8 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-black"
+                                            onClick={() => {
+                                                resetField("programCode")
+                                            }}
+                                        />
+                                    )}
+                                </div>
+                            )}
+                        />
+
+                        {/*cohortYear*/}
+                        <FormControl>
+                            <div className="relative">
+                                <Input
+                                    type="number"
+                                    placeholder="chọn năm học"
+                                    {...register("cohortYear")}
+                                />
+                                {
+                                    cohortYearWatch && (
+                                        <XMarkIcon
+                                            className="absolute w-4 h-4 right-8 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-black"
+                                            onClick={() => {
+                                                resetField("cohortYear");
+                                            }}
+                                        />
+                                    )
+                                }
+                            </div>
+                        </FormControl>
                     </div>
+                )}
+                <div className="flex flex-1/6 justify-center">
+                    <Button
+                        variant="solid"
+                        color="primary"
+                        onClick={onSearch}
+                        className="w-fill"
+                    >
+                        Tìm kiếm
+                    </Button>
                 </div>
-            )}
-        </div>
+            </div>
+        </Stack>
     );
 }
 
-function PhoneInputSelectDropDown({ setPhoneNumber }: { setPhoneNumber: (value: string) => void }) {
+
+function PhoneInputSelectDropDown({ phoneNumber, setPhoneNumber }: { phoneNumber?: string, setPhoneNumber: (value: string) => void }) {
     const [isFocused, setIsFocused] = useState(false);
     return (
         <FormControl required>
             <FormLabel>{studentFields.phoneNumber}</FormLabel>
             <PhoneInput
                 country={'vn'}
+                value={phoneNumber}
                 enableSearch
                 containerStyle={{
                     width: "100%",
@@ -609,12 +892,15 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
     const [documentType, setDocumentType] = useState<IdentityDocumentType>(IdentityDocumentType.CCCD);
     const [documentData, setDocumentData] = useState<Partial<IdentityDocument>>({});
     const updateField = (key: string, value: any) => {
-        setDocumentData((prev) => ({
-            ...prev,
-            [key]: value,
-            type: documentType,
-        }));
-        setValue('identityDocuments', [{ ...documentData, type: documentType } as IdentityDocument]);
+        setDocumentData((prev) => {
+            const newData = {
+                ...prev,
+                [key]: value,
+                type: documentType,
+            };
+            setValue('identityDocuments', [newData as IdentityDocument]);
+            return newData;
+        });
     };
 
     const renderCommonFields = () => (
@@ -872,7 +1158,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
     );
 }
 function StudentCreateFormContainer() {
-    const { handleCreate } = useStudentsContext();
+    const { handleCreate } = useStudentsActionContext();
     const { register, reset, getValues, setValue, control } = useForm<Partial<Student>>();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -922,34 +1208,46 @@ function StudentCreateFormContainer() {
 
 }
 
-function StudentsRemoveButton({ onRemove }: { onRemove: () => void }) {
+function StudentsRemoveButton() {
+    const { handleRemoveStudents } = useStudentsActionContext();
+    const { selectedStudentIds } = useStudentSelectionContext();
+    const onRemove = () => {
+        handleRemoveStudents(selectedStudentIds);
+    };
     return (
         <Button
             variant="solid"
             color="danger"
             startDecorator={<TrashIcon className="w-5 h-5" />}
             onClick={onRemove}
-            className="w-fit "
+            className="w-fit"
         >
-            Xoá
+            {selectedStudentIds.length > 0
+                ? `Xoá ${selectedStudentIds.length}`
+                : 'Xoá'}
         </Button>
     );
 }
 
+
 function StudentPage() {
-    const { page, limit, total, handlePageChange } = useStudentsContext()
+    const { page, limit, total } = useStudentsDataContext()
+    const { handlePageChange } = useStudentsActionContext()
     return (
         <main className="flex flex-col">
             <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
 
-            <section className="flex items-center justify-between w-full gap-4">
+            <section className="flex items-center justify-between w-full mt-4 gap-4">
                 <div className="flex items-center gap-2 flex-1 max-w-md">
-                    <Search />
-
+                    <StudentsRemoveButton />
                     <StudentCreateFormContainer />
                 </div>
                 <ImportButtonStudent />
                 {/* <ExportButtonStudent searchQuery={searchQuery} /> */}
+            </section>
+
+            <section className="mt-4">
+                <Search />
             </section>
 
             <section className="flex flex-col gap-6 items-center mt-6">

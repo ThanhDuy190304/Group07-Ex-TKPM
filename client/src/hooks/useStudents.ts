@@ -26,11 +26,10 @@ export function useAllStudents(searchQuery: Partial<Student> & { page?: number; 
             putStudent(studentId, updatedData),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ['students', JSON.stringify(searchQuery)]
+                queryKey: ['students']
             });
         },
     });
-
 
     const removeStudent = useMutation({
         mutationFn: (studentId: string) => deleteStudent(studentId),
@@ -42,10 +41,10 @@ export function useAllStudents(searchQuery: Partial<Student> & { page?: number; 
     });
 
     const removeStudents = useMutation({
-        mutationFn: deleteStudents,
+        mutationFn: (studentIds: string[]) => deleteStudents(studentIds),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ['students', JSON.stringify(searchQuery)]
+                queryKey: ['students', searchQuery]
             });
         },
     });
