@@ -18,6 +18,17 @@ const create = async (req, res, next) => {
     }
 }
 
+const update = async (req, res, next) => {
+    try{
+        const courseCode = req.params.courseCode;
+        const updateData = req.body;
+        const result = await CourseService.update(courseCode, updateData);
+        return res.status(200).json({data: result});
+    }catch(error){
+        next(error);
+    }
+}
+
 const remove = async(req, res, next) =>{
     try{
         await CourseService.delete(req,params.courseCode);
@@ -30,5 +41,6 @@ const remove = async(req, res, next) =>{
 module.exports = {
     getAll,
     create,
+    update,
     remove,
 }
