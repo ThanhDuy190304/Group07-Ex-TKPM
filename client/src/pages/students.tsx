@@ -687,7 +687,7 @@ function Search() {
     }
 
     return (
-        <Stack spacing={2} className="border shadow-md rounded-md p-2">
+        <Stack spacing={2} className="border shadow-md rounded-md p-2 gap-4 pt-6 pb-6">
             <RadioGroup
                 orientation="horizontal"
                 value={searchType}
@@ -700,7 +700,7 @@ function Search() {
                 {searchType === 'studentCode' && (
                     <>
                         <Input
-                            className="flex-5/6"
+                            className="flex-5/6 !h-10"
                             placeholder="VD: 22120081"
                             {...register("studentCode")}
                         />
@@ -816,12 +816,12 @@ function Search() {
                         </FormControl>
                     </div>
                 )}
-                <div className="flex flex-1/6 justify-center">
+                <div className="flex flex-1/6 justify-center ">
                     <Button
                         variant="solid"
                         color="primary"
                         onClick={onSearch}
-                        className="w-fill"
+                        className="w-56"
                     >
                         Tìm kiếm
                     </Button>
