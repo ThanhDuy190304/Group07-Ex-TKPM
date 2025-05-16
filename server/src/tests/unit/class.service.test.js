@@ -1,10 +1,10 @@
-const ClassService = require("../service/class.service");
+const ClassService = require("../../service/class.service");
 
 const {
   ValidationError,
   NotFoundError,
   DuplicateResourceError,
-} = require("../util/errors");
+} = require("../../util/errors");
 
 const { mockClassInfo, mockCreatedClass } = require("./mocks/class.mock");
 const { mockCourse } = require("./mocks/course.mock");
@@ -39,7 +39,7 @@ describe("ClassService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    models = require("../models/init-models")(require("../config/db"));
+    models = require("../../models/init-models")(require("../../config/db"));
   });
 
   describe("create", () => {

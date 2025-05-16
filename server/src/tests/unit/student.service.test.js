@@ -2,9 +2,9 @@ const { Student } = require("./__mocks__/student.model")
 const { Program } = require("./__mocks__/program.model")
 const { Faculty } = require("./__mocks__/faculty.model")
 const { IdentityDocument } = require("./__mocks__/identityDocument")
-const StudentService = require("../service/student.service")
+const StudentService = require("../../service/student.service")
 
-const { NotFoundError, ValidationError } = require("../util/errors");
+const { NotFoundError, ValidationError } = require("../../util/errors");
 
 describe("unit test for StudentService.update", () => {
     let mockStudent;
