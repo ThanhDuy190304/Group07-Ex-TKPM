@@ -1,144 +1,291 @@
-// const request = require("supertest");
-// const express = require("express");
-// const classRoute = require("../src/route/classRoute");
-// const classController = require("../src/controller/class.controller");
+const ClassService = require("../src/service/class.service");
 
-// const app = express();
-// app.use(express.json());
-// app.use("/api/class", classRoute);
+const {
+  ValidationError,
+  NotFoundError,
+  DuplicateResourceError,
+} = require("../src/util/errors");
 
-// describe("Class Routes", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
+const { mockClassInfo, mockCreatedClass } = require("./mocks/class.mock");
+const { mockCourse } = require("./mocks/course.mock");
 
-//   afterEach(() => {
-//     jest.clearAllMocks();
-//   });
+jest.mock("../src/config/db");
+jest.mock("../src/models/init-models", () => {
+  return jest.fn(() => ({
+    Class: {
+      findOne: jest.fn(),
+      create: jest.fn(),
+    },
+    Course: {
+      findOne: jest.fn(),
+    },
+    Student: {
+      findOne: jest.fn(),
+    },
+    ClassRegistration: {
+      count: jest.fn(),
+      findAll: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+    },
+  }));
+});
+jest.mock("../src/util/validator", () => ({
+  validateUUID: jest.fn(() => true),
+}));
 
-//   it("should create a new class", async () => {
-//     const newClassData = {
-//       classCode: "21_CQ3",
-//       courseCode: "FRA101",
-//       semester: "Kỳ 2",
-//       academicYear: "2023",
-//       instructor: "Lý Phương Thắm",
-//       maxStudents: 80,
-//       room: "E102",
-//       schedule: "T2(1-3)-P.cs2:E102",
-//     };
+describe("ClassService", () => {
+  let models;
 
-//     const res = await request(app).post("/api/class").send(newClassData);
+  beforeEach(() => {
+    jest.clearAllMocks();
+    models = require("../src/models/init-models")(require("../src/config/db"));
+  });
 
-//     expect(res.statusCode).toEqual(201);
-//     expect(res.body).toHaveProperty("data");
-//     expect(res.body.data).toHaveProperty("class");
-//     const createdClass = res.body.data.class;
+  describe("create", () => {
+    it("should create a new class successfully", async () => {
+      // Arrange
 
-//     expect(createdClass).toHaveProperty("id");
-//     expect(typeof createdClass.id).toBe("string");
-//     // UUID v4 pattern check (simple version)
-//     expect(createdClass.id).toMatch(
-//       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
-//     );
+      models.Course.findOne.mockResolvedValue(mockCourse);
+      models.Class.findOne.mockResolvedValue(null);
+      models.Class.create.mockResolvedValue({
+        get: jest.fn(() => mockCreatedClass),
+      });
 
-//     // Ensure all other fields match
-//     expect(createdClass).toMatchObject(newClassData);
-//     // expect(classController.create).toHaveBeenCalledTimes(1);
-//   });
+      // Act
+      const result = await ClassService.create(mockClassInfo);
 
-//   it("should allocate a student to a class", async () => {
-//     const allocationData = {
-//       studentId: "92320824-e17b-446c-be8b-86494420f7a8",
-//       classId: "7b8d3f25-2ce2-42ac-bbdd-cc48afc652b2",
-//     };
-//     const res = await request(app)
-//       .post("/api/class/allocate")
-//       .send(allocationData);
+      // Assert
+      expect(models.Course.findOne).toHaveBeenCalledWith({
+        where: { courseCode: mockClassInfo.courseCode },
+      });
 
-//     expect(res.statusCode).toEqual(201);
-//     expect(res.body).toHaveProperty("data");
-//     expect(res.body.data).toHaveProperty("classCode");
-//     expect(res.body.data).toHaveProperty("studentCode");
-//     expect(res.body.data.classCode).toEqual("21_CQ1");
-//     expect(res.body.data.studentCode).toEqual("2022016");
-//     // expect(classController.allocateStudent).toHaveBeenCalledTimes(1);
-//   });
+      expect(models.Class.findOne).toHaveBeenCalledWith({
+        where: { classCode: mockClassInfo.classCode },
+      });
 
-//   it("should return 409 if student is already allocated to the class", async () => {
-//     const allocationData = {
-//       studentId: "8d667db6-de72-4674-8464-145731496267",
-//       classId: "7b8d3f25-2ce2-42ac-bbdd-cc48afc652b2",
-//     };
+      expect(models.Class.create).toHaveBeenCalledWith({
+        ...mockClassInfo,
+        courseCode: mockClassInfo.courseCode,
+      });
 
-//     const res = await request(app)
-//       .post("/api/class/allocate")
-//       .send(allocationData);
+      expect(result).toEqual({
+        class: expect.objectContaining({
+          classCode: "21_CQ1",
+          courseCode: "FRA101",
+        }),
+      });
+    });
 
-//     expect(res.statusCode).toEqual(409);
-//     // expect(classController.allocateStudent).toHaveBeenCalledTimes(1);
-//   });
+    it("should throw ValidationError when required fields are missing", async () => {
+      // Arrange
+      const classInfo = {
+        classCode: "21_CQ1",
+        // Missing courseCode
+        academicYear: "2023",
+        semester: "Kỳ 2",
+        maxStudents: 80,
+      };
 
-//   it("should handle errors when creating a class and missing semester", async () => {
-//     const newClassData = {
-//       classCode: "21_CQ3",
-//       courseCode: "FRA101", // missing classCode
-//       academicYear: "2023",
-//       instructor: "Lý Phương Thắm",
-//       maxStudents: 80,
-//       room: "E102",
-//       schedule: "T2(1-3)-P.cs2:E102",
-//     };
+      // Act & Assert
+      await expect(ClassService.create(classInfo)).rejects.toThrow(
+        ValidationError
+      );
+    });
 
-//     const res = await request(app).post("/api/class").send(newClassData);
+    it("should throw NotFoundError when course does not exist", async () => {
+      // Arrange
+      const classInfo = {
+        classCode: "21_CQ1",
+        courseCode: "NON_EXISTENT",
+        academicYear: "2023",
+        semester: "Kỳ 2",
+        maxStudents: 80,
+      };
 
+      models.Course.findOne.mockResolvedValue(null);
 
-//     expect(res.statusCode).toEqual(500);
-//     expect(res.body).toHaveProperty("error");
+      // Act & Assert
+      await expect(ClassService.create(classInfo)).rejects.toThrow(
+        NotFoundError
+      );
+    });
 
-//     // expect(classController.create).toHaveBeenCalledTimes(1);
-//   });
+    it("should throw DuplicateResourceError when class code already exists", async () => {
+      // Arrange
+      const classInfo = {
+        classCode: "21_CQ1",
+        courseCode: "FRA101",
+        academicYear: "2023",
+        semester: "Kỳ 2",
+        maxStudents: 80,
+      };
 
-//   // it('should handle errors when allocating a student to class', async () => {
-//   //   classController.allocateStudent.mockImplementationOnce((req, res) => {
-//   //       res.status(400).json({ message: 'Bad request' });
-//   //   });
+      const mockExistingClass = { id: 1, classCode: "21_CQ1" };
 
-//   //   const allocationData = { studentId: 1, classId: 1 };
-//   //   const res = await request(app)
-//   //     .post('/api/class/allocate')
-//   //     .send(allocationData);
+      models.Course.findOne.mockResolvedValue({ id: 1 });
+      models.Class.findOne.mockResolvedValue(mockExistingClass);
 
-//   //   expect(res.statusCode).toEqual(400);
-//   //   expect(res.body.message).toEqual('Bad request');
-//   //   expect(classController.allocateStudent).toHaveBeenCalledTimes(1);
-//   // });
+      // Act & Assert
+      await expect(ClassService.create(classInfo)).rejects.toThrow(
+        DuplicateResourceError
+      );
+    });
+  });
 
-//   //   it('should handle errors on post / with invalid class data', async () => {
-//   //       const invalidClassData = {};
+  describe("allocateStudent", () => {
+    it("should allocate a student to a class successfully", async () => {
+      // Arrange
+      const classId = "class-id";
+      const studentId = "student-id";
 
-//   //       classController.create.mockImplementationOnce((req, res) => {
-//   //           res.status(400).json({ message: "Invalid Class Data" })
-//   //       });
+      const mockClass = {
+        id: classId,
+        classCode: "21_CQ1",
+        maxStudents: 30,
+        courseCodeCourse: { prerequisiteCourseCode: [] },
+      };
 
-//   //       const res = await request(app).post("/api/class").send(invalidClassData);
+      const mockStudent = { id: studentId, studentCode: "2022016" };
 
-//   //       expect(res.statusCode).toBe(400);
-//   //       expect(res.body.message).toBe("Invalid Class Data");
-//   //       expect(classController.create).toHaveBeenCalledTimes(1);
-//   //   });
+      models.Class.findOne.mockResolvedValue(mockClass);
+      models.Student.findOne.mockResolvedValue(mockStudent);
+      models.ClassRegistration.count.mockResolvedValue(10);
+      models.ClassRegistration.findAll.mockResolvedValue([]);
+      models.ClassRegistration.create.mockResolvedValue({
+        classCode: "21_CQ1",
+        studentCode: "2022016",
+      });
 
-//   //       it('should handle errors on post /allocate with invalid allocation data', async () => {
-//   //       const invalidAllocationData = {};
+      // Act
+      const result = await ClassService.allocateStudent(classId, studentId);
 
-//   //       classController.allocateStudent.mockImplementationOnce((req, res) => {
-//   //           res.status(400).json({ message: "Invalid Allocation Data" })
-//   //       });
+      // Assert
+      expect(models.Class.findOne).toHaveBeenCalledWith({
+        where: { id: classId },
+        include: [{ model: models.Course, as: "courseCodeCourse" }],
+      });
+      expect(models.Student.findOne).toHaveBeenCalledWith({
+        where: { id: studentId },
+      });
+      expect(models.ClassRegistration.create).toHaveBeenCalledWith({
+        classCode: "21_CQ1",
+        studentCode: "2022016",
+      });
+      expect(result).toEqual({
+        data: { classCode: "21_CQ1", studentCode: "2022016" },
+      });
+    });
 
-//   //       const res = await request(app).post("/api/class/allocate").send(invalidAllocationData);
+    it("should throw ValidationError when class is full", async () => {
+      // Arrange
+      const classId = "class-id";
+      const studentId = "student-id";
 
-//   //       expect(res.statusCode).toBe(400);
-//   //       expect(res.body.message).toBe("Invalid Allocation Data");
-//   //       expect(classController.allocateStudent).toHaveBeenCalledTimes(1);
-//   //   });
-// });
+      const mockClass = {
+        id: classId,
+        classCode: "21_CQ1",
+        maxStudents: 30,
+        courseCodeCourse: { prerequisiteCourseCode: [] },
+      };
+
+      models.Class.findOne.mockResolvedValue(mockClass);
+      models.ClassRegistration.count.mockResolvedValue(30); // Class is full
+
+      // Act & Assert
+      await expect(
+        ClassService.allocateStudent(classId, studentId)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw NotFoundError when class does not exist", async () => {
+      // Arrange
+      const classId = "non-existent-class-id";
+      const studentId = "student-id";
+
+      models.Class.findOne.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        ClassService.allocateStudent(classId, studentId)
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it("should throw NotFoundError when student does not exist", async () => {
+      // Arrange
+      const classId = "class-id";
+      const studentId = "non-existent-student-id";
+
+      const mockClass = {
+        id: classId,
+        classCode: "21_CQ1",
+        maxStudents: 30,
+        courseCodeCourse: { prerequisiteCourseCode: [] },
+      };
+
+      models.Class.findOne.mockResolvedValue(mockClass);
+      models.Student.findOne.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        ClassService.allocateStudent(classId, studentId)
+      ).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe("cancelStudentRegistration", () => {
+    it("should cancel a student's registration successfully", async () => {
+      // Arrange
+      const classId = "class-id";
+      const studentId = "student-id";
+
+      const mockClass = { id: classId, classCode: "21_CQ1" };
+      const mockStudent = { id: studentId, studentCode: "2022016" };
+      const mockRegistration = { destroy: jest.fn() };
+
+      models.Class.findOne.mockResolvedValue(mockClass);
+      models.Student.findOne.mockResolvedValue(mockStudent);
+      models.ClassRegistration.findOne.mockResolvedValue(mockRegistration);
+
+      // Act
+      const result = await ClassService.cancelStudentRegistration(
+        classId,
+        studentId
+      );
+
+      // Assert
+      expect(models.Class.findOne).toHaveBeenCalledWith({
+        where: { id: classId },
+      });
+      expect(models.Student.findOne).toHaveBeenCalledWith({
+        where: { id: studentId },
+      });
+      expect(models.ClassRegistration.findOne).toHaveBeenCalledWith({
+        where: { classCode: "21_CQ1", studentCode: "2022016" },
+      });
+      expect(mockRegistration.destroy).toHaveBeenCalled();
+      expect(result).toEqual({
+        message: "Registration canceled successfully",
+        message_vi: "Hủy đăng ký thành công",
+      });
+    });
+
+    it("should throw NotFoundError when registration does not exist", async () => {
+      // Arrange
+      const classId = "class-id";
+      const studentId = "student-id";
+
+      const mockClass = { id: classId, classCode: "21_CQ1" };
+      const mockStudent = { id: studentId, studentCode: "2022016" };
+
+      models.Class.findOne.mockResolvedValue(mockClass);
+      models.Student.findOne.mockResolvedValue(mockStudent);
+      models.ClassRegistration.findOne.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        ClassService.cancelStudentRegistration(classId, studentId)
+      ).rejects.toThrow(NotFoundError);
+    });
+  });
+});
