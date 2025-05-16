@@ -8,12 +8,13 @@ interface Option {
 
 interface MultiSelectProps {
     options: Option[];
+    initialSelectedOptions?: string[];
     placeholder?: string;
     onChange: (selectedOptions: string[]) => void;
 }
 
-export function MultiSelect({ options, onChange, placeholder = "" }: MultiSelectProps) {
-    const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+export function MultiSelect({ options, initialSelectedOptions = [], onChange, placeholder = "" }: MultiSelectProps) {
+    const [selectedOptions, setSelectedOptions] = useState<string[]>(initialSelectedOptions);
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const focusRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -22,6 +23,10 @@ export function MultiSelect({ options, onChange, placeholder = "" }: MultiSelect
 
     const optionRefs = useRef<(HTMLLabelElement | null)[]>([]);
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            setIsOpen((prev) => !prev);
+        }
         if (!isOpen) return;
         if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
             const searchChar = e.key.toLowerCase();
@@ -42,11 +47,11 @@ export function MultiSelect({ options, onChange, placeholder = "" }: MultiSelect
             <div tabIndex={0}
                 ref={focusRef}
                 onKeyDown={handleKeyDown}
-                className="relative w-full cursor-pointer inline-flex outline-none
+                className="relative w-full h-10 cursor-pointer inline-flex outline-none
                     border border-solid border-2 rounded-lg border-[#CDD7E1] focus:border-[#0b6bcb] "
                 onClick={() => setIsOpen((prev) => !prev)}>
                 {/*Selected Text */}
-                <div className="flex-2/3 overflow-hidden px-2 py-1 flex flex-wrap items-center">
+                <div className="flex-grow overflow-hidden px-2 py-1 flex flex-wrap items-center">
                     {selectedOptions.length === 0 ? (
                         <span className="text-gray-400 text-sm">{placeholder}</span>
                     ) : (
@@ -61,18 +66,20 @@ export function MultiSelect({ options, onChange, placeholder = "" }: MultiSelect
 
                 {/* Uncheck full */}
                 {selectedOptions.length > 0 && (
-                    <XMarkIcon
-                        onClick={(e) => {
-                            e.stopPropagation(); // ngăn toggle dropdown khi bấm icon
-                            setSelectedOptions([]);
-                        }}
-                        className="flex-1/6 my-2 w-5 h-5 text-gray-500 hover:text-red-500 cursor-pointer"
-                    />
+                    <div className="flex items-center justify-center px-1">
+                        <XMarkIcon
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedOptions([]);
+                            }}
+                            className="w-5 h-5 text-gray-500 hover:text-red-500 cursor-pointer"
+                        />
+                    </div>
                 )}
 
                 {/* Chevron Icon */}
-                <div className="flex-1/6">
-                    <ChevronDownIcon className="w-5 h-5 my-2" />
+                <div className="flex items-center justify-center px-1">
+                    <ChevronDownIcon className="w-5 h-5" />
                 </div>
             </div >
 

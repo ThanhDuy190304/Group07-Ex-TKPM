@@ -1,10 +1,10 @@
 const CourseService = require("../service/course.service");
 
-const getAll = async(req, res, next) => {
-    try{
+const getAll = async (req, res, next) => {
+    try {
         const response = await CourseService.getAll();
-        return res.status(200).json({data: response});
-    }catch(error){
+        return res.status(200).json({ data: response });
+    } catch (error) {
         next(error);
     }
 }
@@ -18,11 +18,22 @@ const create = async (req, res, next) => {
     }
 }
 
-const remove = async(req, res, next) =>{
-    try{
-        await CourseService.delete(req,params.courseCode);
+const update = async (req, res, next) => {
+    try {
+        const courseCode = req.params.courseCode;
+        const updateData = req.body;
+        const result = await CourseService.update(courseCode, updateData);
+        return res.status(200).json({ data: result });
+    } catch (error) {
+        next(error);
+    }
+}
+
+const remove = async (req, res, next) => {
+    try {
+        await CourseService.delete(req.params.courseCode);
         return res.status(204).send();
-    }catch(error){
+    } catch (error) {
         next(error);
     }
 }
@@ -30,5 +41,6 @@ const remove = async(req, res, next) =>{
 module.exports = {
     getAll,
     create,
+    update,
     remove,
 }

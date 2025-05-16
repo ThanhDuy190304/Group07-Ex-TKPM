@@ -32,7 +32,7 @@ class InternalServerError extends BaseError {
 class DuplicateResourceError extends BaseError {
   constructor(
     message = "Resource already exists",
-    message_vi = "Tài nguyên đã tồn tại"
+    message_vi = "Dữ liệu đã tồn tại"
   ) {
     super(message, message_vi, 409);
   }

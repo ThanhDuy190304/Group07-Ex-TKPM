@@ -14,7 +14,7 @@ const getAllStudents = async (req, res, next) => {
 const create = async (req, res, next) => {
   try {
     const result = await studentService.create(req.body);
-    return res.status(201).json({ data: result });
+    return res.status(200).send();
   } catch (error) {
     next(error);
   }
@@ -25,7 +25,7 @@ const update = async (req, res, next) => {
     const studentId = req.params.studentId;
     const updateData = req.body;
     const result = await studentService.update(studentId, updateData);
-    return res.status(200).json({ data: result });
+    return res.status(200).send();
   } catch (error) {
     next(error);
   }

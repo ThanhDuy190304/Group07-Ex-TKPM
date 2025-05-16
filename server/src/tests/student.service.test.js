@@ -6,7 +6,7 @@ const StudentService = require("../service/student.service")
 
 const { NotFoundError, ValidationError } = require("../util/errors");
 
-describe("StudentService.update", () => {
+describe("unit test for StudentService.update", () => {
     let mockStudent;
     let studentService;
 
@@ -48,12 +48,8 @@ describe("StudentService.update", () => {
             status: "Đang học",
             phoneNumber: "+84901234564",
         };
-        //Act
-        const result = await studentService.update(mockStudent.id, studentInfoToUpdate);
-        //Assert
-        expect(result.student.email).toBe("nguyenvanb@student.university.edu.vn");
-        expect(result.student.status).toBe("Đang học");
-        expect(result.student.phoneNumber).toBe("+84901234564");
+        //Act && Assert
+        await expect(studentService.update(mockStudent.id, studentInfoToUpdate)).resolves.toBeUndefined();
     });
 
     test("When updating with invalid email suffix, then throw ValidationError", async () => {
@@ -84,5 +80,8 @@ describe("StudentService.update", () => {
     });
 
 })
+
+
+
 
 

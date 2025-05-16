@@ -27,7 +27,18 @@ export async function postCourses(newFaculty: Partial<Course>) {
 
 export async function deleteCourse(courseId: string) {
     try {
-        await api.delete(`/student/${courseId}`);
+        await api.delete(`/course/${courseId}`);
+    } catch (error: any) {
+        throw {
+            status: error.response.status,
+            message: error.response.data.error_vn,
+        };
+    }
+}
+
+export async function putCourse({ courseId, updatedCourse }: { courseId: string, updatedCourse: Partial<Course> }) {
+    try {
+        await api.put(`/course/${courseId}`, updatedCourse);
     } catch (error: any) {
         throw {
             status: error.response.status,

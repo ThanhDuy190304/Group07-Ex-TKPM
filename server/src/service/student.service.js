@@ -1,7 +1,8 @@
 const BaseService = require("./base.service");
 const CsvImportService = require("./csv.service");
 
-const { validateStudentEmail, validatePhone, validateUUID, validateStatusTransition } = require("../util/validator");
+const { validateStudentEmail, validatePhone, validateStatusTransition } = require("../util/validator");
+const { mapSequelizeError } = require("../util/errorsMapperFromPostgres")
 const { NotFoundError, ValidationError } = require("../util/errors");
 const initModels = require("../models/init-models");
 const sequelize = require("../config/db");
@@ -20,13 +21,6 @@ class StudentService extends BaseService {
   }
 
   async #validateStudentData(studentInf) {
-    //Check student code
-    if (studentInf?.studentCode) {
-      const student = await this.model.findOne({ where: { studentCode: studentInf.studentCode } });
-      if (student) {
-        throw new ValidationError("Student code already exists", "Mã sinh viên này đã tồn tại");
-      }
-    }
     //Check email
     if (studentInf?.email && !validateStudentEmail(studentInf.email)) {
       throw new ValidationError(
@@ -41,7 +35,6 @@ class StudentService extends BaseService {
       }
     }
   }
-
 
   async getAll(searchQuery) {
     console.log(searchQuery);
@@ -98,23 +91,18 @@ class StudentService extends BaseService {
   }
 
   async update(studentId, updateData) {
-    if (!validateUUID(studentId)) {
-      throw new ValidationError("Invalid id", "UUID sinh viên không hợp lệ");
-    }
     const student = await this.model.findOne({ where: { id: studentId } });
-    if (!student) {
-      throw new NotFoundError("Student not exists", "Sinh viên này không tồn tại");
-    }
     if (updateData?.status) {
       if (!validateStatusTransition(student.status, updateData.status))
         throw new ValidationError("Invalid status student", "Trạng thái sinh viên không hợp lệ");
     }
     await this.#validateStudentData(updateData);
     const updateFields = omit(updateData, ['id', 'studentCode']);
-    const updatedStudent = await student.update(updateFields);
-    return {
-      student: omit(updatedStudent.get({ plain: true }), ["createdAt", "updatedAt"])
-    };
+    try {
+      await student.update(updateFields);
+    } catch (err) {
+      throw mapSequelizeError(err);
+    }
   }
 
   async create(newStudentInf) {
@@ -128,44 +116,42 @@ class StudentService extends BaseService {
         `Thiếu các trường bắt buộc: ${missingFields.join(", ")}`
       );
     }
-
     await this.#validateStudentData(newStudentInf);
-
     const transaction = await this.model.sequelize.transaction();
-
     try {
       const newStudent = await this.model.create(newStudentInf, { transaction });
-
-      const docWithStudentCode = {
-        ...newStudentInf.identityDocuments[0],
-        studentCode: newStudent.studentCode,
-      };
-      const existingDoc = await this.IdentityDocument.findOne({
-        where: { number: docWithStudentCode.number },
-      });
-
-      if (existingDoc) {
-        throw new ValidationError(
-          "Identity document number already exists.",
-          "Số của giấy tờ tùy thân đã tồn tại."
-        );
-      }
-      await this.IdentityDocument.create(docWithStudentCode, { transaction });
-
+      await this.#createIdentityDocument(newStudentInf.identityDocuments[0], newStudent.studentCode, transaction);
       await transaction.commit();
 
-      return {
-        student: omit(newStudent.get({ plain: true }), ["createdAt", "updatedAt"])
-      };
     } catch (error) {
       await transaction.rollback();
-      throw error;
+      throw mapSequelizeError(error);
     }
   }
 
+  async #createIdentityDocument(docData, studentCode, transaction) {
+    const docWithStudentCode = {
+      ...docData,
+      studentCode
+    };
+    const existingDoc = await this.IdentityDocument.findOne({
+      where: { number: docWithStudentCode.number }
+    });
+    if (existingDoc) {
+      throw new ValidationError(
+        "Identity document number already exists.",
+        "Số của giấy tờ tùy thân đã tồn tại."
+      );
+    }
+    await this.IdentityDocument.create(docWithStudentCode, { transaction });
+  }
 
   async deleteStudents(studentIds) {
-    await this.model.destroy({ where: { id: studentIds } });
+    try {
+      await this.model.destroy({ where: { id: studentIds } });
+    } catch (error) {
+      throw mapSequelizeError(error);
+    }
   }
 
   async importFile(fileBuffer, format) {

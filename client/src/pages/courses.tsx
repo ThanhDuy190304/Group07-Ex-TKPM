@@ -1,4 +1,4 @@
-import { useState, Dispatch, SetStateAction } from 'react';
+import { useState, useEffect, Dispatch, SetStateAction, useContext, createContext, ReactNode, useMemo, useCallback } from 'react';
 import { useForm, UseFormRegister, Control, Controller } from "react-hook-form"
 import { useCourses } from '../hooks/useCourses'
 import { Course, KeyNameOfCourse } from '../types/course'
@@ -7,32 +7,175 @@ import { useFaculties } from '../hooks/useFaculties';
 
 import { useError } from "../context/ErrorContext";
 
-
 import {
     Sheet, Table, Modal, Button, ModalDialog, DialogTitle, DialogContent,
-    FormControl, FormLabel, Input, Select, Option, RadioGroup, Radio
+    FormControl, FormLabel, Input, Select, Option, RadioGroup, Radio, Textarea
 } from '@mui/joy';
 import { PencilSquareIcon, CheckIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 import ToggleOnOff from '../components/button/toggleOnOFF';
 import { MultiSelect } from '../components/select/multiSelect';
 import { Faculty } from '../types/faculty';
+import { deleteCourse } from '../api/apiCourses';
 
-
-
-interface CourseCreateProps {
+const CoursesDataContext = createContext<{
     courses: Course[],
-    faculties: Faculty[],
-    onCreate: () => Promise<void>;
-    register: UseFormRegister<Partial<Course>>
-    control: Control<Partial<Course>, any, Partial<Course>>
+} | null>(null);
+
+const CoursesActionContext = createContext<{
+    handleUpdate: (courseId: string, updatedData: Partial<Course>) => Promise<boolean>;
+    handleDelete: () => Promise<boolean>;
+    handleCreate: (newCourse: Partial<Course>) => Promise<boolean>;
+} | null>(null);
+
+const CourseSelectionContext = createContext<{
+    selectedCourseId: string | null;
+    setSelectedCourseId: React.Dispatch<React.SetStateAction<string | null>>;
+} | null>(null);
+
+const FacultiesDataContext = createContext<{
+    faculties: Faculty[]
+} | null>(null);
+
+function CourseProvider({ children }: { children: ReactNode }) {
+    const { showError } = useError();
+    const { coursesQuery, createCourse, removeCourse, updateCourse } = useCourses();
+    const { facultiesQuery } = useFaculties();
+
+    const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+
+    const handleCreate = useCallback(async (newCourse: Partial<Course>): Promise<boolean> => {
+        try {
+            await createCourse.mutateAsync(newCourse);
+            return true;
+        } catch (error: any) {
+            showError(error.message);
+            return false;
+        }
+    }, [createCourse])
+
+    const handleDelete = useCallback(async (): Promise<boolean> => {
+        try {
+
+            if (!selectedCourseId) {
+                showError("Vui lòng chọn khoá học cần xoá");
+                return false;
+            }
+
+            try {
+                await removeCourse.mutateAsync(selectedCourseId);
+                setSelectedCourseId(null);
+                return true;
+            } catch (error: any) {
+                showError(error.message);
+                return false;
+            }
+
+        } catch (error: any) {
+            showError(error.message);
+            return false;
+        }
+    }, [removeCourse])
+
+    const handleUpdate = useCallback(async (courseId: string, updatedCourse: Partial<Course>): Promise<boolean> => {
+        try {
+            await updateCourse.mutateAsync({ courseId, updatedCourse });
+            return true;
+        } catch (error: any) {
+            showError(error.message);
+            return false;
+        }
+    }, [updateCourse])
+
+    const coursestDataContextValue = useMemo(() => ({
+        courses: coursesQuery.data?.courses || []
+    }), [coursesQuery.data])
+
+    const coursesActionContextValue = useMemo(() => ({
+        handleUpdate,
+        handleDelete,
+        handleCreate,
+    }), [])
+
+    const courseSelectionContextValue = useMemo(() => ({
+        selectedCourseId,
+        setSelectedCourseId
+    }), [selectedCourseId, setSelectedCourseId]);
+
+    const facultiestDataContextValue = useMemo(() => ({
+        faculties: facultiesQuery.data?.faculties || []
+    }), [facultiesQuery.data])
+
+    if (coursesQuery.isLoading || facultiesQuery.isLoading) {
+        return <p>Đang tải dữ liệu...</p>;
+    } else if (coursesQuery.error || facultiesQuery.error) {
+        return <p>Lỗi không tải được dữ liệu</p>
+    }
+
+    return (
+        <CoursesDataContext.Provider value={coursestDataContextValue}>
+            <CoursesActionContext.Provider value={coursesActionContextValue}>
+                <CourseSelectionContext.Provider value={courseSelectionContextValue}>
+                    <FacultiesDataContext.Provider value={facultiestDataContextValue}>
+                        {children}
+                    </FacultiesDataContext.Provider>
+                </CourseSelectionContext.Provider>
+            </CoursesActionContext.Provider>
+        </CoursesDataContext.Provider>
+    )
+
 }
 
-function CourseCreateFormModal({ courses, faculties, onCreate, register, control, isOpen, setIsOpen }: CourseCreateProps & { isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
+//Custom hook
+function useCoursesDataContext() {
+    const context = useContext(CoursesDataContext);
+    if (!context) throw new Error('useCoursesDataContext must be used within CourseProvider');
+    return context;
+}
+
+function useCoursesActionContext() {
+    const context = useContext(CoursesActionContext);
+    if (!context) throw new Error('useCoursesActionContext must be used within CourseProvider');
+    return context;
+}
+
+function useCourseSelectionContext() {
+    const context = useContext(CourseSelectionContext);
+    if (!context) throw new Error('CourseSelectionContext must be used within CourseProvider');
+    return context;
+}
+
+function useFacultiesDataContext() {
+    const context = useContext(FacultiesDataContext);
+    if (!context) throw new Error('useFacultiesDataContext must be used within CourseProvider');
+    return context;
+}
+
+function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
+    const { register, getValues, control } = useForm<Partial<Course>>();
+    const { faculties } = useFacultiesDataContext();
+    const { courses } = useCoursesDataContext();
+    const { handleCreate } = useCoursesActionContext();
+    const onCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const newCourse: Partial<Course> = {
+            courseCode: getValues('courseCode'),
+            name: getValues('name'),
+            credits: getValues('credits'),
+            facultyCode: getValues('facultyCode'),
+            description: getValues('description'),
+            prerequisiteCourseCode: getValues('prerequisiteCourseCode'),
+        }
+        const result = await handleCreate(newCourse)
+        if (result) {
+            setIsOpen(false);
+        }
+    }
     return (
         <Modal open={isOpen} onClose={() => setIsOpen(false)}>
-            <ModalDialog>
+            <ModalDialog className='w-1/2'>
                 <DialogTitle>Tạo khoá học mới</DialogTitle>
+                <hr className="border-t border-gray-200 my-2" />
                 <DialogContent>
                     <div className="max-h-[70vh] overflow-y-auto pr-2">
                         <form onSubmit={onCreate}>
@@ -57,7 +200,7 @@ function CourseCreateFormModal({ courses, faculties, onCreate, register, control
                                     />
                                 </FormControl>
 
-                                {/* Course Name */}
+                                {/* Credits */}
                                 <FormControl required>
                                     <FormLabel>{KeyNameOfCourse.credits}</FormLabel>
                                     <Input
@@ -90,13 +233,13 @@ function CourseCreateFormModal({ courses, faculties, onCreate, register, control
                                 />
 
                                 {/*Description*/}
-                                <FormControl required>
+                                <FormControl required className="col-span-full">
                                     <FormLabel>{KeyNameOfCourse.description}</FormLabel>
-                                    <Input
-                                        autoFocus
-                                        type="text"
+                                    <Textarea
+                                        minRows={4}
                                         {...register("description", { required: true })}
                                     />
+
                                 </FormControl>
 
                                 {/* Prerequisite Course */}
@@ -111,7 +254,7 @@ function CourseCreateFormModal({ courses, faculties, onCreate, register, control
 
                                         return (
                                             <>
-                                                <FormControl>
+                                                <FormControl className="col-span-full">
                                                     <FormLabel>{KeyNameOfCourse.prerequisiteCourseCode}</FormLabel>
                                                     <MultiSelect
                                                         {...field}
@@ -149,7 +292,8 @@ function CourseCreateFormModal({ courses, faculties, onCreate, register, control
         </Modal>
     );
 }
-function CourseCreateButton({ courses, faculties, register, control, onCreate }: CourseCreateProps) {
+
+function CourseCreateButton() {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <>
@@ -162,61 +306,20 @@ function CourseCreateButton({ courses, faculties, register, control, onCreate }:
             >
                 Tạo khóa học mới
             </Button>
-            <CourseCreateFormModal
-                courses={courses}
-                faculties={faculties}
-                onCreate={onCreate}
-                register={register}
-                control={control}
-                isOpen={isOpen}
-                setIsOpen={setIsOpen} />
+            <CourseCreateFormModal isOpen={isOpen} setIsOpen={setIsOpen} />
         </>
 
     );
 }
 
-interface CourseCreateContainerProps {
-    courses: Course[],
-    faculties: Faculty[],
-    createCourse: (newCourse: Partial<Course>) => Promise<void>;
-}
-function CourseCreateContainer({ courses, faculties, createCourse }: CourseCreateContainerProps) {
-
-    const { register, reset, getValues, setValue, control } = useForm<Partial<Course>>();
-    const onCreate = async () => {
-        const newCourse: Partial<Course> = {
-            courseCode: getValues('courseCode'),
-            name: getValues('name'),
-            credits: getValues('credits'),
-            facultyCode: getValues('facultyCode'),
-            description: getValues('description'),
-            prerequisiteCourseCode: getValues('prerequisiteCourseCode'),
-        }
-        await createCourse(newCourse)
-        reset();
-    }
-
-    return (
-        <CourseCreateButton
-            courses={courses}
-            faculties={faculties}
-            onCreate={onCreate}
-            register={register}
-            control={control}
-        />
-    );
-}
-
-interface CourseRemoveContainerProps {
-    onRemove: () => Promise<void>;
-}
-function CourseRemoveContainer({ onRemove }: CourseRemoveContainerProps) {
+function CourseDeleteButton() {
+    const { handleDelete } = useCoursesActionContext();
     return (
         <Button
             variant="solid"
             color="danger"
             startDecorator={<TrashIcon className="w-5 h-5" />}
-            onClick={onRemove}
+            onClick={handleDelete}
             className="w-fit "
         >
             Xoá
@@ -224,6 +327,136 @@ function CourseRemoveContainer({ onRemove }: CourseRemoveContainerProps) {
     );
 }
 
+function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
+    const { register, getValues, control, reset } = useForm<Partial<Course>>();
+    const { faculties } = useFacultiesDataContext();
+    const { courses } = useCoursesDataContext();
+    const { handleUpdate } = useCoursesActionContext();
+
+    useEffect(() => {
+        const { id, courseCode, ...rest } = course;
+        reset(rest);
+    }, [course, reset]);
+
+    const onUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const result = await handleUpdate(course.id, getValues());
+        if (result) {
+            setIsOpen(false);
+        }
+    }
+
+    return (
+        <Modal
+            open={isOpen} onClose={() => setIsOpen(false)}>
+            <ModalDialog className="w-1/2">
+                <DialogTitle>{course.courseCode}</DialogTitle>
+                <hr className="border-t border-gray-200 my-2" />
+                <DialogContent>
+                    <div className='overflow-y-auto'>
+                        <form onSubmit={onUpdate}>
+                            <div className="m-2 mb-4 grid grid-cols-1 gap-4">
+
+                                {/* Course Name */}
+                                <FormControl required>
+                                    <FormLabel>{KeyNameOfCourse.name}</FormLabel>
+                                    <Input
+                                        autoFocus
+                                        type="text"
+                                        defaultValue={course.name}
+                                        {...register("name", { required: true })}
+                                    />
+                                </FormControl>
+
+                                {/* Credits */}
+                                <FormControl required>
+                                    <FormLabel>{KeyNameOfCourse.credits}</FormLabel>
+                                    <Input
+                                        autoFocus
+                                        type="number"
+                                        defaultValue={course.credits}
+                                        {...register("credits", { required: true })}
+                                    />
+                                </FormControl>
+
+                                {/*Faculty Code*/}
+                                <Controller
+                                    name="facultyCode"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <FormControl required>
+                                            <FormLabel>{KeyNameOfCourse.facultyCode}</FormLabel>
+                                            <Select
+                                                {...field}
+                                                defaultValue={course.facultyCode}
+                                                value={field.value}
+                                                onChange={(e, newValue) => field.onChange(newValue)}
+                                            >
+                                                {faculties.map((faculty) => (
+                                                    <Option key={faculty.facultyCode} value={faculty.facultyCode}>
+                                                        {faculty.name}
+                                                    </Option>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    )}
+                                />
+
+                                {/*Description*/}
+                                <FormControl required className="col-span-full">
+                                    <FormLabel>{KeyNameOfCourse.description}</FormLabel>
+                                    <Textarea
+                                        minRows={4}
+                                        defaultValue={course.description}
+                                        {...register("description", { required: true })}
+                                    />
+                                </FormControl>
+
+                                {/* Prerequisite Course */}
+                                <Controller
+                                    name="prerequisiteCourseCode"
+                                    control={control}
+                                    render={({ field }) => {
+                                        const courseOptions = courses.map((course) => ({
+                                            label: course.courseCode,
+                                            value: course.courseCode,
+                                        }));
+                                        const initialSelectedOptions = course.prerequisiteCourseCode;
+                                        return (
+                                            <>
+                                                <FormControl className="col-span-full">
+                                                    <FormLabel>{KeyNameOfCourse.prerequisiteCourseCode}</FormLabel>
+                                                    <MultiSelect
+                                                        {...field}
+                                                        options={courseOptions}
+                                                        initialSelectedOptions={initialSelectedOptions}
+                                                        onChange={(selectedOptions) => {
+                                                            field.onChange(selectedOptions);
+                                                        }}
+                                                    />
+                                                </FormControl>
+                                            </>
+                                        )
+                                    }}
+                                />
+                            </div>
+                            <div className="flex justify-center mt-8">
+                                <Button
+                                    variant="solid"
+                                    color="primary"
+                                    type="submit"
+                                    className="w-1/2"
+                                >
+                                    Xác nhận
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </DialogContent>
+            </ModalDialog>
+        </Modal>
+    );
+}
 
 interface CourseRowProps {
     index: number;
@@ -250,145 +483,107 @@ function CourseRow({ index, course }: CourseRowProps) {
     );
 }
 
-interface CourseTableProps {
-    courses: Course[];
-    selectedId: null | string;
-    setSelectedId: (selectedId: null | string) => void;
-}
-function CourseTable({ courses, selectedId, setSelectedId }: CourseTableProps) {
-    const headers = ["STT", ...Object.values(KeyNameOfCourse)];
-    return (
-        <RadioGroup
-            value={selectedId}
-            onChange={(e) => setSelectedId(e.target.value)}
-        >
-            <Table className="!table-auto !border-separate border border-slate-200 !rounded-lg w-full overflow-hidden">
-                <thead>
-                    <tr>
-                        <th className="w-12"></th>
-                        {headers.map((header, index) => (
-                            <th key={index} className="capitalize">{header}</th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {courses.map((course, index) => (
-                        <tr key={course.id}>
-                            <td >
-                                <Radio
-                                    value={course.id}
-                                    checked={selectedId === course.id}
-                                    onClick={() => {
-                                        setSelectedId(selectedId === course.id ? null : course.id);
-                                    }}
-                                    slots={{
-                                        radio: (props) => {
-                                            const { ownerState, ...domProps } = props;
-                                            return (
-                                                <span
-                                                    {...domProps}
-                                                    className={`relative w-5 h-5 cursor-pointer rounded border flex items-center justify-center transition-all duration-200 ease-in-out
-                                                         ${ownerState?.checked
-                                                            ? "border-blue-500 bg-blue-500/10"
-                                                            : "border-gray-400 hover:border-blue-400"}`}
-                                                />
-                                            );
-                                        },
-                                        icon: (props) => {
-                                            const { ownerState } = props;
-                                            return ownerState.checked ? (
-                                                <CheckIcon className={`absolute w-3.5 h-3.5 text-blue-700 transition-all duration-200 ease-in-out
-                                                 ${ownerState?.checked ? "scale-100 opacity-100" : "scale-75 opacity-0"}`}
-                                                />
-                                            ) : null;
-                                        },
-                                    }}
-                                />
+function CourseTable() {
+    const { selectedCourseId, setSelectedCourseId } = useCourseSelectionContext();
+    const { courses } = useCoursesDataContext();
 
-                            </td>
-                            <CourseRow
-                                index={index}
-                                course={course}
-                            />
-                        </tr>))}
-                </tbody>
-            </Table>
-        </RadioGroup >
+    const headers = ["STT", ...Object.values(KeyNameOfCourse)];
+
+    const [selectedCourseForUpdate, setSelectedCourseForUpdate] = useState<Course | null>(null);
+    const [isUpdateModelOpen, setIsUpdateModelOpen] = useState<boolean>(false);
+    return (
+        <>
+            <RadioGroup
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+            >
+                <Table className="!table-auto !border-separate border border-slate-200 !rounded-lg w-full overflow-hidden">
+                    <thead>
+                        <tr>
+                            <th className="w-12"></th>
+                            {headers.map((header, index) => (
+                                <th key={index} className="capitalize">{header}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {courses.map((course, index) => (
+                            <tr key={course.id}
+                                className="cursor-pointer hover:bg-gray-100"
+                                onClick={() => {
+                                    setSelectedCourseForUpdate(course);
+                                    setIsUpdateModelOpen(true);
+                                }}>
+                                <td>
+                                    <Radio
+                                        value={course.id}
+                                        checked={selectedCourseId === course.id}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedCourseId(selectedCourseId === course.id ? null : course.id);
+                                        }}
+                                        slots={{
+                                            radio: (props) => {
+                                                const { ownerState, ...domProps } = props;
+                                                return (
+                                                    <span
+                                                        {...domProps}
+                                                        className={`relative w-5 h-5 cursor-pointer rounded border flex items-center justify-center transition-all duration-200 ease-in-out
+                                                         ${ownerState?.checked
+                                                                ? "border-blue-500 bg-blue-500/10"
+                                                                : "border-gray-400 hover:border-blue-400"}`}
+                                                    />
+                                                );
+                                            },
+                                            icon: (props) => {
+                                                const { ownerState } = props;
+                                                return ownerState.checked ? (
+                                                    <CheckIcon className={`absolute w-3.5 h-3.5 text-blue-700 transition-all duration-200 ease-in-out
+                                                 ${ownerState?.checked ? "scale-100 opacity-100" : "scale-75 opacity-0"}`}
+                                                    />
+                                                ) : null;
+                                            },
+                                        }}
+                                    />
+
+                                </td>
+                                <CourseRow
+                                    index={index}
+                                    course={course}
+                                />
+                            </tr>))}
+                    </tbody>
+                </Table>
+            </RadioGroup >
+            {selectedCourseForUpdate && (
+                <CourseUpdateFormModal
+                    course={selectedCourseForUpdate}
+                    isOpen={isUpdateModelOpen}
+                    setIsOpen={setIsUpdateModelOpen}
+                />
+            )}
+        </>
 
     );
 }
-
-interface CourseContainerProps {
-    courses: Course[];
-    faculties: Faculty[];
-    createCourse: (course: Partial<Course>) => void;
-    removeCourse: (courseId: string) => void;
-}
-function CourseContainer({ courses, faculties, createCourse, removeCourse }: CourseContainerProps) {
-    const { showError } = useError();
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-
-    const handleRemoveCourse = async () => {
-        if (!selectedId) return;
-        try {
-            await removeCourse(selectedId);
-            setSelectedId(null); // Reset selection sau khi xóa
-        } catch (error: any) {
-            showError(error.message);
-        }
-    }
-
-
-    const handleCreateCourse = async (newCourse: Partial<Course>) => {
-        try {
-            await createCourse(newCourse);
-        } catch (error: any) {
-            showError(error.message);
-        }
-    }
-
+function CoursePage() {
     return (
         <section className='flex flex-col gap-4'>
             <div className="flex gap-2">
-                <CourseRemoveContainer
-                    onRemove={handleRemoveCourse} />
-                <CourseCreateContainer
-                    courses={courses}
-                    faculties={faculties}
-                    createCourse={handleCreateCourse} />
+                <CourseDeleteButton />
+                <CourseCreateButton />
             </div>
-            <CourseTable
-                courses={courses}
-                selectedId={selectedId}
-                setSelectedId={setSelectedId} />
+            <CourseTable />
         </section>
-    );
-
+    )
 }
 
-export default function CoursePage() {
-    const { coursesQuery, createCourse, removeCourse } = useCourses();
-    const { facultiesQuery } = useFaculties();
-    if (coursesQuery.isLoading) {
-        return <p>Đang tải dữ liệu...</p>;
-    } else if (coursesQuery.error) {
-        return <p>{coursesQuery.error.message}</p>;
-    }
-
-    const courses = coursesQuery.data.courses as Course[];
-    const faculties = facultiesQuery.data.faculties as Faculty[];
-
+function CoursePageContainer() {
     return (
-        <main className="space-y-8">
-            <h2 className="text-2xl font-bold">Quản lý khóa học</h2>
-            <CourseContainer
-                courses={courses}
-                faculties={faculties}
-                createCourse={createCourse.mutateAsync}
-                removeCourse={removeCourse.mutateAsync}
-            />
-        </main>
+        <CourseProvider>
+            <CoursePage />
+        </CourseProvider>
     );
-
 }
 
+export default CoursePageContainer;

@@ -1,6 +1,6 @@
 const { NotFoundError, ValidationError, InternalServerError, } = require("../util/errors");
+const { mapSequelizeError } = require("../util/errorsMapperFromPostgres");
 const pluralize = require("pluralize")
-const { validateUUID } = require("../util/validator");
 const { camelCase } = require("lodash");
 
 class BaseService {
@@ -21,13 +21,17 @@ class BaseService {
   }
 
   async delete(id) {
-    if (!validateUUID(id)) {
-      throw new ValidationError();
-    }
-    const deleted = await this.model.destroy({ where: { id: id } });
-    if (!deleted) {
-      throw new NotFoundError();
+    try {
+      const deleted = await this.model.destroy({ where: { id } });
+
+      if (!deleted) {
+        throw new NotFoundError();
+      }
+    } catch (err) {
+      throw mapSequelizeError(err);
     }
   }
+
 }
+
 module.exports = BaseService;

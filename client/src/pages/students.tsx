@@ -85,7 +85,7 @@ function StudentProvider({ children }: { children: ReactNode }) {
     const handleRemoveStudents = useCallback(async (studentIds: string[]) => {
         try {
             await removeStudents.mutateAsync(studentIds);
-            setSelectedStudentIds([]); // Clear selection after delete
+            setSelectedStudentIds([]);
             return true;
         } catch (error: any) {
             showError(error.message);
@@ -154,7 +154,7 @@ function StudentProvider({ children }: { children: ReactNode }) {
     const selectionContextValue = useMemo(() => ({
         selectedStudentIds,
         setSelectedStudentIds
-    }), [selectedStudentIds]);
+    }), [selectedStudentIds, setSelectedStudentIds]);
 
 
     if (studentsQuery.isLoading || facultiesQuery.isLoading || programsQuery.isLoading) {
@@ -180,7 +180,7 @@ function StudentProvider({ children }: { children: ReactNode }) {
                     </ProgramContext.Provider>
                 </FacultyContext.Provider>
             </StudentActionContext.Provider>
-        </StudentDataContext.Provider >
+        </StudentDataContext.Provider>
     );
 }
 // Custom hooks
