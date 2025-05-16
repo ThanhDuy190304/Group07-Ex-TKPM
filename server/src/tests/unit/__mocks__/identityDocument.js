@@ -1,7 +1,7 @@
-const { IdentityDocument } = require("../../service/student.service");
-
 const mockIdentityDocumentModel = {
-    findAll: jest.fn().mockResolvedValue([])
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
 };
 
 module.exports = {

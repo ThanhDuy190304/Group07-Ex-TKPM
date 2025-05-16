@@ -41,7 +41,7 @@ describe("unit test for StudentService.update", () => {
         })
     })
 
-    test("When updating with valid student data, then return updated student.", async () => {
+    test("When update data is valid, should update successfully without throw error.", async () => {
         //Arrange
         const studentInfoToUpdate = {
             email: "nguyenvanb@student.university.edu.vn",
@@ -81,6 +81,86 @@ describe("unit test for StudentService.update", () => {
 
 })
 
+
+describe("unit test for StudentService.create", () => {
+    let studentService;
+    const mockTransaction = {
+        commit: jest.fn(),
+        rollback: jest.fn(),
+    };
+    beforeEach(() => {
+        Student.create.mockResolvedValue({ studentCode: "SV001" });
+
+        Student.sequelize = {
+            transaction: jest.fn().mockResolvedValue(mockTransaction)
+        };
+
+        IdentityDocument.findOne.mockResolvedValue(null);
+        IdentityDocument.create.mockResolvedValue({});
+
+        studentService = new StudentService({
+            Student: Student, Program: Program,
+            Faculty: Faculty, IdentityDocument: IdentityDocument
+        })
+    })
+
+    test("When data being full fields and valid, should create successfully without throw error.", async () => {
+        //Arrange
+        const newStudent = {
+            studentCode: "SV001",
+            fullName: "Nguyen Van A",
+            dateOfBirth: "2025-03-03",
+            gender: "male",
+            email: "nguyenvana@student.university.edu.vn",
+            phoneNumber: "+84901234567",
+            nationality: "VN",
+            facultyCode: "CNTT",
+            programCode: "KTPM",
+            cohortYear: 2022,
+            identityDocuments: [{ type: "CCCD", number: "123456789" }],
+        };
+        //Act && Assert
+        await expect(studentService.create(newStudent)).resolves.toBeUndefined();
+    })
+
+    test("When email does not end with student.university.edu.vn, then throw ValidationError", async () => {
+        const newStudent = {
+            studentCode: "SV002",
+            fullName: "Nguyen Van B",
+            dateOfBirth: "2025-03-03",
+            gender: "female",
+            email: "someone@gmail.com", // ❌ sai đuôi
+            phoneNumber: "+84901234567",
+            nationality: "VN",
+            facultyCode: "CNTT",
+            programCode: "KTPM",
+            cohortYear: 2022,
+            identityDocuments: [{ type: "CCCD", number: "987654321" }],
+        };
+
+        await expect(studentService.create(newStudent)).rejects.toThrow(ValidationError);
+    });
+
+    test("When phoneNumber is invalid, then throw ValidationError", async () => {
+        const newStudent = {
+            studentCode: "SV003",
+            fullName: "Tran Van C",
+            dateOfBirth: "2025-03-03",
+            gender: "male",
+            email: "tranvanc@student.university.edu.vn",
+            phoneNumber: "+85901234567", // ❌ sai đầu số
+            nationality: "VN",
+            facultyCode: "CNTT",
+            programCode: "KTPM",
+            cohortYear: 2022,
+            identityDocuments: [{ type: "CCCD", number: "1122334455" }],
+        };
+
+        await expect(studentService.create(newStudent)).rejects.toThrow(ValidationError);
+    });
+
+
+})
 
 
 

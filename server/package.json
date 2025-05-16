@@ -27,6 +27,8 @@
   "scripts": {
     "test": "jest",
     "test_having_coverage": "jest --coverage",
+    "test:unit": "jest src/tests/unit",
+    "test:integration": "jest src/tests/integration",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },
