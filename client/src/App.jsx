@@ -8,6 +8,9 @@ import CoursePage from "./pages/courses";
 import { ErrorProvider } from "./context/ErrorContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+import './config/i18n';
+
 // Tạo QueryClient
 const queryClient = new QueryClient();
 

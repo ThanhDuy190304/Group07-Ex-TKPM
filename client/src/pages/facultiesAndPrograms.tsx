@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { usePrograms } from '../hooks/usePrograms'
 import { useFaculties } from '../hooks/useFaculties'
-import { Faculty, facultyFields } from '../types/faculty';
-import { Program, programFields } from '../types/program';
+import { Faculty, facultyFieldKeys } from '../types/faculty';
+import { Program, programFieldKeys } from '../types/program';
 
 import {
     Table, Sheet, Modal, Button, ModalDialog, DialogTitle, DialogContent,
@@ -16,7 +18,7 @@ import { useError } from "../context/ErrorContext";
 function FacultyCreateModalDialog({ onCreate }: { onCreate: (newFaculty: Partial<Faculty>) => void }) {
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState<Partial<Faculty>>({});
-
+    const { t: tFaculty } = useTranslation('faculty');
     const handleChange = (key: keyof Faculty, value: string) => {
         setFormData({ ...formData, [key]: value });
     };
@@ -44,9 +46,9 @@ function FacultyCreateModalDialog({ onCreate }: { onCreate: (newFaculty: Partial
                     <DialogContent>Điền đủ thông tin dưới đây.</DialogContent>
                     <form onSubmit={handleSubmit}>
                         <Stack spacing={2}>
-                            {Object.entries(facultyFields).map(([key, label]) => (
-                                <FormControl key={key}>
-                                    <FormLabel>{label}</FormLabel>
+                            {Object.entries(facultyFieldKeys).map(([key, label]) => (
+                                <FormControl>
+                                    <FormLabel>{tFaculty(label)}</FormLabel>
                                     <Input
                                         autoFocus={key === "name"}
                                         required
@@ -133,14 +135,16 @@ interface FacultiesTableProps {
 }
 
 function FacultiesTable({ faculties, editingFaculty, isEditingFacultyId, onEdit, onChange, onSave, onCancel }: FacultiesTableProps) {
-    const headers = ["STT", ...Object.values(facultyFields)];
+    const headers = ["STT", ...Object.values(facultyFieldKeys)];
+    const { t: tFaculty } = useTranslation('faculty');
+
     return (
         <Sheet className="flex-2" variant="outlined" sx={{ borderRadius: "md", overflow: "auto" }}>
             <Table>
                 <thead>
                     <tr>
                         {headers.map((header, index) => (
-                            <th key={index} className="w-32 capitalize">{header}</th>
+                            <th key={index} className="w-32 capitalize">{tFaculty(header)}</th>
                         ))}
                         <th className="w-12"></th>
                     </tr>
@@ -244,6 +248,7 @@ function FacultiesContainer({ faculties }: { faculties: Faculty[] }) {
 function ProgramCreateModalDialog({ onCreate }: { onCreate: (newProgram: Partial<Program>) => void }) {
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState<Partial<Program>>({});
+    const { t: tProgram } = useTranslation('program');
 
     const handleChange = (key: keyof Program, value: string) => {
         setFormData({ ...formData, [key]: value });
@@ -272,9 +277,9 @@ function ProgramCreateModalDialog({ onCreate }: { onCreate: (newProgram: Partial
                     <DialogContent>Điền đủ thông tin dưới đây.</DialogContent>
                     <form onSubmit={handleSubmit}>
                         <Stack spacing={2}>
-                            {Object.entries(programFields).map(([key, label]) => (
+                            {Object.entries(programFieldKeys).map(([key, label]) => (
                                 <FormControl key={key}>
-                                    <FormLabel>{label}</FormLabel>
+                                    <FormLabel>{tProgram(label)}</FormLabel>
                                     <Input
                                         autoFocus={key === "name"}
                                         required
@@ -360,14 +365,15 @@ interface ProgramsTableProps {
 }
 
 function ProgramsTable({ programs, editingProgram, isEditingProgramId, onEdit, onChange, onSave, onCancel }: ProgramsTableProps) {
-    const headers = ["STT", ...Object.values(programFields)];
+    const headers = ["STT", ...Object.values(programFieldKeys)];
+    const { t: tProgram } = useTranslation('program');
     return (
         <Sheet className="flex-2" variant="outlined" sx={{ borderRadius: "md", overflow: "auto" }}>
             <Table>
                 <thead>
                     <tr>
                         {headers.map((header, index) => (
-                            <th key={index} className="w-32 capitalize">{header}</th>
+                            <th key={index} className="w-32 capitalize">{tProgram(header)}</th>
                         ))}
                         <th className="w-12"></th>
                     </tr>

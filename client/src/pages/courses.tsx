@@ -1,7 +1,8 @@
 import { useState, useEffect, Dispatch, SetStateAction, useContext, createContext, ReactNode, useMemo, useCallback } from 'react';
-import { useForm, UseFormRegister, Control, Controller } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
+import { useTranslation } from 'react-i18next';
 import { useCourses } from '../hooks/useCourses'
-import { Course, KeyNameOfCourse } from '../types/course'
+import { Course, CourseFieldKeys } from '../types/course'
 
 import { useFaculties } from '../hooks/useFaculties';
 
@@ -11,12 +12,11 @@ import {
     Sheet, Table, Modal, Button, ModalDialog, DialogTitle, DialogContent,
     FormControl, FormLabel, Input, Select, Option, RadioGroup, Radio, Textarea
 } from '@mui/joy';
-import { PencilSquareIcon, CheckIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 import ToggleOnOff from '../components/button/toggleOnOFF';
 import { MultiSelect } from '../components/select/multiSelect';
 import { Faculty } from '../types/faculty';
-import { deleteCourse } from '../api/apiCourses';
 
 const CoursesDataContext = createContext<{
     courses: Course[],
@@ -152,6 +152,7 @@ function useFacultiesDataContext() {
 }
 
 function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
+    const { t: tCourse } = useTranslation('course');
     const { register, getValues, control } = useForm<Partial<Course>>();
     const { faculties } = useFacultiesDataContext();
     const { courses } = useCoursesDataContext();
@@ -182,7 +183,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
                             <div className="m-2 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* Course Code */}
                                 <FormControl required>
-                                    <FormLabel>{KeyNameOfCourse.courseCode}</FormLabel>
+                                    <FormLabel>{tCourse(CourseFieldKeys.courseCode)}</FormLabel>
                                     <Input
                                         autoFocus
                                         type="text"
@@ -192,7 +193,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
 
                                 {/* Course Name */}
                                 <FormControl required>
-                                    <FormLabel>{KeyNameOfCourse.name}</FormLabel>
+                                    <FormLabel>{tCourse(CourseFieldKeys.name)}</FormLabel>
                                     <Input
                                         autoFocus
                                         type="text"
@@ -202,7 +203,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
 
                                 {/* Credits */}
                                 <FormControl required>
-                                    <FormLabel>{KeyNameOfCourse.credits}</FormLabel>
+                                    <FormLabel>{tCourse(CourseFieldKeys.credits)}</FormLabel>
                                     <Input
                                         autoFocus
                                         type="number"
@@ -216,7 +217,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
                                     control={control}
                                     render={({ field }) => (
                                         <FormControl required>
-                                            <FormLabel>{KeyNameOfCourse.facultyCode}</FormLabel>
+                                            <FormLabel>{tCourse(CourseFieldKeys.facultyCode)}</FormLabel>
                                             <Select
                                                 {...field}
                                                 value={field.value}
@@ -234,7 +235,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
 
                                 {/*Description*/}
                                 <FormControl required className="col-span-full">
-                                    <FormLabel>{KeyNameOfCourse.description}</FormLabel>
+                                    <FormLabel>{CourseFieldKeys.description}</FormLabel>
                                     <Textarea
                                         minRows={4}
                                         {...register("description", { required: true })}
@@ -255,7 +256,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
                                         return (
                                             <>
                                                 <FormControl className="col-span-full">
-                                                    <FormLabel>{KeyNameOfCourse.prerequisiteCourseCode}</FormLabel>
+                                                    <FormLabel>{CourseFieldKeys.prerequisiteCourseCode}</FormLabel>
                                                     <MultiSelect
                                                         {...field}
                                                         options={courseOptions}
@@ -328,6 +329,7 @@ function CourseDeleteButton() {
 }
 
 function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
+    const { t: tCourse } = useTranslation('course');
     const { register, getValues, control, reset } = useForm<Partial<Course>>();
     const { faculties } = useFacultiesDataContext();
     const { courses } = useCoursesDataContext();
@@ -359,7 +361,7 @@ function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, 
 
                                 {/* Course Name */}
                                 <FormControl required>
-                                    <FormLabel>{KeyNameOfCourse.name}</FormLabel>
+                                    <FormLabel>{tCourse(CourseFieldKeys.name)}</FormLabel>
                                     <Input
                                         autoFocus
                                         type="text"
@@ -370,7 +372,7 @@ function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, 
 
                                 {/* Credits */}
                                 <FormControl required>
-                                    <FormLabel>{KeyNameOfCourse.credits}</FormLabel>
+                                    <FormLabel>{tCourse(CourseFieldKeys.credits)}</FormLabel>
                                     <Input
                                         autoFocus
                                         type="number"
@@ -385,7 +387,7 @@ function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, 
                                     control={control}
                                     render={({ field }) => (
                                         <FormControl required>
-                                            <FormLabel>{KeyNameOfCourse.facultyCode}</FormLabel>
+                                            <FormLabel>{tCourse(CourseFieldKeys.facultyCode)}</FormLabel>
                                             <Select
                                                 {...field}
                                                 defaultValue={course.facultyCode}
@@ -404,7 +406,7 @@ function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, 
 
                                 {/*Description*/}
                                 <FormControl required className="col-span-full">
-                                    <FormLabel>{KeyNameOfCourse.description}</FormLabel>
+                                    <FormLabel>{tCourse(CourseFieldKeys.description)}</FormLabel>
                                     <Textarea
                                         minRows={4}
                                         defaultValue={course.description}
@@ -425,7 +427,7 @@ function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, 
                                         return (
                                             <>
                                                 <FormControl className="col-span-full">
-                                                    <FormLabel>{KeyNameOfCourse.prerequisiteCourseCode}</FormLabel>
+                                                    <FormLabel>{tCourse(CourseFieldKeys.prerequisiteCourseCode)}</FormLabel>
                                                     <MultiSelect
                                                         {...field}
                                                         options={courseOptions}
@@ -463,7 +465,7 @@ interface CourseRowProps {
     course: Course;
 }
 function CourseRow({ index, course }: CourseRowProps) {
-    const keyNames = Object.keys(KeyNameOfCourse) as (keyof Course)[];
+    const keyNames = Object.keys(CourseFieldKeys) as (keyof Course)[];
     const handleToggleActive = async () => {
         console.log(`Toggling active for course ${course.id}`);
     };
@@ -484,10 +486,10 @@ function CourseRow({ index, course }: CourseRowProps) {
 }
 
 function CourseTable() {
+    const { t: tCourse } = useTranslation('course');
     const { selectedCourseId, setSelectedCourseId } = useCourseSelectionContext();
     const { courses } = useCoursesDataContext();
-
-    const headers = ["STT", ...Object.values(KeyNameOfCourse)];
+    const headers = ["STT", ...Object.values(CourseFieldKeys)];
 
     const [selectedCourseForUpdate, setSelectedCourseForUpdate] = useState<Course | null>(null);
     const [isUpdateModelOpen, setIsUpdateModelOpen] = useState<boolean>(false);
@@ -502,7 +504,7 @@ function CourseTable() {
                         <tr>
                             <th className="w-12"></th>
                             {headers.map((header, index) => (
-                                <th key={index} className="capitalize">{header}</th>
+                                <th key={index} className="capitalize">{tCourse(header)}</th>
                             ))}
                         </tr>
                     </thead>
