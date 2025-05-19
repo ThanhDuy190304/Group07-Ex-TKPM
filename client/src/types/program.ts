@@ -4,7 +4,7 @@ export interface Program {
     programCode: string,
 }
 
-export const programFields: Partial<Record<keyof Program, string>> = {
+export const programFields: { programCode: string, name: string } = {
     programCode: "Mã chương trình",
-    name: "Tên chương trình",
+    name: "Chương trình đào tạo",
 };

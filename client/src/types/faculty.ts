@@ -4,7 +4,7 @@ export interface Faculty {
     facultyCode: string,
 }
 
-export const facultyFields: Partial<Record<keyof Faculty, string>> = {
+export const facultyFields: { facultyCode: string; name: string } = {
     facultyCode: "Mã khoa",
-    name: "Tên khoa",
+    name: "Khoa",
 };

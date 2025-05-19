@@ -8,6 +8,7 @@ export function usePrograms() {
     const programsQuery = useQuery({
         queryKey: ["programs"],
         queryFn: getPrograms,
+        refetchOnWindowFocus: false,
     });
 
     const createProgram = useMutation({

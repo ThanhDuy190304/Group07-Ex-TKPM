@@ -8,6 +8,7 @@ export function useCourses() {
     const coursesQuery = useQuery({
         queryKey: ["courses"],
         queryFn: getCourses,
+        refetchOnWindowFocus: false,
     });
 
     const createCourse = useMutation({

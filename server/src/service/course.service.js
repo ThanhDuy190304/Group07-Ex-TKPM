@@ -42,7 +42,6 @@ class CourseService extends BaseService {
 
 
   async update(courseId, updateData) {
-    console.log(courseId);
     const course = await this.model.findOne({ where: { id: courseId } });
     if (!course) {
       throw new NotFoundError("Course not found", "Khóa học không tồn tại");

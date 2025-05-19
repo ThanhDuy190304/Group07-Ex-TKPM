@@ -1,6 +1,7 @@
 import { Address } from "./address";
 import { IdentityDocument } from "./identityDocument";
 import { Gender, StudentStatus } from "./enum";
+
 export interface Student {
     id: string;
     studentCode: string;
@@ -20,7 +21,7 @@ export interface Student {
     identityDocuments: IdentityDocument[]
 }
 
-export const studentFields: Partial<Record<keyof Student, string>> = {
+export const studentFields: Record<Exclude<keyof Student, 'id'>, string> = {
     studentCode: "MSSV",
     fullName: "Họ và tên",
     dateOfBirth: "Ngày sinh",

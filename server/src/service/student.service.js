@@ -37,7 +37,6 @@ class StudentService extends BaseService {
   }
 
   async getAll(searchQuery) {
-    console.log(searchQuery);
     const whereClause = {};
     if (searchQuery?.studentCode) whereClause.studentCode = searchQuery?.studentCode;
     else {

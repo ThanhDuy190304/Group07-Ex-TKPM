@@ -10,7 +10,8 @@ export function useAllStudents(searchQuery: Partial<Student> & { page?: number; 
     const studentsQuery = useQuery({
         queryKey: ['students', searchQuery],
         queryFn: () => getAllStudents(searchQuery),
-        placeholderData: (previousData) => previousData
+        placeholderData: (previousData) => previousData,
+        refetchOnWindowFocus: false,
     })
 
     const createStudent = useMutation({

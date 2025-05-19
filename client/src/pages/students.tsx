@@ -10,7 +10,7 @@ import {
 import {
     Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button,
     Modal, ModalDialog, DialogTitle, DialogContent, FormControl, FormLabel, Checkbox,
-    Tab, Tabs, TabList, TabPanel, RadioGroup, Radio, Stack,
+    Tab, Tabs, TabList, TabPanel, RadioGroup, Radio, Stack
 } from '@mui/joy';
 
 import FemaleIcon from '@mui/icons-material/Female';
@@ -26,8 +26,8 @@ import { useAllStudents } from "../hooks/useStudents"
 import { useFaculties } from "../hooks/useFaculties";
 import { usePrograms } from "../hooks/usePrograms";
 import { Student, studentFields } from "../types/student";
-import { Faculty } from "../types/faculty";
-import { Program } from "../types/program";
+import { Faculty, facultyFields } from "../types/faculty";
+import { Program, programFields } from "../types/program";
 import { Address, formatAddress, addressFields } from "../types/address";
 import { IdentityDocument, identityDocumentFields, CCCDIdentityDocument, CMNDIdentityDocument, PassportIdentityDocument, formatIdentityDocument } from "../types/identityDocument";
 import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
@@ -283,72 +283,103 @@ function Pagination({ total, limit, currentPage, onPageChange }: PaginationProps
 
 function StudentPersonalInfoDisplay({ student }: { student: Student }) {
     const flattedStudent = flattenStudent(student);
+    type InfoItemProps = {
+        icon: React.ReactNode;
+        value: string;
+        label?: string;
+        fullRow?: boolean;
+    };
+
+    const InfoItem = ({ icon, value, label, fullRow }: InfoItemProps) => (
+        <div className={`flex items-center text-gray-500  ${fullRow ? "col-span-2" : ""}`}>
+            {icon}
+            <span className="whitespace-nowrap text-base font-medium text-gray-800">
+                {label ? `${label} ` : ""}
+                {value}
+            </span>
+        </div>
+    );
+    const renderStudentInfo = () => {
+        const genderIcon =
+            flattedStudent.gender === "Nam" ? (
+                <MaleIcon className="w-6 h-6 mr-2" />
+            ) : flattedStudent.gender === "Nữ" ? (
+                <FemaleIcon className="w-6 h-6 mr-2" />
+            ) : (
+                <TransgenderIcon className="w-6 h-6 mr-2" />
+            );
+
+        const items: InfoItemProps[] = [
+            { icon: <PermIdentityIcon className="w-6 h-6 mr-2" />, value: flattedStudent.fullName },
+            { icon: <EnvelopeIcon className="w-6 h-6 mr-2" />, value: flattedStudent.email },
+            { icon: <CakeIcon className="w-6 h-6 mr-2" />, value: flattedStudent.dateOfBirth },
+            { icon: genderIcon, value: flattedStudent.gender },
+            { icon: <PhoneIcon className="w-6 h-6 mr-2" />, value: flattedStudent.phoneNumber },
+            { icon: <GlobeAsiaAustraliaIcon className="w-6 h-6 mr-2" />, value: flattedStudent.nationality },
+            {
+                icon: <MapPinIcon className="w-6 h-6 mr-2" />,
+                label: "Địa chỉ nhận thư:",
+                value: flattedStudent.mailAddress,
+                fullRow: true,
+            },
+            {
+                icon: <MapPinIcon className="w-6 h-6 mr-2" />,
+                label: "Địa chỉ thường trú:",
+                value: flattedStudent.permanentAddress,
+                fullRow: true,
+            },
+            {
+                icon: <MapPinIcon className="w-6 h-6 mr-2" />,
+                label: "Địa chỉ tạm trú:",
+                value: flattedStudent.temporaryResidenceAddress,
+                fullRow: true,
+            },
+            {
+                icon: <BrandingWatermarkIcon className="w-6 h-6 mr-2" />,
+                value: flattedStudent.identityDocuments,
+                fullRow: true,
+            },
+        ];
+
+        return items.map((item, index) => <InfoItem key={index} {...item} />);
+    };
+
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-center">
-                <PermIdentityIcon className="w-6 h-6 mr-2" />
-                <span>{flattedStudent.fullName}</span>
-            </div>
-            <div className="flex items-center">
-                <EnvelopeIcon className="w-6 h-6 mr-2" />
-                <span>{flattedStudent.email}</span>
-            </div>
-            <div className="flex items-center">
-                <CakeIcon className="w-6 h-6 mr-2" />
-                <span>{flattedStudent.dateOfBirth}</span>
-            </div>
-            <div className="flex items-center">
-                {flattedStudent.gender === "Nam" ? (
-                    <MaleIcon className="w-6 h-6 mr-2" />
-                ) : flattedStudent.gender === "Nữ" ? (
-                    <FemaleIcon className="w-6 h-6 mr-2" />
-                ) : (
-                    <TransgenderIcon className="w-6 h-6 mr-2" />
-                )}
-                <span>{flattedStudent.gender}</span>
-            </div>
-            <div className="flex items-center">
-                <PhoneIcon className="w-6 h-6 mr-2" />
-                <span>{flattedStudent.phoneNumber}</span>
-            </div>
-            <div className="flex items-center">
-                <MapPinIcon className="w-6 h-6 mr-2" />
-                <span className="whitespace-nowrap">
-                    Địa chỉ nhận thư: {flattedStudent.mailAddress || "Chưa có"}
-                </span>
-            </div>
-            <div className="flex items-center">
-                <MapPinIcon className="w-6 h-6 mr-2" />
-                <span className="whitespace-nowrap">
-                    Địa chỉ thường trú: {flattedStudent.permanentAddress || "Chưa có"}
-                </span>
-            </div>
-            <div className="flex items-center">
-                <MapPinIcon className="w-6 h-6 mr-2" />
-                <span className="whitespace-nowrap">
-                    Địa chỉ tạm trú: {flattedStudent.temporaryResidenceAddress || "Chưa có"}
-                </span>
-            </div>
-            <div className="flex items-center">
-                <GlobeAsiaAustraliaIcon className="w-6 h-6 mr-2" />
-                <span>{flattedStudent.nationality}</span>
-            </div>
-            <div className="flex items-center">
-                <BrandingWatermarkIcon className="w-6 h-6 mr-2" />
-                <span>{flattedStudent.identityDocuments}</span>
-            </div>
+        <div className="grid grid-cols-2 gap-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            {renderStudentInfo()}
         </div>
     );
 }
+function StudentAcademicInfDisplay({ student }: { student: Student }) {
+    const { programs } = useProgramsContext();
+    const { faculties } = useFacultiesContext();
 
-interface StudentPersonalInfoUpdate {
+    const facultyName = faculties.find(faculty => faculty.facultyCode === student.facultyCode)?.name;
+    const programName = programs.find(program => program.programCode === student.programCode)?.name;
+
+    const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
+        <div className="flex flex-col">
+            <span className="text-sm text-gray-500">{label}</span>
+            <span className="text-base font-medium text-gray-800">{value}</span>
+        </div>
+    );
+
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+            <InfoRow label={facultyFields.name} value={facultyName} />
+            <InfoRow label={programFields.name} value={programName} />
+            <InfoRow label={studentFields.cohortYear} value={student.cohortYear} />
+            <InfoRow label={studentFields.status} value={student.status} />
+        </div>
+    );
+}
+interface StudentUpdate {
     student: Student
     register: UseFormRegister<Partial<Student>>
     setValue: UseFormSetValue<Partial<Student>>
     control: Control<Partial<Student>, any, Partial<Student>>
-    onUpdateSubmit: () => Promise<void>
 }
-function StudentPersonalInfoUpdate({ student, register, setValue, control, onUpdateSubmit }: StudentPersonalInfoUpdate) {
+function StudentPersonalInfoUpdate({ student, register, setValue, control }: StudentUpdate) {
     const [phoneNumber, setPhoneNumber] = useState<string>(student.phoneNumber);
     useEffect(() => {
         setValue("fullName", student.fullName);
@@ -365,11 +396,7 @@ function StudentPersonalInfoUpdate({ student, register, setValue, control, onUpd
         }
     }, [phoneNumber, setValue]);
     return (
-        <form
-            onSubmit={(e) => {
-                onUpdateSubmit()
-            }}
-        >
+        <div className="grid grid-cols-1 gap-x-8 gap-y-4 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
             {/*Họ và tên*/}
             <FormControl required>
                 <FormLabel>{studentFields.fullName}</FormLabel>
@@ -429,21 +456,101 @@ function StudentPersonalInfoUpdate({ student, register, setValue, control, onUpd
                     {...register("nationality", { required: true })}
                 />
             </FormControl>
-
-        </form>
+        </div>
     );
 }
 
-function StudentDetailModal({ studentId, isOpen, setIsOpen }: { studentId: string, isOpen: boolean, setIsOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
-    const { students } = useStudentsDataContext();
+function StudentAcademicInfUpdate({ student, register, setValue }: StudentUpdate) {
+    const { faculties } = useFacultiesContext();
+    const { programs } = useProgramsContext();
+
+    useEffect(() => {
+        setValue("facultyCode", student.facultyCode);
+        setValue("programCode", student.programCode);
+        setValue("cohortYear", student.cohortYear);
+        setValue("status", student.status);
+    }, [student, setValue]);
+
+    return (
+        <div className="grid grid-cols-1 gap-x-8 gap-y-4 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+            {/*Khoa*/}
+            <FormControl required>
+                <FormLabel>{studentFields.facultyCode}</FormLabel>
+                <Select
+                    defaultValue={student.facultyCode}
+                    {...register("facultyCode", { required: true })}
+                    onChange={(e, newValue) => setValue("facultyCode", newValue as string)}
+                >
+                    {faculties.map((faculty) => (
+                        <Option key={faculty.facultyCode} value={faculty.facultyCode}>
+                            {faculty.name}
+                        </Option>
+                    ))}
+                </Select>
+            </FormControl>
+
+            {/* Chương trình */}
+            <FormControl required>
+                <FormLabel>{studentFields.programCode}</FormLabel>
+                <Select
+                    defaultValue={student.programCode}
+                    {...register("programCode", { required: true })}
+                    onChange={(e, newValue) => setValue("programCode", newValue as string)}
+                >
+                    {programs.map((program) => (
+                        <Option key={program.programCode} value={program.programCode}>
+                            {program.name}
+                        </Option>
+                    ))}
+                </Select>
+            </FormControl>
+
+            {/* Khóa học */}
+            <FormControl required>
+                <FormLabel>{studentFields.cohortYear}</FormLabel>
+                <Input
+                    type="number"
+                    defaultValue={student.cohortYear}
+                    {...register("cohortYear", {
+                        required: true,
+                        valueAsNumber: true,
+                    })}
+                />
+            </FormControl>
+
+            {/*Tình trạng*/}
+            <FormControl required>
+                <FormLabel>{studentFields.programCode}</FormLabel>
+                <Select
+                    defaultValue={student.status}
+                    {...register("status", { required: true })}
+                    onChange={(e, newValue) => setValue("status", newValue as StudentStatus)}
+                >
+                    {Object.values(StudentStatus).map((status) => (
+                        <Option key={status} value={status}>
+                            {status}
+                        </Option>
+                    ))}
+                </Select>
+            </FormControl>
+        </div>
+    );
+}
+
+
+function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
+    : {
+        student: Student, setSelectedStudent: React.Dispatch<React.SetStateAction<Student | null>>
+        isOpen: boolean, setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+    }) {
     const { handleUpdate } = useStudentsActionContext();
-    const student = (students.find(s => s.id === studentId)) as Student;
     const [isUpdateOpen, setIsUpdateOpen] = useState<boolean>(false);
     const { register, getValues, setValue, control, reset } = useForm<Partial<Student>>();
     const onUpdateSubmit = async () => {
         const updatedData = getValues();
-        const result = await handleUpdate(studentId, updatedData);
+        const result = await handleUpdate(student.id, updatedData);
         if (result) {
+            setSelectedStudent({ ...student, ...updatedData });
             setIsUpdateOpen(false);
         }
     }
@@ -465,31 +572,41 @@ function StudentDetailModal({ studentId, isOpen, setIsOpen }: { studentId: strin
                     <XCircleIcon className="w-8 h-8" />
                 </button>
                 <Typography level="h4">{studentFields.studentCode}: {student.studentCode}</Typography>
-                <Tabs defaultValue={0}>
+                <Tabs defaultValue={0}
+                    className="flex flex-col flex-1 overflow-hidden"
+                    onChange={() => {
+                        reset();
+                        setIsUpdateOpen(false);
+                    }}>
                     <TabList >
                         <Tab>Thông tin cá nhân</Tab>
                         <Tab>Thông tin học vụ</Tab>
                     </TabList>
-                    <TabPanel value={0}>
+                    <TabPanel value={0} className="flex-1 overflow-auto">
                         {isUpdateOpen ? (
                             <StudentPersonalInfoUpdate
                                 student={student}
                                 register={register}
                                 setValue={setValue}
                                 control={control}
-                                onUpdateSubmit={onUpdateSubmit}
                             />
                         ) : (
                             <StudentPersonalInfoDisplay student={student} />
                         )}
                     </TabPanel>
-                    <TabPanel value={1}>
-                        <Typography>Khoa: {student.facultyCode}</Typography>
-                        <Typography>Chương trình: {student.programCode}</Typography>
-                        <Typography>Khóa: {student.cohortYear}</Typography>
+                    <TabPanel value={1} className="flex-1 overflow-auto">
+                        {isUpdateOpen ? (
+                            <StudentAcademicInfUpdate student={student}
+                                register={register}
+                                setValue={setValue}
+                                control={control}
+                            />
+                        ) : (
+                            <StudentAcademicInfDisplay student={student} />
+                        )}
                     </TabPanel>
                     {!isUpdateOpen && (
-                        <div className="flex justify-end mt-2">
+                        <div className="flex justify-end mt-auto">
                             <Button
                                 variant="solid"
                                 color="neutral"
@@ -502,7 +619,7 @@ function StudentDetailModal({ studentId, isOpen, setIsOpen }: { studentId: strin
                     )}
                     {
                         isUpdateOpen && (
-                            <div className="flex gap-2 justify-end mt-2">
+                            <div className="flex gap-2 justify-end mt-auto">
                                 <Button
                                     variant="solid"
                                     color="danger"
@@ -526,7 +643,7 @@ function StudentDetailModal({ studentId, isOpen, setIsOpen }: { studentId: strin
                     }
                 </Tabs>
             </ModalDialog>
-        </Modal>
+        </Modal >
     );
 }
 
@@ -562,7 +679,7 @@ function StudentTable() {
     const { students } = useStudentsDataContext()
     const { selectedStudentIds, setSelectedStudentIds } = useStudentSelectionContext()
 
-    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+    const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState<boolean>(false);
 
     const studentFieldWidths: Partial<Record<keyof Student, string>> = {
@@ -605,14 +722,15 @@ function StudentTable() {
                                         },
                                     }} />
                             </th>
-                            {Object.keys(studentFieldWidths).map((key) => (
+                            {(Object.keys(studentFieldWidths) as (keyof typeof studentFields)[]).map(key => (
                                 <th
                                     key={key}
-                                    className={`px-4 py-2 text-left font-semibold select-text ${studentFieldWidths[key as keyof Student]}`}
+                                    className={`px-4 py-2 text-left font-semibold select-text ${studentFieldWidths[key] ?? ''}`}
                                 >
-                                    {studentFields[key as keyof Student]}
+                                    {studentFields[key]!}
                                 </th>
                             ))}
+
                         </tr>
                     </thead>
                     <tbody>
@@ -620,7 +738,7 @@ function StudentTable() {
                             <Fragment key={student.id} >
                                 <tr className="cursor-pointer hover:bg-gray-100"
                                     onClick={() => {
-                                        setSelectedStudentId(student.id);
+                                        setSelectedStudent(student);
                                         setIsDetailOpen(true);
                                     }}
                                 >
@@ -657,9 +775,10 @@ function StudentTable() {
                     </tbody>
                 </Table>
             </Sheet >
-            {selectedStudentId && (
+            {selectedStudent && (
                 <StudentDetailModal
-                    studentId={selectedStudentId}
+                    student={selectedStudent}
+                    setSelectedStudent={setSelectedStudent}
                     isOpen={isDetailOpen}
                     setIsOpen={setIsDetailOpen}
                 />
@@ -1050,7 +1169,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
                                 {/* Các trường địa chỉ */}
                                 {["mailAddress", "temporaryResidenceAddress", "permanentAddress"].map((addressType) => (
                                     <FormControl className="sm:col-span-2" key={addressType}>
-                                        <FormLabel>{studentFields[addressType as keyof Student]}</FormLabel>
+                                        <FormLabel>{studentFields[addressType as keyof typeof studentFields]}</FormLabel>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
                                             {Object.entries(addressFields).map(([key, label]) => {
                                                 const addressKey = key as keyof Address;
@@ -1135,8 +1254,8 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
                                         })}
                                     />
                                 </FormControl>
-                            </div>
 
+                            </div>
 
                             <div className="flex justify-center mt-8">
                                 <Button

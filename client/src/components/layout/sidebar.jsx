@@ -8,7 +8,7 @@ function SidebarItem({ to, icon: Icon, label }) {
     return (
         <Link
             to={to}
-            className="flex items-center gap-2 py-3 rounded-md hover:bg-gray-700 focus:bg-gray-700 group"
+            className="flex items-center gap-2 p-3 rounded-md hover:bg-gray-700 focus:bg-gray-700 group"
         >
             <Icon className="w-6 h-6 text-gray-500 group-hover:text-white group-focus:text-white" />
             <span className="text-sm text-gray-500 group-hover:text-white group-focus:text-white  select-none">{label}</span>
@@ -21,7 +21,7 @@ function Sidebar() {
         <div className="positive top-0 left-0">
             {/* Sidebar */}
             <div className={`h-screen bg-black transition-all duration-500
-                ${isOpen ? "translate-x-0 visible opacity-100 w-64 p-4" : "-translate-x-full opacity-0 invisible w-0"}
+                ${isOpen ? "translate-x-0 visible opacity-100 w-72 p-4" : "-translate-x-full opacity-0 invisible w-0"}
             `}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">

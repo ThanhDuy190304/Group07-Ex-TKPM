@@ -8,6 +8,7 @@ export function useFaculties() {
     const facultiesQuery = useQuery({
         queryKey: ["faculties"],
         queryFn: getFaculties,
+        refetchOnWindowFocus: false,
     });
 
     const createFaculty = useMutation({

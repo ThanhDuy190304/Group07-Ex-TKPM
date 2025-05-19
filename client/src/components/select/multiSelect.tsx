@@ -57,9 +57,9 @@ export function MultiSelect({ options, initialSelectedOptions = [], onChange, pl
                     ) : (
                         <span
                             className="text-sm px-2 py-1 whitespace-nowrap overflow-hidden text-ellipsis w-full"
-                            title={selectedOptions.join(", ")}
+                            title={selectedOptions.filter(v => v).join(", ")}
                         >
-                            {selectedOptions.join(", ")}
+                            {selectedOptions.filter(v => v).join(", ")}
                         </span>
                     )}
                 </div>

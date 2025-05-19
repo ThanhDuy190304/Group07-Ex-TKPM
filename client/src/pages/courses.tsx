@@ -52,7 +52,7 @@ function CourseProvider({ children }: { children: ReactNode }) {
             showError(error.message);
             return false;
         }
-    }, [createCourse])
+    }, [createCourse, showError])
 
     const handleDelete = useCallback(async (): Promise<boolean> => {
         try {
@@ -75,7 +75,7 @@ function CourseProvider({ children }: { children: ReactNode }) {
             showError(error.message);
             return false;
         }
-    }, [removeCourse])
+    }, [removeCourse, selectedCourseId, showError]);
 
     const handleUpdate = useCallback(async (courseId: string, updatedCourse: Partial<Course>): Promise<boolean> => {
         try {
@@ -85,7 +85,7 @@ function CourseProvider({ children }: { children: ReactNode }) {
             showError(error.message);
             return false;
         }
-    }, [updateCourse])
+    }, [updateCourse, showError])
 
     const coursestDataContextValue = useMemo(() => ({
         courses: coursesQuery.data?.courses || []
@@ -95,12 +95,12 @@ function CourseProvider({ children }: { children: ReactNode }) {
         handleUpdate,
         handleDelete,
         handleCreate,
-    }), [])
+    }), [handleUpdate, handleDelete, handleCreate])
 
     const courseSelectionContextValue = useMemo(() => ({
         selectedCourseId,
         setSelectedCourseId
-    }), [selectedCourseId, setSelectedCourseId]);
+    }), [selectedCourseId]);
 
     const facultiestDataContextValue = useMemo(() => ({
         faculties: facultiesQuery.data?.faculties || []
@@ -569,6 +569,7 @@ function CourseTable() {
 function CoursePage() {
     return (
         <section className='flex flex-col gap-4'>
+            <h2 className="text-2xl font-bold">Quản lý khóa học</h2>
             <div className="flex gap-2">
                 <CourseDeleteButton />
                 <CourseCreateButton />
