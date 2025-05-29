@@ -13,7 +13,13 @@ class CourseService extends BaseService {
   }
 
   async create(newCourseInf) {
-    if (!newCourseInf?.name || !newCourseInf?.courseCode || !newCourseInf?.credits || !newCourseInf?.facultyCode || !newCourseInf?.description) {
+    if (
+      !newCourseInf?.name ||
+      !newCourseInf?.courseCode ||
+      !newCourseInf?.credits ||
+      !newCourseInf?.facultyCode ||
+      !newCourseInf?.description
+    ) {
       throw new ValidationError("Missing required fields", "Thiếu dữ liệu");
     }
 
@@ -21,28 +27,40 @@ class CourseService extends BaseService {
       throw new ValidationError("Invalid credits", "Số tín chỉ không hợp lệ");
     }
 
-    this.#checkPrerequisiteCourse(newCourseInf);
+    const existingCourse = await this.model.findOne({
+      where: { courseCode: newCourseInf.courseCode.trim() },
+    });
+    if (existingCourse) {
+      throw new DuplicateResourceError("Course code already exists", "Mã khóa học đã tồn tại");
+    }
+
+    await this.#checkFacultyCode(newCourseInf.facultyCode.trim());
+
+    await this.#checkPrerequisiteCourse(newCourseInf);
+
     try {
       const newCourse = await this.model.create({
-        name: newCourseInf.name, courseCode:
-          newCourseInf.courseCode.trim(),
+        name: newCourseInf.name.trim(),
+        courseCode: newCourseInf.courseCode.trim(),
         credits: newCourseInf.credits,
         facultyCode: newCourseInf.facultyCode.trim(),
-        description: newCourseInf.description,
-        prerequisiteCourseCode: newCourseInf.prerequisiteCourseCode
+        description: newCourseInf.description.trim(),
+        prerequisiteCourseCode: newCourseInf.prerequisiteCourseCode || [],
       });
       return {
-        course: omit(newCourse.get({ plain: true }), ["createdAt", "updatedAt"])
+        course: omit(newCourse.get({ plain: true }), ["createdAt", "updatedAt"]),
       };
-    }
-    catch (err) {
+    } catch (err) {
       throw mapSequelizeError(err);
     }
   }
 
-
   async update(courseId, updateData) {
-    console.log(courseId);
+
+    if (!validateUUID(courseId)) {
+      throw new ValidationError("Invalid course ID", "ID khóa học không hợp lệ");
+    }
+
     const course = await this.model.findOne({ where: { id: courseId } });
     if (!course) {
       throw new NotFoundError("Course not found", "Khóa học không tồn tại");
@@ -50,60 +68,94 @@ class CourseService extends BaseService {
 
     const updateFields = {};
     if (updateData?.name) {
-      updateFields.name = updateData.name;
+      updateFields.name = updateData.name.trim();
     }
     if (updateData?.description) {
-      updateFields.description = updateData.description;
+      updateFields.description = updateData.description.trim();
     }
     if (updateData?.facultyCode) {
-      updateFields.facultyCode = updateData.facultyCode;
+      await this.#checkFacultyCode(updateData.facultyCode.trim());
+      updateFields.facultyCode = updateData.facultyCode.trim();
+    }
+    if (updateData?.prerequisiteCourseCode) {
+      await this.#checkPrerequisiteCourse({
+        prerequisiteCourseCode: updateData.prerequisiteCourseCode,
+        courseCode: course.courseCode,
+      });
+      updateFields.prerequisiteCourseCode = updateData.prerequisiteCourseCode;
     }
     if (updateData?.credits) {
+      if (updateData.credits < 2) {
+        throw new ValidationError("Invalid credits", "Số tín chỉ không hợp lệ");
+      }
       const classes = await models.Class.findAll({
         where: { courseCode: course.courseCode },
         include: {
           model: models.Student,
           as: "studentCodeStudents",
-          though: { attributes: [] },
-        }
+          through: { attributes: [] },
+        },
       });
       const hasStudentsRegistered = classes.some(cls => cls.studentCodeStudents.length > 0);
       if (hasStudentsRegistered) {
-        throw new ValidationError("Cannot update credits, students have already registered for the course", "Không thể cập nhật tín chỉ, có sinh viên đã đăng ký khóa học này");
+        throw new ValidationError(
+          "Cannot update credits, students have already registered for the course",
+          "Không thể cập nhật tín chỉ, có sinh viên đã đăng ký khóa học này"
+        );
       }
-      else {
-        updateFields.credits = updateData.credits;
-      }
+      updateFields.credits = updateData.credits;
     }
 
-    const updateCourse = await course.update(updateFields);
+    if (Object.keys(updateFields).length === 0) {
+      throw new ValidationError("No valid fields provided for update", "Không có trường hợp lệ để cập nhật");
+    }
+
+    const updatedCourse = await course.update(updateFields);
     return {
-      program: omit(updateCourse.get({ plain: true }), ["createdAt", "updatedAt"])
-    }
+      course: omit(updatedCourse.get({ plain: true }), ["createdAt", "updatedAt"]),
+    };
+  }
 
+    
+  async #checkFacultyCode(facultyCode) {
+    const faculty = await models.Faculty.findOne({ where: { faculty_code: facultyCode } });
+    if (!faculty) {
+      throw new NotFoundError("Faculty not found", `Khoa không tồn tại: ${facultyCode}`);
+    }
   }
 
   async #checkPrerequisiteCourse(newCourseInf) {
-    let validPrerequisites = [];
-    if (newCourseInf.prerequisiteCourseCode && newCourseInf.prerequisiteCourseCode.length > 0) {
+    if (newCourseInf.prerequisiteCourseCode && !Array.isArray(newCourseInf.prerequisiteCourseCode)) {
+      throw new ValidationError("Prerequisite course codes must be an array", "Mã môn tiên quyết phải là mảng");
+    }
+
+    if (newCourseInf.prerequisiteCourseCode?.length > 0) {
+      if (
+        newCourseInf.courseCode &&
+        newCourseInf.prerequisiteCourseCode.includes(newCourseInf.courseCode.trim())
+      ) {
+        throw new ValidationError(
+          "Course cannot be its own prerequisite",
+          "Khóa học không thể là môn tiên quyết của chính nó"
+        );
+      }
+
       const prerequisiteCourses = await models.Course.findAll({
-        where: {
-          courseCode: newCourseInf.prerequisiteCourseCode
-        }
+        where: { courseCode: newCourseInf.prerequisiteCourseCode },
       });
 
       if (prerequisiteCourses.length !== newCourseInf.prerequisiteCourseCode.length) {
         const existingCodes = prerequisiteCourses.map(course => course.courseCode);
-        const invalidCodes = newCourseInf.prerequisiteCourseCode.filter(code => !existingCodes.includes(code));
-
-        throw new NotFoundError("Prerequisite course(s) not found", `Môn tiên quyết không tồn tại: ${invalidCodes.join(", ")}`);
+        const invalidCodes = newCourseInf.prerequisiteCourseCode.filter(
+          code => !existingCodes.includes(code)
+        );
+        throw new NotFoundError(
+          "Prerequisite course(s) not found",
+          `Môn tiên quyết không tồn tại: ${invalidCodes.join(", ")}`
+        );
       }
-      validPrerequisites = prerequisiteCourses.map(course => course.courseCode);
     }
   }
-
-
-
 }
 
 module.exports = new CourseService();
