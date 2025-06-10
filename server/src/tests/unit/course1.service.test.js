@@ -20,6 +20,13 @@ describe("create a course", () => {
                 updatedAt: new Date(),
             }),
         });
+
+        // Mock Course.findAll to return prerequisite courses for valid data
+        Course.findAll.mockResolvedValue([
+            { courseCode: "CS100" },
+            { courseCode: "CS200" },
+        ]);
+
         courseService = new CourseService({ Course });
     });
 
@@ -86,25 +93,28 @@ describe("update a course", () => {
             description: "Basic programming course",
             prerequisiteCourseCode: ["CS100", "CS200"],
         };
-
-    })
+        Faculty.findOne.mockResolvedValue({ facultyCode: "CS" });
+        Course.findAll.mockResolvedValue([{ courseCode: "CS100" }, { courseCode: "CS102" }]);
+        Course.findByPk.mockImplementation((id) => {
+            if (id === course.id) {
+                return Promise.resolve({
+                    ...course,
+                    get: () => ({
+                        ...course,
+                        name: "Updated Programming Course",
+                        description: "Updated description",
+                        prerequisiteCourseCode: ["CS100", "CS102"],
+                    }),
+                });
+            }
+            return Promise.resolve(null);
+        });
+        Course.update.mockResolvedValue([1, []]); // Simulate successful update
+        courseService = new CourseService({ Course, Faculty });
+    });
 
     test("When updating with valid data, then return updated course", async () => {
         //Arrange
-        Faculty.findOne.mockResolvedValue({ facultyCode: "CS" });
-        Course.findAll.mockResolvedValue(["CS101", "CS102"]);
-        Course.update.mockResolvedValue([
-            1, [{
-                get: () => ({
-                    courseCode: "CS101",
-                    name: "Updated Programming Course",
-                    description: "Updated description",
-                    facultyCode: "CS",
-                    prerequisiteCourseCode: ["CS101", "CS102"],
-                })
-            }]
-        ]);
-        courseService = new CourseService({ Course, Faculty });
         const updateData = {
             name: "Updated Programming Course",
             description: "Updated description",

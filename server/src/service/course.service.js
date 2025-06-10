@@ -26,6 +26,9 @@ class CourseService extends BaseService {
     if (newCourseInf.credits < 2) {
       throw new ValidationError("Invalid credits", "Số tín chỉ không hợp lệ");
     }
+
+    await this.#checkPrerequisiteCourse(newCourseInf);
+
     try {
       const newCourse = await this.model.create({
         name: newCourseInf.name.trim(),
@@ -44,26 +47,59 @@ class CourseService extends BaseService {
   }
 
   async update(courseId, updateData) {
+    if (!courseId) {
+      throw new ValidationError("Course ID is required", "Yêu cầu ID khóa học");
+    }
+
+    if (!updateData || Object.keys(updateData).length === 0) {
+      throw new ValidationError("No data provided for update", "Không có dữ liệu để cập nhật");
+    }
+
+    // Prevent updating courseCode
+    if (updateData.courseCode) {
+      throw new ValidationError("Cannot update course code", "Không thể cập nhật mã khóa học");
+    }
+
+    // Fetch the course
+    const course = await this.model.findByPk(courseId);
+    if (!course) {
+      throw new NotFoundError("Course not found", `Khóa học không tồn tại: ${courseId}`);
+    }
+
     const updateFields = {};
-    if (updateData?.name) {
+    // Update name
+    if (updateData.name) {
+      if (typeof updateData.name !== "string") {
+        throw new ValidationError("Name must be a string", "Tên phải là chuỗi");
+      }
       updateFields.name = updateData.name.trim();
     }
-    if (updateData?.description) {
+    // Update description
+    if (updateData.description) {
+      if (typeof updateData.description !== "string") {
+        throw new ValidationError("Description must be a string", "Mô tả phải là chuỗi");
+      }
       updateFields.description = updateData.description.trim();
     }
-    if (updateData?.facultyCode) {
+    // Update facultyCode
+    if (updateData.facultyCode) {
+      if (typeof updateData.facultyCode !== "string") {
+        throw new ValidationError("Faculty code must be a string", "Mã khoa phải là chuỗi");
+      }
       await this.#checkFacultyCode(updateData.facultyCode.trim());
       updateFields.facultyCode = updateData.facultyCode.trim();
     }
-    if (updateData?.prerequisiteCourseCode) {
+    // Update prerequisiteCourseCode
+    if (updateData.prerequisiteCourseCode) {
       await this.#checkPrerequisiteCourse({
         prerequisiteCourseCode: updateData.prerequisiteCourseCode,
         courseCode: course.courseCode,
       });
       updateFields.prerequisiteCourseCode = updateData.prerequisiteCourseCode;
     }
-    if (updateData?.credits) {
-      if (updateData.credits < 2) {
+    // Update credits
+    if (updateData.credits !== undefined) {
+      if (!Number.isInteger(updateData.credits) || updateData.credits < 2) {
         throw new ValidationError("Invalid credits", "Số tín chỉ không hợp lệ");
       }
       const classes = await models.Class.findAll({
@@ -74,7 +110,7 @@ class CourseService extends BaseService {
           through: { attributes: [] },
         },
       });
-      const hasStudentsRegistered = classes.some(cls => cls.studentCodeStudents.length > 0);
+      const hasStudentsRegistered = classes.some(cls => cls.studentCodeStudents?.length > 0);
       if (hasStudentsRegistered) {
         throw new ValidationError(
           "Cannot update credits, students have already registered for the course",
@@ -87,16 +123,22 @@ class CourseService extends BaseService {
     if (Object.keys(updateFields).length === 0) {
       throw new ValidationError("No valid fields provided for update", "Không có trường hợp lệ để cập nhật");
     }
+
     try {
-      const updatedCourse = await this.model.update(updateFields);
+      const [affectedRows] = await this.model.update(updateFields, { where: { id: courseId } });
+      if (affectedRows === 0) {
+        throw new NotFoundError("Course not found or no changes applied", `Khóa học không tồn tại hoặc không có thay đổi: ${courseId}`);
+      }
+      const updatedCourse = await this.model.findByPk(courseId);
+      if (!updatedCourse) {
+        throw new NotFoundError("Updated course not found", `Khóa học đã cập nhật không tồn tại: ${courseId}`);
+      }
       return {
         course: omit(updatedCourse.get({ plain: true }), ["createdAt", "updatedAt"]),
       };
-    }
-    catch (err) {
+    } catch (err) {
       throw mapSequelizeError(err);
     }
-
   }
 
   async #checkFacultyCode(facultyCode) {
@@ -141,4 +183,3 @@ class CourseService extends BaseService {
 }
 
 module.exports = CourseService;
-
