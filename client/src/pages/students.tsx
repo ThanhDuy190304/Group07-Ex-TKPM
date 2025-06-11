@@ -1,5 +1,6 @@
-import { Fragment, useState, useEffect, useMemo, useCallback, useContext, createContext, ReactNode } from "react";
+import { Fragment, useState, useEffect, useMemo, useCallback, useContext, createContext, ReactNode, useTransition } from "react";
 import { Control, Controller, useForm, UseFormRegister, UseFormSetValue, FieldPath } from "react-hook-form";
+import { useTranslation } from 'react-i18next';
 import {
     MagnifyingGlassIcon, TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
@@ -25,9 +26,9 @@ import 'react-phone-input-2/lib/style.css';
 import { useAllStudents } from "../hooks/useStudents"
 import { useFaculties } from "../hooks/useFaculties";
 import { usePrograms } from "../hooks/usePrograms";
-import { Student, studentFields } from "../types/student";
-import { Faculty, facultyFields } from "../types/faculty";
-import { Program, programFields } from "../types/program";
+import { Student, studentFieldKeys } from "../types/student";
+import { Faculty } from "../types/faculty";
+import { Program } from "../types/program";
 import { Address, formatAddress, addressFields } from "../types/address";
 import { IdentityDocument, identityDocumentFields, CCCDIdentityDocument, CMNDIdentityDocument, PassportIdentityDocument, formatIdentityDocument } from "../types/identityDocument";
 import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
@@ -351,9 +352,9 @@ function StudentPersonalInfoDisplay({ student }: { student: Student }) {
     );
 }
 function StudentAcademicInfDisplay({ student }: { student: Student }) {
+    const { t: tStudent } = useTranslation('student');
     const { programs } = useProgramsContext();
     const { faculties } = useFacultiesContext();
-
     const facultyName = faculties.find(faculty => faculty.facultyCode === student.facultyCode)?.name;
     const programName = programs.find(program => program.programCode === student.programCode)?.name;
 
@@ -366,10 +367,10 @@ function StudentAcademicInfDisplay({ student }: { student: Student }) {
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
-            <InfoRow label={facultyFields.name} value={facultyName} />
-            <InfoRow label={programFields.name} value={programName} />
-            <InfoRow label={studentFields.cohortYear} value={student.cohortYear} />
-            <InfoRow label={studentFields.status} value={student.status} />
+            <InfoRow label={tStudent(studentFieldKeys.facultyCode)} value={facultyName} />
+            <InfoRow label={tStudent(studentFieldKeys.programCode)} value={programName} />
+            <InfoRow label={tStudent(studentFieldKeys.cohortYear)} value={student.cohortYear} />
+            <InfoRow label={tStudent(studentFieldKeys.status)} value={student.status} />
         </div>
     );
 }
@@ -380,6 +381,7 @@ interface StudentUpdate {
     control: Control<Partial<Student>, any, Partial<Student>>
 }
 function StudentPersonalInfoUpdate({ student, register, setValue, control }: StudentUpdate) {
+    const { t: tStudent } = useTranslation('student');
     const [phoneNumber, setPhoneNumber] = useState<string>(student.phoneNumber);
     useEffect(() => {
         setValue("fullName", student.fullName);
@@ -399,7 +401,7 @@ function StudentPersonalInfoUpdate({ student, register, setValue, control }: Stu
         <div className="grid grid-cols-1 gap-x-8 gap-y-4 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
             {/*Họ và tên*/}
             <FormControl required>
-                <FormLabel>{studentFields.fullName}</FormLabel>
+                <FormLabel>{tStudent(studentFieldKeys.fullName)}</FormLabel>
                 <Input
                     type="text"
                     {...register("fullName", { required: true })}
@@ -413,7 +415,7 @@ function StudentPersonalInfoUpdate({ student, register, setValue, control }: Stu
                 defaultValue={Gender.Khac}
                 render={({ field }) => (
                     <FormControl required>
-                        <FormLabel>{studentFields.gender}</FormLabel>
+                        <FormLabel>{tStudent(studentFieldKeys.gender)}</FormLabel>
                         <Select
                             {...field}
                             value={field.value}
@@ -429,7 +431,7 @@ function StudentPersonalInfoUpdate({ student, register, setValue, control }: Stu
 
             {/* Ngày sinh */}
             <FormControl required>
-                <FormLabel>{studentFields.dateOfBirth}</FormLabel>
+                <FormLabel>{tStudent(studentFieldKeys.dateOfBirth)}</FormLabel>
                 <Input
                     type="date"
                     {...register("dateOfBirth", { required: true })}
@@ -438,7 +440,7 @@ function StudentPersonalInfoUpdate({ student, register, setValue, control }: Stu
 
             {/*Email*/}
             <FormControl required>
-                <FormLabel>{studentFields.email}</FormLabel>
+                <FormLabel>{tStudent(studentFieldKeys.email)}</FormLabel>
                 <Input
                     type="email"
                     {...register("email", { required: true })}
@@ -450,7 +452,7 @@ function StudentPersonalInfoUpdate({ student, register, setValue, control }: Stu
 
             {/*Quốc gia*/}
             <FormControl required>
-                <FormLabel>{studentFields.nationality}</FormLabel>
+                <FormLabel>{tStudent(studentFieldKeys.nationality)}</FormLabel>
                 <Input
                     type="text"
                     {...register("nationality", { required: true })}
@@ -463,6 +465,7 @@ function StudentPersonalInfoUpdate({ student, register, setValue, control }: Stu
 function StudentAcademicInfUpdate({ student, register, setValue }: StudentUpdate) {
     const { faculties } = useFacultiesContext();
     const { programs } = useProgramsContext();
+    const { t: tStudent } = useTranslation('student');
 
     useEffect(() => {
         setValue("facultyCode", student.facultyCode);
@@ -475,7 +478,7 @@ function StudentAcademicInfUpdate({ student, register, setValue }: StudentUpdate
         <div className="grid grid-cols-1 gap-x-8 gap-y-4 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
             {/*Khoa*/}
             <FormControl required>
-                <FormLabel>{studentFields.facultyCode}</FormLabel>
+                <FormLabel>{tStudent(studentFieldKeys.facultyCode)}</FormLabel>
                 <Select
                     defaultValue={student.facultyCode}
                     {...register("facultyCode", { required: true })}
@@ -491,7 +494,7 @@ function StudentAcademicInfUpdate({ student, register, setValue }: StudentUpdate
 
             {/* Chương trình */}
             <FormControl required>
-                <FormLabel>{studentFields.programCode}</FormLabel>
+                <FormLabel>{tStudent(studentFieldKeys.programCode)}</FormLabel>
                 <Select
                     defaultValue={student.programCode}
                     {...register("programCode", { required: true })}
@@ -507,7 +510,7 @@ function StudentAcademicInfUpdate({ student, register, setValue }: StudentUpdate
 
             {/* Khóa học */}
             <FormControl required>
-                <FormLabel>{studentFields.cohortYear}</FormLabel>
+                <FormLabel>{tStudent(studentFieldKeys.cohortYear)}</FormLabel>
                 <Input
                     type="number"
                     defaultValue={student.cohortYear}
@@ -520,7 +523,7 @@ function StudentAcademicInfUpdate({ student, register, setValue }: StudentUpdate
 
             {/*Tình trạng*/}
             <FormControl required>
-                <FormLabel>{studentFields.programCode}</FormLabel>
+                <FormLabel>{tStudent(studentFieldKeys.programCode)}</FormLabel>
                 <Select
                     defaultValue={student.status}
                     {...register("status", { required: true })}
@@ -543,6 +546,12 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
         student: Student, setSelectedStudent: React.Dispatch<React.SetStateAction<Student | null>>
         isOpen: boolean, setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
     }) {
+
+    const { t: tStudent } = useTranslation('student');
+    const { t: tCommon } = useTranslation('common');
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
+
     const { handleUpdate } = useStudentsActionContext();
     const [isUpdateOpen, setIsUpdateOpen] = useState<boolean>(false);
     const { register, getValues, setValue, control, reset } = useForm<Partial<Student>>();
@@ -554,6 +563,7 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
             setIsUpdateOpen(false);
         }
     }
+
     if (!isOpen) return null;
     return (
         <Modal
@@ -571,7 +581,7 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                 >
                     <XCircleIcon className="w-8 h-8" />
                 </button>
-                <Typography level="h4">{studentFields.studentCode}: {student.studentCode}</Typography>
+                <Typography level="h4">{tStudent(studentFieldKeys.studentCode)}: {student.studentCode}</Typography>
                 <Tabs defaultValue={0}
                     className="flex flex-col flex-1 overflow-hidden"
                     onChange={() => {
@@ -579,8 +589,10 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                         setIsUpdateOpen(false);
                     }}>
                     <TabList >
-                        <Tab>Thông tin cá nhân</Tab>
-                        <Tab>Thông tin học vụ</Tab>
+                        <>
+                            <Tab>{lang === 'en' ? 'Personal Information' : 'Thông tin cá nhân'}</Tab>
+                            <Tab>{lang === 'en' ? 'Academic Information' : 'Thông tin học vụ'}</Tab>
+                        </>
                     </TabList>
                     <TabPanel value={0} className="flex-1 overflow-auto">
                         {isUpdateOpen ? (
@@ -613,7 +625,7 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                                 startDecorator={<PencilSquareIcon className="w-5 h-5" />}
                                 onClick={() => setIsUpdateOpen(true)}
                             >
-                                Chỉnh sửa thông tin
+                                {tCommon('edit')}
                             </Button>
                         </div>
                     )}
@@ -627,7 +639,7 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                                     onClick={() => setIsUpdateOpen(false)}
                                     className="w-fit"
                                 >
-                                    Hủy
+                                    {tCommon('cancel')}
                                 </Button>
                                 <Button
                                     variant="solid"
@@ -636,7 +648,7 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                                     onClick={() => onUpdateSubmit()}
                                     className="w-fit"
                                 >
-                                    Xác nhận
+                                    {tCommon('save')}
                                 </Button>
                             </div>
                         )
@@ -676,6 +688,7 @@ function StudentTableRow({ student }: { student: Student }) {
 }
 
 function StudentTable() {
+    const { t: tStudent } = useTranslation('student');
     const { students } = useStudentsDataContext()
     const { selectedStudentIds, setSelectedStudentIds } = useStudentSelectionContext()
 
@@ -722,12 +735,12 @@ function StudentTable() {
                                         },
                                     }} />
                             </th>
-                            {(Object.keys(studentFieldWidths) as (keyof typeof studentFields)[]).map(key => (
+                            {(Object.keys(studentFieldWidths) as (keyof typeof studentFieldKeys)[]).map(key => (
                                 <th
                                     key={key}
                                     className={`px-4 py-2 text-left font-semibold select-text ${studentFieldWidths[key] ?? ''}`}
                                 >
-                                    {studentFields[key]!}
+                                    {tStudent(studentFieldKeys[key])}
                                 </th>
                             ))}
 
@@ -789,6 +802,11 @@ function StudentTable() {
 
 //Search
 function Search() {
+    const { t: tCommon } = useTranslation('common');
+
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
+
     const { handleSearch } = useStudentsActionContext()
     const { faculties } = useFacultiesContext();
     const { programs } = useProgramsContext();
@@ -812,8 +830,8 @@ function Search() {
                 value={searchType}
                 onChange={(event) => setSearchType(event.target.value)}
             >
-                <Radio value="studentCode" label="Tìm theo MSSV" />
-                <Radio value="advanced" label="Tìm kiếm nâng cao" />
+                <Radio value="studentCode" label={lang === 'en' ? 'Search by Student ID' : 'Tìm theo MSSV'} />
+                <Radio value="advanced" label={lang === 'en' ? 'Advanced Search' : 'Tìm kiếm nâng cao'} />
             </RadioGroup>
             <div className="flex flex-col md:flex-row gap-2 ">
                 {searchType === 'studentCode' && (
@@ -940,9 +958,9 @@ function Search() {
                         variant="solid"
                         color="primary"
                         onClick={onSearch}
-                        className="w-56"
+                        className="w-full"
                     >
-                        Tìm kiếm
+                        {tCommon('search')}
                     </Button>
                 </div>
             </div>
@@ -953,9 +971,11 @@ function Search() {
 
 function PhoneInputSelectDropDown({ phoneNumber, setPhoneNumber }: { phoneNumber?: string, setPhoneNumber: (value: string) => void }) {
     const [isFocused, setIsFocused] = useState(false);
+    const { t: tStudent } = useTranslation('student');
+
     return (
         <FormControl required>
-            <FormLabel>{studentFields.phoneNumber}</FormLabel>
+            <FormLabel>{tStudent(studentFieldKeys.phoneNumber)}</FormLabel>
             <PhoneInput
                 country={'vn'}
                 value={phoneNumber}
@@ -999,6 +1019,10 @@ interface StudentCreateFormProps {
 function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, isOpen }: StudentCreateFormProps) {
     const { faculties } = useFacultiesContext();
     const { programs } = useProgramsContext();
+    const { t: tStudent } = useTranslation('student');
+    const { t: tCommon } = useTranslation('common');
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
 
     const [phoneNumber, setPhoneNumber] = useState<string>();
     useEffect(() => {
@@ -1084,7 +1108,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
     return (
         <Modal open={isOpen} onClose={() => setIsOpen(false)}>
             <ModalDialog>
-                <DialogTitle>Tạo sinh viên mới</DialogTitle>
+                <DialogTitle>{lang === 'en' ? 'Create New Student' : 'Tạo sinh viên mới'}</DialogTitle>
                 <DialogContent>
                     <div className="max-h-[70vh] overflow-y-auto pr-2">
                         <form
@@ -1094,11 +1118,11 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
                             }}
                             autoComplete="on"
                         >
-                            <p className="text-base mb-2">Điền thông tin cá nhân</p>
+                            <p className="text-base mb-2">{tCommon('completeAllInf')}</p>
                             <div className="m-2 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* MSSV */}
                                 <FormControl required>
-                                    <FormLabel>{studentFields.studentCode}</FormLabel>
+                                    <FormLabel>{tStudent(studentFieldKeys.studentCode)}</FormLabel>
                                     <Input
                                         autoFocus
                                         type="text"
@@ -1108,7 +1132,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
 
                                 {/*Họ và tên*/}
                                 <FormControl required>
-                                    <FormLabel>{studentFields.fullName}</FormLabel>
+                                    <FormLabel>{tStudent(studentFieldKeys.fullName)}</FormLabel>
                                     <Input
                                         type="text"
                                         {...register("fullName", { required: true })}
@@ -1122,7 +1146,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
                                     defaultValue={Gender.Khac}
                                     render={({ field }) => (
                                         <FormControl required>
-                                            <FormLabel>{studentFields.gender}</FormLabel>
+                                            <FormLabel>{tStudent(studentFieldKeys.gender)}</FormLabel>
                                             <Select
                                                 {...field}
                                                 value={field.value}
@@ -1138,7 +1162,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
 
                                 {/* Ngày sinh */}
                                 <FormControl required>
-                                    <FormLabel>{studentFields.dateOfBirth}</FormLabel>
+                                    <FormLabel>{tStudent(studentFieldKeys.dateOfBirth)}</FormLabel>
                                     <Input
                                         type="date"
                                         {...register("dateOfBirth", { required: true })}
@@ -1147,7 +1171,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
 
                                 {/*Email*/}
                                 <FormControl required>
-                                    <FormLabel>{studentFields.email}</FormLabel>
+                                    <FormLabel>{tStudent(studentFieldKeys.email)}</FormLabel>
                                     <Input
                                         type="email"
                                         {...register("email", { required: true })}
@@ -1159,7 +1183,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
 
                                 {/*Quốc gia*/}
                                 <FormControl required className="sm:col-span-2">
-                                    <FormLabel>{studentFields.nationality}</FormLabel>
+                                    <FormLabel>{tStudent(studentFieldKeys.nationality)}</FormLabel>
                                     <Input
                                         type="text"
                                         {...register("nationality", { required: true })}
@@ -1169,7 +1193,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
                                 {/* Các trường địa chỉ */}
                                 {["mailAddress", "temporaryResidenceAddress", "permanentAddress"].map((addressType) => (
                                     <FormControl className="sm:col-span-2" key={addressType}>
-                                        <FormLabel>{studentFields[addressType as keyof typeof studentFields]}</FormLabel>
+                                        <FormLabel>{studentFieldKeys[addressType as keyof typeof studentFieldKeys]}</FormLabel>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
                                             {Object.entries(addressFields).map(([key, label]) => {
                                                 const addressKey = key as keyof Address;
@@ -1190,7 +1214,10 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
 
                                 {/*Giấy tờ tùy thân*/}
                                 <div className="sm:col-span-2">
-                                    <p>Nhập 1 trong 3 loại giấy tờ tùy thân</p>
+                                    <p>{
+                                        lang === 'en' ? "Please choose one of three indentity documents" :
+                                            "Chọn 1 trong 3 loại giấy tờ tùy thân"
+                                    }</p>
                                     <Select value={documentType} onChange={(e, val) => {
                                         setDocumentType(val as IdentityDocumentType);
                                         setDocumentData({ type: val as IdentityDocumentType });
@@ -1210,11 +1237,10 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
 
                             </div>
 
-                            <p className="text-base mb-2">Điền thông tin học vụ</p>
                             <div className="m-2 sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 {/* Khoa */}
                                 <FormControl required>
-                                    <FormLabel>{studentFields.facultyCode}</FormLabel>
+                                    <FormLabel>{tStudent(studentFieldKeys.facultyCode)}</FormLabel>
                                     <Select
                                         {...register("facultyCode", { required: true })}
                                         onChange={(e, newValue) => setValue("facultyCode", newValue as string)}
@@ -1229,7 +1255,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
 
                                 {/* Chương trình */}
                                 <FormControl required>
-                                    <FormLabel>{studentFields.programCode}</FormLabel>
+                                    <FormLabel>{tStudent(studentFieldKeys.programCode)}</FormLabel>
                                     <Select
                                         {...register("programCode", { required: true })}
                                         onChange={(e, newValue) => setValue("programCode", newValue as string)}
@@ -1244,7 +1270,7 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
 
                                 {/* Khóa học */}
                                 <FormControl required>
-                                    <FormLabel>{studentFields.cohortYear}</FormLabel>
+                                    <FormLabel>{tStudent(studentFieldKeys.cohortYear)}</FormLabel>
                                     <Input
                                         type="number"
                                         defaultValue={new Date().getFullYear()}
@@ -1264,19 +1290,19 @@ function StudentCreateForm({ onCreate, register, setValue, control, setIsOpen, i
                                     type="submit"
                                     className="w-1/2"
                                 >
-                                    Xác nhận
+                                    {tCommon('save')}
                                 </Button>
                             </div>
 
                         </form>
                     </div>
                 </DialogContent>
-
             </ModalDialog>
         </Modal>
     );
 }
 function StudentCreateFormContainer() {
+    const { t: tCommon } = useTranslation('common');
     const { handleCreate } = useStudentsActionContext();
     const { register, reset, getValues, setValue, control } = useForm<Partial<Student>>();
     const [isOpen, setIsOpen] = useState(false);
@@ -1313,7 +1339,7 @@ function StudentCreateFormContainer() {
                 onClick={() => setIsOpen(true)}
                 className="w-fit"
             >
-                Tạo sinh viên
+                {tCommon('add')}
             </Button>
             <StudentCreateForm
                 register={register}
@@ -1328,6 +1354,7 @@ function StudentCreateFormContainer() {
 }
 
 function StudentsRemoveButton() {
+    const { t: tCommon } = useTranslation('common');
     const { handleRemoveStudents } = useStudentsActionContext();
     const { selectedStudentIds } = useStudentSelectionContext();
     const onRemove = () => {
@@ -1342,19 +1369,23 @@ function StudentsRemoveButton() {
             className="w-fit"
         >
             {selectedStudentIds.length > 0
-                ? `Xoá ${selectedStudentIds.length}`
-                : 'Xoá'}
+                ? tCommon('delete') + ' ' + selectedStudentIds.length
+                : tCommon('delete')}
         </Button>
     );
 }
 
 
 function StudentPage() {
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
     const { page, limit, total } = useStudentsDataContext()
     const { handlePageChange } = useStudentsActionContext()
     return (
         <main className="flex flex-col">
-            <h2 className="text-2xl font-bold">Quản lý sinh viên</h2>
+            <h2 className="text-2xl font-bold">
+                {lang === 'en' ? "Student Management" : "Quản lý sinh viên"
+                }</h2>
 
             <section className="flex items-center justify-between w-full mt-4 gap-4">
                 <div className="flex items-center gap-2 flex-1 max-w-md">

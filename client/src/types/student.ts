@@ -21,21 +21,20 @@ export interface Student {
     identityDocuments: IdentityDocument[]
 }
 
-export const studentFields: Record<Exclude<keyof Student, 'id'>, string> = {
-    studentCode: "MSSV",
-    fullName: "Họ và tên",
-    dateOfBirth: "Ngày sinh",
-    gender: "Giới tính",
-    email: "Email",
-    phoneNumber: "SĐT",
-    mailAddress: "Địa chỉ nhận thư",
-    permanentAddress: "Địa chỉ thường trú",
-    temporaryResidenceAddress: "Địa chỉ tạm trú",
-    facultyCode: "Khoa",
-    cohortYear: "Khóa",
-    programCode: "Chương trình",
-    nationality: "Quốc tịch",
-    status: "Tình trạng",
-    identityDocuments: "Giấy tờ tùy thân",
+export const studentFieldKeys: Record<Exclude<keyof Student, 'id'>, string> = {
+    studentCode: "studentCode",
+    fullName: "fullName",
+    dateOfBirth: "dateOfBirth",
+    gender: "gender",
+    email: "email",
+    phoneNumber: "phoneNumber",
+    mailAddress: "mailAddress",
+    permanentAddress: "permanentAddress",
+    temporaryResidenceAddress: "temporaryResidenceAddress",
+    facultyCode: "facultyCode",
+    cohortYear: "cohortYear",
+    programCode: "programCode",
+    nationality: "nationality",
+    status: "status",
+    identityDocuments: "identityDocuments",
 };
-

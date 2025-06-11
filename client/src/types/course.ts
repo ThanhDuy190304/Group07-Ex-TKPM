@@ -9,12 +9,12 @@ export interface Course {
     prerequisiteCourseCode: string[],
 }
 
-export const KeyNameOfCourse: Partial<Record<keyof Course, string>> = {
-    courseCode: "Mã khóa học",
-    name: "Tên",
-    credits: "Số tín chỉ",
-    facultyCode: "Mã khoa",
-    description: "Mô tả",
-    prerequisiteCourseCode: "Môn tiên quyết",
-    isActive: "Trạng thái",
-}
+export const CourseFieldKeys: Record<Exclude<keyof Course, 'id'>, string> = {
+    courseCode: "courseCode",
+    name: "name",
+    credits: "credits",
+    facultyCode: "facultyCode",
+    description: "description",
+    prerequisiteCourseCode: "prerequisiteCourseCode",
+    isActive: "isActive",
+};

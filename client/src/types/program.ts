@@ -3,8 +3,7 @@ export interface Program {
     name: string,
     programCode: string,
 }
-
-export const programFields: { programCode: string, name: string } = {
-    programCode: "Mã chương trình",
-    name: "Chương trình đào tạo",
+export const programFieldKeys: Record<'programCode' | 'name', string> = {
+    programCode: "programCode",
+    name: "name",
 };

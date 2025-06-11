@@ -4,7 +4,7 @@ export interface Faculty {
     facultyCode: string,
 }
 
-export const facultyFields: { facultyCode: string; name: string } = {
-    facultyCode: "Mã khoa",
-    name: "Khoa",
+export const facultyFieldKeys: Record<'facultyCode' | 'name', string> = {
+    facultyCode: "facultyCode",
+    name: "name",
 };
