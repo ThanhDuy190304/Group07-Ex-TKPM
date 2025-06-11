@@ -56,18 +56,14 @@ describe("unit test for StudentService.update", () => {
         //Arrange
         const studentInfoToUpdate = { email: "hacker@gmail.com" };
         //Act & Assert
-        await expect(studentService.update(mockStudent.id, studentInfoToUpdate))
-            .rejects
-            .toThrow(ValidationError);
+        await expect(studentService.update(mockStudent.id, studentInfoToUpdate)).rejects.toThrow(ValidationError);
     });
 
     test("When updating with invalid status, then throw ValidationError", async () => {
         //Arrange
         const studentInfoToUpdate = { status: "Đình chỉ" };
         //Act & Assert
-        await expect(studentService.update(mockStudent.id, studentInfoToUpdate))
-            .rejects
-            .toThrow(ValidationError);
+        await expect(studentService.update(mockStudent.id, studentInfoToUpdate)).rejects.toThrow(ValidationError);
     });
 
     test("When updating with invalid phone, then throw ValidationError", async () => {

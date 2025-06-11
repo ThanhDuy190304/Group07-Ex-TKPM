@@ -5,6 +5,8 @@ import Sidebar from "./components/layout/sidebar";
 import StudentPageContainer from "./pages/students";
 import FacultyAndProgramPage from "./pages/facultiesAndPrograms";
 import CoursePage from "./pages/courses";
+import SettingsPage from "./pages/settings";
+
 import { ErrorProvider } from "./context/ErrorContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -26,7 +28,8 @@ function App() {
                 <Route path="/" element={<StudentPageContainer />} />
                 <Route path="/students" element={<StudentPageContainer />} />
                 <Route path="/faculties-and-programs" element={<FacultyAndProgramPage />} />
-                <Route path="/course" element={<CoursePage />} />
+                <Route path="/courses" element={<CoursePage />} />
+                <Route path="/setting" element={<SettingsPage />} />
               </Routes>
               <ToastContainer position="top-right" autoClose={3000} />
             </ErrorProvider>

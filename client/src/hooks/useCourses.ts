@@ -20,13 +20,20 @@ export function useCourses() {
 
     const updateCourse = useMutation({
         mutationFn: ({ courseId, updatedCourse, }: {
-            courseId: string;
-            updatedCourse: Partial<Course>;
+            courseId: string; updatedCourse: Partial<Course>;
         }) => putCourse({ courseId, updatedCourse }),
 
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["courses"] });
-        },
+        onSuccess: (_, { courseId, updatedCourse }) => {
+            queryClient.setQueryData<{ courses: Course[] }>(['courses'], (oldData) => {
+                if (!oldData) return oldData;
+                return {
+                    ...oldData,
+                    courses: oldData.courses.map((course) =>
+                        course.id === courseId ? { ...course, ...updatedCourse } : course
+                    ),
+                };
+            });
+        }
     });
 
     const removeCourse = useMutation({

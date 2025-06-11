@@ -16,9 +16,14 @@ import { useError } from "../context/ErrorContext";
 
 //Faculty
 function FacultyCreateModalDialog({ onCreate }: { onCreate: (newFaculty: Partial<Faculty>) => void }) {
+    const { t: tFaculty } = useTranslation('faculty');
+    const { t: tCommon } = useTranslation('common');
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
+
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState<Partial<Faculty>>({});
-    const { t: tFaculty } = useTranslation('faculty');
+
     const handleChange = (key: keyof Faculty, value: string) => {
         setFormData({ ...formData, [key]: value });
     };
@@ -38,12 +43,12 @@ function FacultyCreateModalDialog({ onCreate }: { onCreate: (newFaculty: Partial
                 onClick={() => setOpen(true)}
                 className="w-fit"
             >
-                Tạo khoa
+                {lang === "en" ? "Create a faculty" : "Tạo khoa"}
             </Button>
             <Modal open={open} onClose={() => setOpen(false)}>
                 <ModalDialog>
-                    <DialogTitle>Tạo khoa mới</DialogTitle>
-                    <DialogContent>Điền đủ thông tin dưới đây.</DialogContent>
+                    <DialogTitle>{lang === "en" ? "Create a new faculty" : "Tạo khoa mới"}</DialogTitle>
+                    <DialogContent>{tCommon('completeAllInf')}</DialogContent>
                     <form onSubmit={handleSubmit}>
                         <Stack spacing={2}>
                             {Object.entries(facultyFieldKeys).map(([key, label]) => (
@@ -57,7 +62,7 @@ function FacultyCreateModalDialog({ onCreate }: { onCreate: (newFaculty: Partial
                                     />
                                 </FormControl>
                             ))}
-                            <Button type="submit">Xác nhận</Button>
+                            <Button type="submit">{tCommon('save')}</Button>
                         </Stack>
                     </form>
                 </ModalDialog>
@@ -135,8 +140,10 @@ interface FacultiesTableProps {
 }
 
 function FacultiesTable({ faculties, editingFaculty, isEditingFacultyId, onEdit, onChange, onSave, onCancel }: FacultiesTableProps) {
-    const headers = ["STT", ...Object.values(facultyFieldKeys)];
     const { t: tFaculty } = useTranslation('faculty');
+    const { t: tCommon } = useTranslation('common');
+
+    const headers = [tCommon('sequenceNumber'), ...Object.values(facultyFieldKeys)];
 
     return (
         <Sheet className="flex-2" variant="outlined" sx={{ borderRadius: "md", overflow: "auto" }}>
@@ -227,6 +234,9 @@ function FacultiesContainer({ faculties }: { faculties: Faculty[] }) {
     const { createFaculty } = useFaculties();
     const { showError } = useError();
 
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
+
     const handleCreate = async (newFaculty: Partial<Faculty>) => {
         try {
             await createFaculty.mutateAsync(newFaculty);
@@ -237,7 +247,7 @@ function FacultiesContainer({ faculties }: { faculties: Faculty[] }) {
 
     return (
         <section className="flex flex-col gap-4">
-            <h3 className="text-xl font-semibold mb-4">Danh Sách Khoa</h3>
+            <h3 className="text-xl font-semibold mb-4">{lang === "en" ? "Faculty list" : "Danh Sách Khoa"}</h3>
             <FacultyCreateModalDialog onCreate={handleCreate} />
             <FacultiesTableContainer faculties={faculties} />
         </section>
@@ -249,6 +259,10 @@ function ProgramCreateModalDialog({ onCreate }: { onCreate: (newProgram: Partial
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState<Partial<Program>>({});
     const { t: tProgram } = useTranslation('program');
+    const { t: tCommon } = useTranslation('common');
+
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
 
     const handleChange = (key: keyof Program, value: string) => {
         setFormData({ ...formData, [key]: value });
@@ -269,12 +283,12 @@ function ProgramCreateModalDialog({ onCreate }: { onCreate: (newProgram: Partial
                 onClick={() => setOpen(true)}
                 className="w-fit"
             >
-                Tạo chương trình
+                {lang === "en" ? "Create a program" : "Tạo chương trình"}
             </Button>
             <Modal open={open} onClose={() => setOpen(false)}>
                 <ModalDialog>
-                    <DialogTitle>Tạo chương trình mới</DialogTitle>
-                    <DialogContent>Điền đủ thông tin dưới đây.</DialogContent>
+                    <DialogTitle>{lang === "en" ? "Create a new program" : "Tạo chương trình mới"}</DialogTitle>
+                    <DialogContent></DialogContent>
                     <form onSubmit={handleSubmit}>
                         <Stack spacing={2}>
                             {Object.entries(programFieldKeys).map(([key, label]) => (
@@ -288,7 +302,7 @@ function ProgramCreateModalDialog({ onCreate }: { onCreate: (newProgram: Partial
                                     />
                                 </FormControl>
                             ))}
-                            <Button type="submit">Xác nhận</Button>
+                            <Button type="submit">{tCommon('save')}</Button>
                         </Stack>
                     </form>
                 </ModalDialog>
@@ -365,8 +379,10 @@ interface ProgramsTableProps {
 }
 
 function ProgramsTable({ programs, editingProgram, isEditingProgramId, onEdit, onChange, onSave, onCancel }: ProgramsTableProps) {
-    const headers = ["STT", ...Object.values(programFieldKeys)];
+    const { t: tCommon } = useTranslation('common');
     const { t: tProgram } = useTranslation('program');
+
+    const headers = [tCommon('sequenceNumber'), ...Object.values(programFieldKeys)];
     return (
         <Sheet className="flex-2" variant="outlined" sx={{ borderRadius: "md", overflow: "auto" }}>
             <Table>
@@ -455,6 +471,8 @@ function ProgramsTableContainer({ programs }: { programs: Program[] }) {
 function ProgramsContainer({ programs }: { programs: Program[] }) {
     const { createProgram } = usePrograms();
     const { showError } = useError();
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
 
     const handleCreate = async (newProgram: Partial<Program>) => {
         try {
@@ -466,7 +484,7 @@ function ProgramsContainer({ programs }: { programs: Program[] }) {
 
     return (
         <section className="flex flex-col gap-4">
-            <h3 className="text-xl font-semibold mb-4">Danh Sách Chương Trình Học</h3>
+            <h3 className="text-xl font-semibold mb-4">{lang === "en" ? "Program list" : "Danh sách chương trình học"}</h3>
             <ProgramCreateModalDialog onCreate={handleCreate} />
             <ProgramsTableContainer programs={programs} />
         </section>
@@ -474,30 +492,32 @@ function ProgramsContainer({ programs }: { programs: Program[] }) {
 }
 
 
+
 function FacultyAndProgramPage() {
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
     const { facultiesQuery } = useFaculties();
     const { programsQuery } = usePrograms();
 
-    if (
-        facultiesQuery.isLoading ||
-        programsQuery.isLoading
-    ) {
-        return <p>Đang tải dữ liệu...</p>;
+    const loadingText = lang === 'en' ? 'Loading data...' : 'Đang tải dữ liệu...';
+    const errorText = lang === 'en' ? 'Failed to load data.' : 'Lỗi khi tải dữ liệu.';
+    const titleText = lang === 'en' ? 'Manage academic' : 'Quản lý Học Thuật';
+
+    if (facultiesQuery.isLoading || programsQuery.isLoading) {
+        return <p>{loadingText}</p>;
     }
 
-    if (
-        facultiesQuery.isError ||
-        programsQuery.isError
-    ) {
-        return <p>Lỗi khi tải dữ liệu.</p>;
+    if (facultiesQuery.isError || programsQuery.isError) {
+        return <p>{errorText}</p>;
     }
+
     const faculties = facultiesQuery.data.faculties as Faculty[];
     const programs = programsQuery.data.programs as Program[];
 
     return (
         <div className="space-y-8">
-            <h2 className="text-2xl font-bold">Quản lý Học Thuật</h2>
-            <section className='flex flex-col gap-4'>
+            <h2 className="text-2xl font-bold">{titleText}</h2>
+            <section className="flex flex-col gap-4">
                 <FacultiesContainer faculties={faculties} />
             </section>
             <section>
@@ -505,7 +525,6 @@ function FacultyAndProgramPage() {
             </section>
         </div>
     );
-
 }
 
 export default FacultyAndProgramPage;

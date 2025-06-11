@@ -68,20 +68,21 @@ const StudentSelectionContext = createContext<{
 } | null>(null);
 
 function StudentProvider({ children }: { children: ReactNode }) {
+    const { t: tCommon } = useTranslation("common"); // ⬅ đổi tên thành tCommon
     const { showError } = useError();
     const [page, setPage] = useState<number>(1);
     const limit = 30;
     const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
+
     const { studentsQuery, updateStudent, removeStudents, createStudent } = useAllStudents({
         ...searchQuery,
         page,
         limit
     });
-    const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
+    const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     const { facultiesQuery } = useFaculties();
     const { programsQuery } = usePrograms();
-    // Handlers
 
     const handleRemoveStudents = useCallback(async (studentIds: string[]) => {
         try {
@@ -125,7 +126,7 @@ function StudentProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         setSelectedStudentIds([]);
-    }, [page])
+    }, [page]);
 
     const studentDataContextValue = useMemo(() => ({
         students: studentsQuery.data?.students || [],
@@ -141,34 +142,33 @@ function StudentProvider({ children }: { children: ReactNode }) {
         handleUpdate,
         handlePageChange,
         handleSearch
-    }), [])
+    }), []);
 
     const facultyContextValue = useMemo(() => ({
         faculties: facultiesQuery.data?.faculties || []
-    }), [[facultiesQuery.data]]);
+    }), [facultiesQuery.data]);
 
     const programContextValue = useMemo(() => ({
         programs: programsQuery.data?.programs || []
-    }), [[programsQuery.data]]);
-
+    }), [programsQuery.data]);
 
     const selectionContextValue = useMemo(() => ({
         selectedStudentIds,
         setSelectedStudentIds
     }), [selectedStudentIds, setSelectedStudentIds]);
 
-
+    // Sử dụng tCommon thay vì t
     if (studentsQuery.isLoading || facultiesQuery.isLoading || programsQuery.isLoading) {
-        return <p>Đang tải dữ liệu...</p>;
+        return <p>{tCommon("loading")}</p>;
     }
 
     if (studentsQuery.isError) {
-        return <p>{studentsQuery.error.message}</p>
-    }
-    if (facultiesQuery.isError || programsQuery.isError) {
-        return <p>Hệ thống lỗi, vui lòng thử lại sau</p>
+        return <p>{studentsQuery.error.message || tCommon("loadError")}</p>;
     }
 
+    if (facultiesQuery.isError || programsQuery.isError) {
+        return <p>{tCommon("systemError")}</p>;
+    }
 
     return (
         <StudentDataContext.Provider value={studentDataContextValue}>

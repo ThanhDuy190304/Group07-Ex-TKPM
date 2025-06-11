@@ -7,6 +7,10 @@ const commonVi = {
     save: "Lưu",
     cancel: "Hủy",
     completeAllInf: "Vui lòng điền đủ thông tin",
+    sequenceNumber: "STT",
+    loading: 'Đang tải dữ liệu...',
+    loadError: 'Lỗi khi tải dữ liệu.',
+    systemError: 'Hệ thống lỗi, vui lòng thử lại sau',
 };
 
 export default commonVi;

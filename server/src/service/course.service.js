@@ -99,7 +99,8 @@ class CourseService extends BaseService {
     }
     // Update credits
     if (updateData.credits !== undefined) {
-      if (!Number.isInteger(updateData.credits) || updateData.credits < 2) {
+      const credits = parseInt(updateData.credits);
+      if (isNaN(credits) || credits < 2) {
         throw new ValidationError("Invalid credits", "Số tín chỉ không hợp lệ");
       }
       const classes = await models.Class.findAll({
@@ -118,6 +119,13 @@ class CourseService extends BaseService {
         );
       }
       updateFields.credits = updateData.credits;
+    }
+    // Update isAvtive
+    if (updateData.isActive !== undefined) {
+      if (typeof updateData.isActive !== "boolean") {
+        throw new ValidationError("isActive must be a boolean", "isActive phải là kiểu boolean");
+      }
+      updateFields.isActive = updateData.isActive;
     }
 
     if (Object.keys(updateFields).length === 0) {

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+
 import {
     Cog8ToothIcon, BellIcon, AcademicCapIcon, ArrowLeftIcon, ArrowRightIcon,
     UserCircleIcon, ClipboardIcon, ClipboardDocumentIcon
@@ -17,6 +19,18 @@ function SidebarItem({ to, icon: Icon, label }) {
 }
 function Sidebar() {
     const [isOpen, setIsOpen] = useState(true);
+    const { i18n } = useTranslation();
+    const language = i18n.language;
+
+    // Tên theo ngôn ngữ
+    const text = {
+        student: language === "en" ? "Student" : "Sinh viên",
+        notification: language === "en" ? "Notifications" : "Thông báo",
+        setting: language === "en" ? "Settings" : "Cài đặt",
+        facultyProgram: language === "en" ? "Faculties & Programs" : "Khoa và Chương Trình Học",
+        course: language === "en" ? "Courses" : "Khóa học",
+    };
+
     return (
         <div className="positive top-0 left-0">
             {/* Sidebar */}
@@ -34,15 +48,15 @@ function Sidebar() {
                     />
                 </div>
                 <div className="flex flex-col gap-2 bg-black mt-8">
-                    <SidebarItem to="/" icon={AcademicCapIcon} label="Sinh viên" />
-                    <SidebarItem to="/notification" icon={BellIcon} label="Thông báo" />
-                    <SidebarItem to="/setting" icon={Cog8ToothIcon} label="Cài đặt" />
-                    <SidebarItem to="/faculties-and-programs" icon={ClipboardIcon} label="Khoa và Chương Trình Học" />
-                    <SidebarItem to="/course" icon={ClipboardDocumentIcon} label="Khóa học"></SidebarItem>
+                    <SidebarItem to="/" icon={AcademicCapIcon} label={text.student} />
+                    <SidebarItem to="/notification" icon={BellIcon} label={text.notification} />
+                    <SidebarItem to="/setting" icon={Cog8ToothIcon} label={text.setting} />
+                    <SidebarItem to="/faculties-and-programs" icon={ClipboardIcon} label={text.facultyProgram} />
+                    <SidebarItem to="/courses" icon={ClipboardDocumentIcon} label={text.course} />
                 </div>
             </div>
 
-            {/* Button hiển thị sidebar */}
+            {/* Nút hiện sidebar */}
             {!isOpen && (
                 <ArrowRightIcon
                     onClick={() => setIsOpen(true)}

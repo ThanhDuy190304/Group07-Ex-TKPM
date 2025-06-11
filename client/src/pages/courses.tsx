@@ -38,6 +38,7 @@ const FacultiesDataContext = createContext<{
 } | null>(null);
 
 function CourseProvider({ children }: { children: ReactNode }) {
+    const { t: tCommon } = useTranslation("common");
     const { showError } = useError();
     const { coursesQuery, createCourse, removeCourse, updateCourse } = useCourses();
     const { facultiesQuery } = useFaculties();
@@ -52,13 +53,12 @@ function CourseProvider({ children }: { children: ReactNode }) {
             showError(error.message);
             return false;
         }
-    }, [createCourse, showError])
+    }, [createCourse, showError]);
 
     const handleDelete = useCallback(async (): Promise<boolean> => {
         try {
-
             if (!selectedCourseId) {
-                showError("Vui lòng chọn khoá học cần xoá");
+                showError(tCommon("pleaseSelectCourseToDelete"));
                 return false;
             }
 
@@ -75,7 +75,7 @@ function CourseProvider({ children }: { children: ReactNode }) {
             showError(error.message);
             return false;
         }
-    }, [removeCourse, selectedCourseId, showError]);
+    }, [removeCourse, selectedCourseId, showError, tCommon]);
 
     const handleUpdate = useCallback(async (courseId: string, updatedCourse: Partial<Course>): Promise<boolean> => {
         try {
@@ -85,17 +85,17 @@ function CourseProvider({ children }: { children: ReactNode }) {
             showError(error.message);
             return false;
         }
-    }, [updateCourse, showError])
+    }, [updateCourse, showError]);
 
     const coursestDataContextValue = useMemo(() => ({
         courses: coursesQuery.data?.courses || []
-    }), [coursesQuery.data])
+    }), [coursesQuery.data]);
 
     const coursesActionContextValue = useMemo(() => ({
         handleUpdate,
         handleDelete,
         handleCreate,
-    }), [handleUpdate, handleDelete, handleCreate])
+    }), [handleUpdate, handleDelete, handleCreate]);
 
     const courseSelectionContextValue = useMemo(() => ({
         selectedCourseId,
@@ -104,12 +104,14 @@ function CourseProvider({ children }: { children: ReactNode }) {
 
     const facultiestDataContextValue = useMemo(() => ({
         faculties: facultiesQuery.data?.faculties || []
-    }), [facultiesQuery.data])
+    }), [facultiesQuery.data]);
 
     if (coursesQuery.isLoading || facultiesQuery.isLoading) {
-        return <p>Đang tải dữ liệu...</p>;
-    } else if (coursesQuery.error || facultiesQuery.error) {
-        return <p>Lỗi không tải được dữ liệu</p>
+        return <p>{tCommon("loading")}</p>;
+    }
+
+    if (coursesQuery.error || facultiesQuery.error) {
+        return <p>{tCommon("loadError")}</p>;
     }
 
     return (
@@ -122,8 +124,7 @@ function CourseProvider({ children }: { children: ReactNode }) {
                 </CourseSelectionContext.Provider>
             </CoursesActionContext.Provider>
         </CoursesDataContext.Provider>
-    )
-
+    );
 }
 
 //Custom hook
@@ -153,6 +154,10 @@ function useFacultiesDataContext() {
 
 function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
     const { t: tCourse } = useTranslation('course');
+    const { t: tCommon } = useTranslation('common');
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
+
     const { register, getValues, control } = useForm<Partial<Course>>();
     const { faculties } = useFacultiesDataContext();
     const { courses } = useCoursesDataContext();
@@ -175,7 +180,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
     return (
         <Modal open={isOpen} onClose={() => setIsOpen(false)}>
             <ModalDialog className='w-1/2'>
-                <DialogTitle>Tạo khoá học mới</DialogTitle>
+                <DialogTitle>{lang === "en" ? "Create a course" : "Tạo khóa học mới"}</DialogTitle>
                 <hr className="border-t border-gray-200 my-2" />
                 <DialogContent>
                     <div className="max-h-[70vh] overflow-y-auto pr-2">
@@ -225,7 +230,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
                                             >
                                                 {faculties.map((faculty) => (
                                                     <Option key={faculty.facultyCode} value={faculty.facultyCode}>
-                                                        {faculty.name}
+                                                        {faculty.facultyCode}
                                                     </Option>
                                                 ))}
                                             </Select>
@@ -281,7 +286,7 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
                                     type="submit"
                                     className="w-1/2"
                                 >
-                                    Xác nhận
+                                    {tCommon('save')}
                                 </Button>
                             </div>
 
@@ -296,6 +301,8 @@ function CourseCreateFormModal({ isOpen, setIsOpen }: { isOpen: boolean, setIsOp
 
 function CourseCreateButton() {
     const [isOpen, setIsOpen] = useState(false);
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
     return (
         <>
             <Button
@@ -305,7 +312,7 @@ function CourseCreateButton() {
                 onClick={() => setIsOpen(true)}
                 className="w-fit "
             >
-                Tạo khóa học mới
+                {lang === 'en' ? "Create a course" : "Tạo khóa học mới"}
             </Button>
             <CourseCreateFormModal isOpen={isOpen} setIsOpen={setIsOpen} />
         </>
@@ -315,6 +322,7 @@ function CourseCreateButton() {
 
 function CourseDeleteButton() {
     const { handleDelete } = useCoursesActionContext();
+    const { t: tCommon } = useTranslation('common');
     return (
         <Button
             variant="solid"
@@ -323,13 +331,14 @@ function CourseDeleteButton() {
             onClick={handleDelete}
             className="w-fit "
         >
-            Xoá
+            {tCommon('delete')}
         </Button>
     );
 }
 
 function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
     const { t: tCourse } = useTranslation('course');
+    const { t: tCommon } = useTranslation('common');
     const { register, getValues, control, reset } = useForm<Partial<Course>>();
     const { faculties } = useFacultiesDataContext();
     const { courses } = useCoursesDataContext();
@@ -396,7 +405,7 @@ function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, 
                                             >
                                                 {faculties.map((faculty) => (
                                                     <Option key={faculty.facultyCode} value={faculty.facultyCode}>
-                                                        {faculty.name}
+                                                        {faculty.facultyCode}
                                                     </Option>
                                                 ))}
                                             </Select>
@@ -449,7 +458,7 @@ function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, 
                                     type="submit"
                                     className="w-1/2"
                                 >
-                                    Xác nhận
+                                    {tCommon('save')}
                                 </Button>
                             </div>
                         </form>
@@ -464,18 +473,24 @@ interface CourseRowProps {
     index: number;
     course: Course;
 }
+
 function CourseRow({ index, course }: CourseRowProps) {
+    const { handleUpdate } = useCoursesActionContext();
     const keyNames = Object.keys(CourseFieldKeys) as (keyof Course)[];
+
     const handleToggleActive = async () => {
-        console.log(`Toggling active for course ${course.id}`);
+        await handleUpdate(course.id, { isActive: !course.isActive } as Partial<Course>);
     };
+
     return (
         <>
             <td className="px-4 py-2">{index + 1}</td>
             {keyNames.map((key) => (
                 <td key={key} className="px-4 py-2 whitespace-nowrap">
                     {key === "isActive" ? (
-                        <ToggleOnOff isOn={course.isActive} onToggle={handleToggleActive} />
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <ToggleOnOff isOn={course.isActive} onToggle={handleToggleActive} />
+                        </div>
                     ) : (
                         String(course[key])
                     )}
@@ -487,9 +502,11 @@ function CourseRow({ index, course }: CourseRowProps) {
 
 function CourseTable() {
     const { t: tCourse } = useTranslation('course');
+    const { t: tCommon } = useTranslation('common');
+
     const { selectedCourseId, setSelectedCourseId } = useCourseSelectionContext();
     const { courses } = useCoursesDataContext();
-    const headers = ["STT", ...Object.values(CourseFieldKeys)];
+    const headers = [tCommon('sequenceNumber'), ...Object.values(CourseFieldKeys)];
 
     const [selectedCourseForUpdate, setSelectedCourseForUpdate] = useState<Course | null>(null);
     const [isUpdateModelOpen, setIsUpdateModelOpen] = useState<boolean>(false);
@@ -568,10 +585,13 @@ function CourseTable() {
 
     );
 }
+
 function CoursePage() {
+    const { i18n } = useTranslation();
+    const lang = i18n.language;
     return (
         <section className='flex flex-col gap-4'>
-            <h2 className="text-2xl font-bold">Quản lý khóa học</h2>
+            <h2 className="text-2xl font-bold">{lang === 'en' ? "Manage courses" : "Quản lý khóa học"}</h2>
             <div className="flex gap-2">
                 <CourseDeleteButton />
                 <CourseCreateButton />

@@ -13,11 +13,13 @@ import programEn from '../locales/en/program';
 import courseEn from '../locales/en/course';
 import commonEn from '../locales/en/common';
 
+const savedLang = localStorage.getItem('language') || 'en';
+
 
 i18n
     .use(initReactI18next)
     .init({
-        lng: 'en', // ngôn ngữ mặc định
+        lng: savedLang, // ngôn ngữ mặc định
         fallbackLng: 'vi',
         debug: true,
         ns: ['student', 'faculty', 'program', 'course'],
