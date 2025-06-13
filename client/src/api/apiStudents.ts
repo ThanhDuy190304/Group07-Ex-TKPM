@@ -1,5 +1,6 @@
 import api from "../config/axios";
 import { Student } from "../types/student"
+import { getErrorMessage } from "../utils/errorMessage";
 
 export const importStudents = async (file: any) => {
     try {
@@ -12,7 +13,7 @@ export const importStudents = async (file: any) => {
         });
         return response.data?.data;
     } catch (error: any) {
-        return { error: error.response.data.message };
+        return { error: getErrorMessage(error) };
     }
 };
 
@@ -23,7 +24,7 @@ export async function putStudent(studentId: string, updatedData: Partial<Student
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -34,7 +35,7 @@ export async function deleteStudent(studentId: string) {
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -46,7 +47,7 @@ export async function postStudent(studentData: Partial<Student>) {
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -61,7 +62,7 @@ export async function getAllStudents(searchQuery: Partial<Student> & { page?: nu
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -75,7 +76,7 @@ export async function deleteStudents(studentIds: string[]) {
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }

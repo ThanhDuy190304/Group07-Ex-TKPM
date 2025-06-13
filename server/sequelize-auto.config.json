@@ -13,7 +13,8 @@
         "courses",
         "faculties",
         "identity_documents",
-        "programs"
+        "programs",
+        "class_registration_period"
     ],
     "ssl": true,
     "dialectOptions": {

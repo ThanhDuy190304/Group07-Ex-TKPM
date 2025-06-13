@@ -9,6 +9,9 @@ const sequelize = new Sequelize(
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
         dialect: "postgres",
+        define: {
+            schema: 'public',
+        },
         logging: false, // Set to true to see SQL queries in console
         dialectOptions: {
             ssl: {
@@ -19,6 +22,12 @@ const sequelize = new Sequelize(
         define: {
             underscored: true, // tự động chuyển camelCase -> snake_case
             timestamps: true // tự động thêm createdAt, updatedAt
+        },
+        pool: {
+            max: 20,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
         },
     }
 );

@@ -4,8 +4,11 @@ import { useTranslation } from 'react-i18next';
 
 import {
     Cog8ToothIcon, BellIcon, AcademicCapIcon, ArrowLeftIcon, ArrowRightIcon,
-    UserCircleIcon, ClipboardIcon, ClipboardDocumentIcon
+    UserCircleIcon, ClipboardIcon, ClipboardDocumentIcon, CalendarDaysIcon
 } from "@heroicons/react/24/outline";
+import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
+import classRegistrationEn from "../../locales/en/classRegistration";
+
 function SidebarItem({ to, icon: Icon, label }) {
     return (
         <Link
@@ -29,6 +32,8 @@ function Sidebar() {
         setting: language === "en" ? "Settings" : "Cài đặt",
         facultyProgram: language === "en" ? "Faculties & Programs" : "Khoa và Chương Trình Học",
         course: language === "en" ? "Courses" : "Khóa học",
+        class: language === "en" ? "Classes" : "Lớp học",
+        classRegistrationPeriod: language === "en" ? "Class Registration Time" : "Thời gian đăng ký học phần",
     };
 
     return (
@@ -53,6 +58,8 @@ function Sidebar() {
                     <SidebarItem to="/setting" icon={Cog8ToothIcon} label={text.setting} />
                     <SidebarItem to="/faculties-and-programs" icon={ClipboardIcon} label={text.facultyProgram} />
                     <SidebarItem to="/courses" icon={ClipboardDocumentIcon} label={text.course} />
+                    <SidebarItem to="/classes" icon={AppRegistrationIcon} label={text.class} />
+                    <SidebarItem to="/class-registration-periods" icon={CalendarDaysIcon} label={text.classRegistrationPeriod} />
                 </div>
             </div>
 

@@ -58,7 +58,7 @@ function CourseProvider({ children }: { children: ReactNode }) {
     const handleDelete = useCallback(async (): Promise<boolean> => {
         try {
             if (!selectedCourseId) {
-                showError(tCommon("pleaseSelectCourseToDelete"));
+                showError(tCommon("Please select course to delete!"));
                 return false;
             }
 

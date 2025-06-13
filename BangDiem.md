@@ -26,25 +26,25 @@ Hệ thống giúp quản lý thông tin khóa học, đăng ký môn học cho 
 <!-- 📌 *Là một* **giáo vụ**, *tôi muốn* có thể chỉnh sửa thông tin khóa học thay vì xóa để đảm bảo dữ liệu không bị mất.   -->
 
 ✅ **Tiêu chí chấp nhận:**  
-- Có thể chỉnh sửa **tên khóa học, mô tả, khoa phụ trách**.  
+<!-- - Có thể chỉnh sửa **tên khóa học, mô tả, khoa phụ trách**.  
 - **Không thể thay đổi mã khóa học** sau khi đã tạo.  
-- **Không thể thay đổi số tín chỉ nếu đã có sinh viên đăng ký**.  
+- **Không thể thay đổi số tín chỉ nếu đã có sinh viên đăng ký**.   -->
 
 #### **User Story 4: Mở lớp học cho một khóa học cụ thể**  
 📌 *Là một* **giáo vụ**, *tôi muốn* tạo một lớp học mới cho một khóa học trong một học kỳ để sinh viên có thể đăng ký.  
 
 ✅ **Tiêu chí chấp nhận:**  
 <!-- - Nhập thông tin: mã lớp học, mã khóa học, năm học, học kỳ, giảng viên, số lượng tối đa, lịch học, phòng học.   -->
-- Một khóa học có thể có nhiều lớp trong cùng một học kỳ.  
+<!-- - Một khóa học có thể có nhiều lớp trong cùng một học kỳ.   -->
 
 ### **2.2 Đăng Ký Khóa Học Cho Sinh Viên (Thủ Công Bởi Giáo Vụ)**  
 #### **User Story 5: Đăng ký khóa học cho sinh viên**  
-📌 *Là một* **giáo vụ**, *tôi muốn* đăng ký khóa học cho sinh viên để đảm bảo sinh viên tham gia đúng lớp học.  
+<!-- 📌 *Là một* **giáo vụ**, *tôi muốn* đăng ký khóa học cho sinh viên để đảm bảo sinh viên tham gia đúng lớp học.   -->
 
 ✅ **Tiêu chí chấp nhận:**  
 <!-- - Chọn sinh viên và chọn khóa học cần đăng ký.   -->
 <!-- - Hệ thống kiểm tra môn tiên quyết trước khi đăng ký.   -->
-- Không thể đăng ký nếu lớp học đã đủ số lượng tối đa.  
+<!-- - Không thể đăng ký nếu lớp học đã đủ số lượng tối đa.   -->
 
 #### **User Story 6: Hủy đăng ký khóa học của sinh viên**  
 📌 *Là một* **giáo vụ**, *tôi muốn* hủy đăng ký môn học của sinh viên khi có sai sót hoặc sinh viên có lý do đặc biệt.  

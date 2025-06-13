@@ -6,6 +6,7 @@ var _faculties = require("./faculties");
 var _identity_documents = require("./identity_documents");
 var _programs = require("./programs");
 var _students = require("./students");
+var _class_registration_period = require("./class_registration_period");
 
 function initModels(sequelize) {
   var class_registrations = _class_registrations(sequelize, DataTypes);
@@ -15,6 +16,7 @@ function initModels(sequelize) {
   var identity_documents = _identity_documents(sequelize, DataTypes);
   var programs = _programs(sequelize, DataTypes);
   var students = _students(sequelize, DataTypes);
+  var class_registration_period = _class_registration_period(sequelize, DataTypes);
 
   classes.belongsToMany(students, { as: 'studentCodeStudents', through: class_registrations, foreignKey: "classCode", otherKey: "studentCode", sourceKey: "classCode" });
   students.belongsToMany(classes, { as: 'classCodeClasses', through: class_registrations, foreignKey: "studentCode", otherKey: "classCode", sourceKey: "studentCode" });
@@ -42,6 +44,7 @@ function initModels(sequelize) {
     IdentityDocument: identity_documents,
     Program: programs,
     Student: students,
+    ClassRegistrationPeriod: class_registration_period
   };
 }
 module.exports = initModels;

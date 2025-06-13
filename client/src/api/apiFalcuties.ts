@@ -1,6 +1,7 @@
 import api from "../config/axios";
 import { Faculty } from "../types/faculty";
 
+import { getErrorMessage } from "../utils/errorMessage";
 
 export async function getFaculties() {
     try {
@@ -9,7 +10,7 @@ export async function getFaculties() {
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -22,7 +23,7 @@ export async function postFaculty(newFaculty: Partial<Faculty>) {
         console.error("Lỗi khi tạo khoa:", error);
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -35,7 +36,7 @@ export async function putFaculty(facultyId: string, updateData: Partial<Faculty>
         console.error("Lỗi khi cập nhật khoa:", error);
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }

@@ -5,8 +5,10 @@ function mapSequelizeError(err) {
 
     switch (err.name) {
         case 'SequelizeForeignKeyConstraintError':
-            return new ValidationError(`'This item cannot be deleted because it’s linked to other data. Please check the dependencies first.`,
-                'Không thể xoá do dữ liệu đang được sử dụng. Vui lòng kiểm tra lại các mục liên quan trước.');
+            return new ValidationError(
+                'The data you entered is not valid because it is linked to other information. Please check and try again.',
+                'Dữ liệu bạn nhập không hợp lệ do đang liên kết với thông tin khác. Vui lòng kiểm tra và thử lại.'
+            );
         case 'SequelizeUniqueConstraintError':
             return new DuplicateResourceError();
         case 'SequelizeValidationError':

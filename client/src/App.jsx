@@ -5,6 +5,8 @@ import Sidebar from "./components/layout/sidebar";
 import StudentPageContainer from "./pages/students";
 import FacultyAndProgramPage from "./pages/facultiesAndPrograms";
 import CoursePage from "./pages/courses";
+import ClassPage from "./pages/classes"
+import ClassRegistrationPeriod from "./pages/classRegistrationPeriod"
 import SettingsPage from "./pages/settings";
 
 import { ErrorProvider } from "./context/ErrorContext";
@@ -30,6 +32,8 @@ function App() {
                 <Route path="/faculties-and-programs" element={<FacultyAndProgramPage />} />
                 <Route path="/courses" element={<CoursePage />} />
                 <Route path="/setting" element={<SettingsPage />} />
+                <Route path="/classes" element={<ClassPage />} />
+                <Route path="/class-registration-periods" element={<ClassRegistrationPeriod />} />
               </Routes>
               <ToastContainer position="top-right" autoClose={3000} />
             </ErrorProvider>

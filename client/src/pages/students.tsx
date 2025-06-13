@@ -1,8 +1,8 @@
-import { Fragment, useState, useEffect, useMemo, useCallback, useContext, createContext, ReactNode, useTransition } from "react";
+import { Fragment, useState, useEffect, useMemo, useCallback, useContext, createContext, ReactNode } from "react";
 import { Control, Controller, useForm, UseFormRegister, UseFormSetValue, FieldPath } from "react-hook-form";
 import { useTranslation } from 'react-i18next';
 import {
-    MagnifyingGlassIcon, TrashIcon,
+    TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon,
     UserPlusIcon, XCircleIcon, CakeIcon, PhoneIcon, MapPinIcon, EnvelopeIcon, AcademicCapIcon,

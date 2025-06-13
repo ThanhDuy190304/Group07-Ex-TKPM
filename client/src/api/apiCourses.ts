@@ -1,5 +1,6 @@
 import api from "../config/axios";
 import { Course } from "../types/course";
+import { getErrorMessage } from "../utils/errorMessage";
 
 export async function getCourses() {
     try {
@@ -8,7 +9,7 @@ export async function getCourses() {
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -20,7 +21,7 @@ export async function postCourses(newFaculty: Partial<Course>) {
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -31,7 +32,7 @@ export async function deleteCourse(courseId: string) {
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
@@ -39,11 +40,10 @@ export async function deleteCourse(courseId: string) {
 export async function putCourse({ courseId, updatedCourse }: { courseId: string, updatedCourse: Partial<Course> }) {
     try {
         await api.put(`/course/${courseId}`, updatedCourse);
-
     } catch (error: any) {
         throw {
             status: error.response.status,
-            message: error.response.data.error_vn,
+            message: getErrorMessage(error),
         };
     }
 }
