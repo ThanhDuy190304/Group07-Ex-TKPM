@@ -34,6 +34,10 @@ import { Address, formatAddress, addressFields } from "../types/address";
 import { IdentityDocument, identityDocumentFields, CCCDIdentityDocument, CMNDIdentityDocument, PassportIdentityDocument, formatIdentityDocument } from "../types/identityDocument";
 import { Gender, StudentStatus, IdentityDocumentType } from "../types/enum"
 import { useError } from "../context/ErrorContext";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import StudyResultPDF from "../components/PDF/StudyResultPDF";
+
+
 import { ImportButtonStudent } from "../components/button/import";
 import { ExportButtonStudent } from "../components/button/export";
 import { FunctionsOutlined } from "@mui/icons-material";
@@ -550,8 +554,22 @@ function StudyResultsRow({ studyResult }: { studyResult: StudyResultItem }) {
             <td className="text-sm text-gray-700">{studyResult.courseName}</td>
             <td className="text-sm text-gray-700">{studyResult.credits}</td>
             <td className="text-sm text-gray-700">{studyResult.classCode}</td>
-            <td className="text-sm text-gray-700">{studyResult.grade !== null ? studyResult.grade : '-'}</td>
-            <td className="text-sm text-gray-700">{studyResult.note || '-'}</td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {studyResult.grade == null ? '-' : studyResult.grade}
+            </td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {studyResult == null ? (
+                    <span className="text-gray-400">-</span>
+                ) : studyResult.isPass ? (
+                    <span className="text-green-600 font-semibold">✓</span>
+                ) : (
+                    <span className="text-red-500 font-semibold">✗</span>
+                )}
+            </td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {studyResult.note == null || studyResult.note.trim() === '' ? '-' : studyResult.note}
+            </td>
+
         </tr>
     );
 }
@@ -614,40 +632,67 @@ function StudyResultDisplay({ student }: { student: Student }) {
                 <Button variant="outlined" onClick={handleSearch}>
                     {lang === "en" ? "View Result" : "Xem kết quả"}
                 </Button>
-            </div>
+                <div className="flex-grow"></div>
 
-            <Sheet className="flex-2" variant="outlined" sx={{ borderRadius: "md", overflow: "auto" }}>
-                <Table>
-                    <thead>
-                        <tr>
-                            {headers.map((header, index) => (
-                                <th key={index} className="capitalize">{tStudentResultItem(header)}</th>
+                <PDFDownloadLink
+                    document={
+                        <StudyResultPDF
+                            student={student}
+                            results={studyResults}
+                            gpa={gpa}
+                            totalCredits={totalCredits}
+                        />
+                    }
+                    fileName={`bangdiem_${student.studentCode}.pdf`}
+                    className="px-4 py-2 bg-blue-600 !text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                    {({ loading }) =>
+                        loading
+                            ? lang === "en"
+                                ? "Generating PDF..."
+                                : "Đang tạo PDF..."
+                            : lang === "en"
+                                ? "Export Result"
+                                : "Xuất bảng điểm"
+                    }
+                </PDFDownloadLink>
+
+            </div>
+            <div id="study-result-to-print">
+                <Sheet className="flex-2" variant="outlined" sx={{ borderRadius: "md", overflow: "auto" }}>
+                    <Table>
+                        <thead>
+                            <tr>
+                                {headers.map((header, index) => (
+                                    <th key={index} className="capitalize">{tStudentResultItem(header)}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {studyResults.map((studyResult) => (
+                                <StudyResultsRow key={studyResult.courseCode + studyResult.semester} studyResult={studyResult} />
                             ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {studyResults.map((studyResult) => (
-                            <StudyResultsRow key={studyResult.courseCode + studyResult.semester} studyResult={studyResult} />
-                        ))}
-                    </tbody>
-                </Table>
-            </Sheet>
+                        </tbody>
+                    </Table>
+                </Sheet>
 
-            <div className="flex gap-6 items-center mt-4 text-gray-700 text-base">
-                <div className="flex items-center gap-2">
-                    <CalculatorIcon className="w-5 h-5 text-blue-600" />
-                    <span>
-                        GPA: <span className="font-semibold text-black">{gpa ?? "N/A"}</span>
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <AcademicCapIcon className="w-5 h-5 text-green-600" />
-                    <span>
-                        {lang === "en" ? "Total Credits" : "Tổng số tín chỉ"}:{" "}
-                        <span className="font-semibold text-black">{totalCredits}</span>
-                    </span>
+                <div className="flex gap-6 items-center mt-4 text-gray-700 text-base">
+                    <div className="flex items-center gap-2">
+                        <CalculatorIcon className="w-5 h-5 text-blue-600" />
+                        <span>
+                            GPA: <span className="font-semibold text-black">{gpa ?? "N/A"}</span>
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <AcademicCapIcon className="w-5 h-5 text-green-600" />
+                        <span>
+                            {lang === "en" ? "Total Credits" : "Tổng số tín chỉ"}:{" "}
+                            <span className="font-semibold text-black">{totalCredits}</span>
+                        </span>
+                    </div>
                 </div>
             </div>
+
         </div>
     );
 }
@@ -701,11 +746,9 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                         setIsUpdateOpen(false);
                     }}>
                     <TabList >
-                        <>
-                            <Tab>{lang === 'en' ? 'Personal Information' : 'Thông tin cá nhân'}</Tab>
-                            <Tab>{lang === 'en' ? 'Academic Information' : 'Thông tin học vụ'}</Tab>
-                            <Tab>{lang === 'en' ? 'Study Result' : 'Kết quả học tập'}</Tab>
-                        </>
+                        <Tab>{lang === 'en' ? 'Personal Information' : 'Thông tin cá nhân'}</Tab>
+                        <Tab>{lang === 'en' ? 'Academic Information' : 'Thông tin học vụ'}</Tab>
+                        <Tab>{lang === 'en' ? 'Study Result' : 'Kết quả học tập'}</Tab>
                     </TabList>
                     <TabPanel value={0} className="flex-1 overflow-auto">
                         {isUpdateOpen ? (

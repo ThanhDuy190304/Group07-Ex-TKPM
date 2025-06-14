@@ -43,6 +43,7 @@ export const studentFieldKeys: Record<Exclude<keyof Student, 'id'>, string> = {
 export interface StudyResultItem {
     classCode: string;
     grade: number | null;
+    isPass: boolean | null;
     note: string | null;
     credits: number;
     courseCode: string;
@@ -59,6 +60,7 @@ export const studyResultItemFieldKeys: Record<keyof StudyResultItem, string> = {
     credits: "credits",
     classCode: "classCode",
     grade: "grade",
+    isPass: "isPass",
     note: "note",
 };
 

@@ -1,6 +1,7 @@
 const StudyResultItemVi = {
     classCode: "Mã lớp",
     grade: "Điểm",
+    isPass: "Đạt?",
     note: "Ghi chú",
     credit: "Số tín chỉ",
     courseCode: "Mã học phần",

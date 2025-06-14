@@ -1,6 +1,7 @@
 const StudyResultItemEn = {
     classCode: "Class Code",
     grade: "Grade",
+    isPass: "Passed?",
     note: "Note",
     credits: "Credits",
     courseCode: "Course Code",

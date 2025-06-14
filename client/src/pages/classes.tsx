@@ -100,8 +100,22 @@ function ClassRegistrationRow({ classRegistration }: { classRegistration: ClassR
     return (
         <tr>
             <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">{classRegistration.studentCode}</td>
-            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">{classRegistration.grade}</td>
-            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">{classRegistration.note}</td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {classRegistration.grade == null ? '-' : classRegistration.grade}
+            </td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {classRegistration.isPass == null ? (
+                    <span className="text-gray-400">-</span>
+                ) : classRegistration.isPass ? (
+                    <span className="text-green-600 font-semibold">✓</span>
+                ) : (
+                    <span className="text-red-500 font-semibold">✗</span>
+                )}
+            </td>
+            <td className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                {classRegistration.note == null || classRegistration.note.trim() === '' ? '-' : classRegistration.note}
+            </td>
+
         </tr>
     );
 }

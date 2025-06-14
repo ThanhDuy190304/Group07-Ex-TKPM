@@ -263,6 +263,7 @@ class StudentService extends BaseService {
         return {
           classCode: item.classCode,
           grade: item.grade,
+          isPass: item.isPass,
           note: item.note,
           courseCode: classInfo.courseCode,
           semester: classInfo.semester,
@@ -309,14 +310,14 @@ class StudentService extends BaseService {
   async #getHighestGradesByCourse(resultList) {
     const courseGradeMap = new Map();
     for (const item of resultList) {
-      const { courseCode, courseName, classCode, semester, academicYear, grade, credits } = item;
+      const { courseCode, courseName, classCode, isPass, note, semester, academicYear, grade, credits } = item;
 
       if (grade == null || courseCode == null || credits == null) continue;
 
       const current = courseGradeMap.get(courseCode);
 
       if (!current || grade > current.grade) {
-        courseGradeMap.set(courseCode, { courseCode, courseName, classCode, semester, academicYear, grade, credits });
+        courseGradeMap.set(courseCode, { courseCode, courseName, classCode, isPass, note, semester, academicYear, grade, credits });
       }
     }
 

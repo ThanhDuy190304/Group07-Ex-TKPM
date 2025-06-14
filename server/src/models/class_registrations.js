@@ -23,6 +23,10 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.REAL,
       allowNull: true
     },
+    isPass: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true
+    },
     note: {
       type: DataTypes.TEXT,
       allowNull: true
