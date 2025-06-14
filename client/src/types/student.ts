@@ -38,3 +38,35 @@ export const studentFieldKeys: Record<Exclude<keyof Student, 'id'>, string> = {
     status: "status",
     identityDocuments: "identityDocuments",
 };
+
+
+export interface StudyResultItem {
+    classCode: string;
+    grade: number | null;
+    note: string | null;
+    credits: number;
+    courseCode: string;
+    semester: string;
+    academicYear: number;
+    courseName: string;
+}
+
+export const studyResultItemFieldKeys: Record<keyof StudyResultItem, string> = {
+    academicYear: "academicYear",
+    semester: "semester",
+    courseCode: "courseCode",
+    courseName: "courseName",
+    credits: "credits",
+    classCode: "classCode",
+    grade: "grade",
+    note: "note",
+};
+
+export interface StudyResult {
+    items: StudyResultItem[];
+    gpa: number | null;
+    totalCredits: number;
+}
+
+
+

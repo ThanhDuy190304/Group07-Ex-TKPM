@@ -5,6 +5,7 @@ const studentController = require("../controller/student.controller");
 
 const upload = require("../middleware/uploadMiddleware");
 
+router.get("/study-results/:studentCode", studentController.getStudyResultOfStudent);
 router.get("/", studentController.getAllStudents);
 router.post("/", studentController.create);
 router.put("/:studentId", studentController.update);

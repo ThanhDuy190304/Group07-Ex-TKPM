@@ -69,10 +69,23 @@ export async function getAllStudents(searchQuery: Partial<Student> & { page?: nu
 
 export async function deleteStudents(studentIds: string[]) {
     try {
-        console.log(studentIds)
         await api.delete('/student/delete-many', {
             data: { studentIds },
         });
+    } catch (error: any) {
+        throw {
+            status: error.response.status,
+            message: getErrorMessage(error),
+        };
+    }
+}
+
+export async function getResultByStudentCode(studentCode: string, searchQuery: { semester?: string; academicYear?: number } = {}) {
+    try {
+        const response = await api.get(`/student/study-results/${studentCode}`, {
+            params: searchQuery,
+        })
+        return response.data.data;
     } catch (error: any) {
         throw {
             status: error.response.status,

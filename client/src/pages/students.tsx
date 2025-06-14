@@ -5,8 +5,8 @@ import {
     TrashIcon,
     PencilSquareIcon, ChevronDoubleLeftIcon, ChevronRightIcon,
     ChevronLeftIcon, ChevronDoubleRightIcon, CheckIcon, XMarkIcon,
-    UserPlusIcon, XCircleIcon, CakeIcon, PhoneIcon, MapPinIcon, EnvelopeIcon, AcademicCapIcon,
-    GlobeAsiaAustraliaIcon
+    UserPlusIcon, XCircleIcon, CakeIcon, PhoneIcon, MapPinIcon, EnvelopeIcon, AcademicCapIcon, CalculatorIcon,
+    GlobeAsiaAustraliaIcon,
 } from "@heroicons/react/24/outline";
 import {
     Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button,
@@ -23,10 +23,11 @@ import PermIdentityIcon from '@mui/icons-material/PermIdentity';
 import PhoneInput from "react-phone-input-2";
 import 'react-phone-input-2/lib/style.css';
 
-import { useAllStudents } from "../hooks/useStudents"
+import { useLang, useMultiTranslation } from "../utils/translation";
+import { useStudents, useResultOfStudent } from "../hooks/useStudents"
 import { useFaculties } from "../hooks/useFaculties";
 import { usePrograms } from "../hooks/usePrograms";
-import { Student, studentFieldKeys } from "../types/student";
+import { Student, studentFieldKeys, StudyResult, StudyResultItem, studyResultItemFieldKeys } from "../types/student";
 import { Faculty } from "../types/faculty";
 import { Program } from "../types/program";
 import { Address, formatAddress, addressFields } from "../types/address";
@@ -74,7 +75,7 @@ function StudentProvider({ children }: { children: ReactNode }) {
     const limit = 30;
     const [searchQuery, setSearchQuery] = useState<Partial<Student>>({});
 
-    const { studentsQuery, updateStudent, removeStudents, createStudent } = useAllStudents({
+    const { studentsQuery, updateStudent, removeStudents, createStudent } = useStudents({
         ...searchQuery,
         page,
         limit
@@ -540,6 +541,117 @@ function StudentAcademicInfUpdate({ student, register, setValue }: StudentUpdate
     );
 }
 
+function StudyResultsRow({ studyResult }: { studyResult: StudyResultItem }) {
+    return (
+        <tr>
+            <td className="text-sm text-gray-700">{studyResult.semester}</td>
+            <td className="text-sm text-gray-700">{studyResult.academicYear}</td>
+            <td className="text-sm text-gray-700">{studyResult.courseCode}</td>
+            <td className="text-sm text-gray-700">{studyResult.courseName}</td>
+            <td className="text-sm text-gray-700">{studyResult.credits}</td>
+            <td className="text-sm text-gray-700">{studyResult.classCode}</td>
+            <td className="text-sm text-gray-700">{studyResult.grade !== null ? studyResult.grade : '-'}</td>
+            <td className="text-sm text-gray-700">{studyResult.note || '-'}</td>
+        </tr>
+    );
+}
+
+function StudyResultDisplay({ student }: { student: Student }) {
+    const { tStudentResultItem } = useMultiTranslation();
+    const lang = useLang();
+    const currentYear = new Date().getFullYear();
+    const startYear = parseInt(student.cohortYear);
+
+    const [academicYear, setAcademicYear] = useState<number | null>(null);
+    const [semester, setSemester] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState<{ semester?: string; academicYear?: number }>({});
+    const { resultQuery } = useResultOfStudent(student.studentCode, searchQuery);
+
+    const studyResults: StudyResultItem[] = resultQuery.data?.resultList || [];
+    const totalCredits = resultQuery.data?.totalCredits || 0;
+    const gpa = resultQuery.data?.gpa ?? null;
+
+    const headers = Object.values(studyResultItemFieldKeys);
+
+    const handleSearch = useCallback(() => {
+        const query: typeof searchQuery = {};
+        if (academicYear) query.academicYear = academicYear;
+        if (academicYear && semester) query.semester = semester;
+        setSearchQuery(query);
+    }, [academicYear, semester]);
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+                <Select
+                    placeholder={lang === 'en' ? '-- All --' : '-- Tất cả --'}
+                    onChange={(_, value) => setAcademicYear(value ? Number(value) : null)}
+                    value={academicYear?.toString() ?? ""}
+                >
+                    <Option value="">{lang === 'en' ? '-- All --' : '-- Tất cả --'}</Option>
+                    {Array.from({ length: currentYear - startYear + 1 }, (_, i) => {
+                        const year = startYear + i;
+                        return (
+                            <Option key={year} value={year.toString()}>
+                                {year}
+                            </Option>
+                        );
+                    })}
+                </Select>
+
+                <Select
+                    placeholder={lang === 'en' ? '-- Select Semester --' : '-- Chọn học kỳ --'}
+                    onChange={(_, value) => setSemester(value || null)}
+                    value={semester ?? ""}
+                    disabled={!academicYear}
+                >
+                    <Option value="">{lang === 'en' ? '-- All --' : '-- Tất cả --'}</Option>
+                    <Option value="Kỳ 1">Kỳ 1</Option>
+                    <Option value="Kỳ 2">Kỳ 2</Option>
+                    <Option value="Kỳ 3">Kỳ 3</Option>
+                </Select>
+
+                <Button variant="outlined" onClick={handleSearch}>
+                    {lang === "en" ? "View Result" : "Xem kết quả"}
+                </Button>
+            </div>
+
+            <Sheet className="flex-2" variant="outlined" sx={{ borderRadius: "md", overflow: "auto" }}>
+                <Table>
+                    <thead>
+                        <tr>
+                            {headers.map((header, index) => (
+                                <th key={index} className="capitalize">{tStudentResultItem(header)}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {studyResults.map((studyResult) => (
+                            <StudyResultsRow key={studyResult.courseCode + studyResult.semester} studyResult={studyResult} />
+                        ))}
+                    </tbody>
+                </Table>
+            </Sheet>
+
+            <div className="flex gap-6 items-center mt-4 text-gray-700 text-base">
+                <div className="flex items-center gap-2">
+                    <CalculatorIcon className="w-5 h-5 text-blue-600" />
+                    <span>
+                        GPA: <span className="font-semibold text-black">{gpa ?? "N/A"}</span>
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <AcademicCapIcon className="w-5 h-5 text-green-600" />
+                    <span>
+                        {lang === "en" ? "Total Credits" : "Tổng số tín chỉ"}:{" "}
+                        <span className="font-semibold text-black">{totalCredits}</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
     : {
@@ -574,7 +686,7 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                 }
             }}
         >
-            <ModalDialog className="w-[1000px] h-[90vh] max-w-full md:max-w-[90%] mx-auto overflow-x-auto overflow-y-auto">
+            <ModalDialog className="w-[1600px] h-[90vh] max-w-full md:max-w-[90%] mx-auto overflow-x-auto overflow-y-auto">
                 <button
                     onClick={() => setIsOpen(false)}
                     className="absolute top-3 right-3 text-gray-500 hover:text-red-500 cursor-pointer"
@@ -592,6 +704,7 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                         <>
                             <Tab>{lang === 'en' ? 'Personal Information' : 'Thông tin cá nhân'}</Tab>
                             <Tab>{lang === 'en' ? 'Academic Information' : 'Thông tin học vụ'}</Tab>
+                            <Tab>{lang === 'en' ? 'Study Result' : 'Kết quả học tập'}</Tab>
                         </>
                     </TabList>
                     <TabPanel value={0} className="flex-1 overflow-auto">
@@ -616,6 +729,9 @@ function StudentDetailModal({ student, setSelectedStudent, isOpen, setIsOpen }
                         ) : (
                             <StudentAcademicInfDisplay student={student} />
                         )}
+                    </TabPanel>
+                    <TabPanel value={2} className="flex-1 overflow-auto">
+                        <StudyResultDisplay student={student} />
                     </TabPanel>
                     {!isUpdateOpen && (
                         <div className="flex justify-end mt-auto">

@@ -64,6 +64,19 @@ const importFile = async (req, res, next) => {
   }
 }
 
+const getStudyResultOfStudent = async (req, res, next) => {
+  try {
+    const studentCode = req.params.studentCode;
+    const { semester, academicYear } = req.query;
+
+    const result = await studentService.getStudyResultWithGPA(studentCode, { semester, academicYear });
+
+    return res.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   create,
@@ -72,4 +85,5 @@ module.exports = {
   remove,
   removeStudents,
   importFile,
+  getStudyResultOfStudent,
 };

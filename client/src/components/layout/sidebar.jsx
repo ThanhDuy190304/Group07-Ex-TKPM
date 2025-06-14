@@ -54,12 +54,12 @@ function Sidebar() {
                 </div>
                 <div className="flex flex-col gap-2 bg-black mt-8">
                     <SidebarItem to="/" icon={AcademicCapIcon} label={text.student} />
-                    <SidebarItem to="/notification" icon={BellIcon} label={text.notification} />
-                    <SidebarItem to="/setting" icon={Cog8ToothIcon} label={text.setting} />
                     <SidebarItem to="/faculties-and-programs" icon={ClipboardIcon} label={text.facultyProgram} />
                     <SidebarItem to="/courses" icon={ClipboardDocumentIcon} label={text.course} />
                     <SidebarItem to="/classes" icon={AppRegistrationIcon} label={text.class} />
                     <SidebarItem to="/class-registration-periods" icon={CalendarDaysIcon} label={text.classRegistrationPeriod} />
+                    <SidebarItem to="/setting" icon={Cog8ToothIcon} label={text.setting} />
+
                 </div>
             </div>
 

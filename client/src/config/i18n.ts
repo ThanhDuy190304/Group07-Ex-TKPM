@@ -8,6 +8,7 @@ import courseVi from '../locales/vi/course';
 import classVi from '../locales/vi/class';
 import classRegistrationVi from '../locales/vi/classRegistration';
 import classRegistrationPeriodVi from '../locales/vi/classRegistrationPeriod';
+import studyResultItemVi from '../locales/vi/studyResultItem';
 import commonVi from '../locales/vi/common';
 
 import studentEn from '../locales/en/student';
@@ -17,6 +18,7 @@ import courseEn from '../locales/en/course';
 import classEn from '../locales/en/class';
 import classRegistrationEn from '../locales/en/classRegistration';
 import classRegistrationPeriodEn from '../locales/en/classRegistrationPeriod';
+import studyResultItemEn from '../locales/en/studyResultItem'
 import commonEn from '../locales/en/common';
 
 const savedLang = localStorage.getItem('language') || 'en';
@@ -38,6 +40,7 @@ i18n
                 class: classVi,
                 classRegistration: classRegistrationVi,
                 classRegistrationPeriod: classRegistrationPeriodVi,
+                studyResultItem: studyResultItemVi,
                 common: commonVi,
             },
             en: {
@@ -45,8 +48,10 @@ i18n
                 faculty: facultyEn,
                 program: programEn,
                 course: courseEn,
+                class: classEn,
                 classRegistration: classRegistrationEn,
                 classRegistrationPeriod: classRegistrationPeriodEn,
+                studyResultItem: studyResultItemEn,
                 common: commonEn
             },
         },

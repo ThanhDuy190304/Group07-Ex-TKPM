@@ -7,7 +7,7 @@ const { NotFoundError, ValidationError } = require("../util/errors");
 const initModels = require("../models/init-models");
 const sequelize = require("../config/db");
 
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const { omit } = require("lodash");
 
 
@@ -18,6 +18,9 @@ class StudentService extends BaseService {
     this.IdentityDocument = models.IdentityDocument;
     this.Faculty = models.Faculty;
     this.Program = models.Program;
+    this.ClassRegistration = models.ClassRegistration;
+    this.Class = models.Class;
+    this.Course = models.Course;
   }
 
   async #validateStudentData(studentInf) {
@@ -221,6 +224,103 @@ class StudentService extends BaseService {
       }
     }
     return results;
+  }
+
+  async #getStudyResultOfStudent(studentCode, searchQuery) {
+    try {
+      if (!studentCode) {
+        throw new ValidationError("Student code is required", "Mã sinh viên là bắt buộc");
+      }
+      let resultOfStudent = await this.ClassRegistration.findAll({
+        where: { studentCode },
+        include: [
+          {
+            model: this.Class,
+            as: "classCodeClass",
+            attributes: ["courseCode", "semester", "academicYear"],
+            where: {
+              ...(searchQuery?.semester && searchQuery?.academicYear && { semester: searchQuery.semester }),
+              ...(searchQuery?.academicYear && { academicYear: searchQuery.academicYear }),
+            },
+            include: [
+              {
+                model: this.Course,
+                as: "courseCodeCourse",
+                attributes: ["name", "credits"],
+              },
+            ],
+          },
+        ],
+        attributes: {
+          exclude: ["studentCode", "createdAt", "updatedAt"],
+        },
+        order: [["createdAt", "DESC"]],
+      });
+
+      return resultOfStudent.map(item => {
+        const classInfo = item.classCodeClass;
+        const courseInfo = classInfo.courseCodeCourse;
+        return {
+          classCode: item.classCode,
+          grade: item.grade,
+          note: item.note,
+          courseCode: classInfo.courseCode,
+          semester: classInfo.semester,
+          academicYear: classInfo.academicYear,
+          courseName: courseInfo.name,
+          credits: courseInfo.credits,
+        };
+      }
+
+      )
+    } catch (error) {
+      throw mapSequelizeError(error);
+    }
+  }
+
+  async getStudyResultWithGPA(studentCode, searchQuery) {
+    const resultList = await this.#getStudyResultOfStudent(studentCode, searchQuery);
+    if (searchQuery.semester && searchQuery.academicYear) {
+      const { gpa, totalCredits } = await this.#calculateGPAOfStudent(resultList);
+      return { resultList, gpa, totalCredits };
+    }
+    const highestMap = await this.#getHighestGradesByCourse(resultList);
+    const highestList = Array.from(highestMap.values());
+    const { gpa, totalCredits } = await this.#calculateGPAOfStudent(highestList);
+    return { resultList: highestList, gpa, totalCredits };
+  }
+
+
+  async #calculateGPAOfStudent(studyResultOfStudent) {
+    let totalGradeXCredits = 0;
+    let totalCredits = 0;
+    for (const item of studyResultOfStudent) {
+      if (item.grade == null || item.credits == null) continue;
+      totalGradeXCredits += item.grade * item.credits;
+      totalCredits += item.credits;
+    }
+    const gpa = totalCredits > 0 ? (totalGradeXCredits / totalCredits).toFixed(2) : null;
+    return {
+      gpa: gpa ? parseFloat(gpa) : null,
+      totalCredits,
+    };
+  }
+
+  async #getHighestGradesByCourse(resultList) {
+    const courseGradeMap = new Map();
+    for (const item of resultList) {
+      const { courseCode, courseName, classCode, semester, academicYear, grade, credits } = item;
+
+      if (grade == null || courseCode == null || credits == null) continue;
+
+      const current = courseGradeMap.get(courseCode);
+
+      if (!current || grade > current.grade) {
+        courseGradeMap.set(courseCode, { courseCode, courseName, classCode, semester, academicYear, grade, credits });
+      }
+    }
+
+    return courseGradeMap;
   }
 
 

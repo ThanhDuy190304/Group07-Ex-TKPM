@@ -13,6 +13,6 @@ export function useMultiTranslation() {
     const { t: tStudent } = useTranslation('student');
     const { t: tFaculty } = useTranslation('faculty');
     const { t: tProgram } = useTranslation('program');
-
-    return { tClass, tClassRegistration, tClassRegistrationPeriod, tStudent, tFaculty, tProgram, tCommon };
+    const { t: tStudentResultItem } = useTranslation('studyResultItem');
+    return { tClass, tClassRegistration, tClassRegistrationPeriod, tStudent, tFaculty, tProgram, tCommon, tStudentResultItem };
 }

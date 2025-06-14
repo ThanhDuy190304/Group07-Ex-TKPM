@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { postStudent, deleteStudent, putStudent, getAllStudents, deleteStudents } from '../api/apiStudents';
+import { postStudent, deleteStudent, putStudent, getAllStudents, deleteStudents, getResultByStudentCode } from '../api/apiStudents';
 import { Student } from '../types/student';
 
 
-export function useAllStudents(searchQuery: Partial<Student> & { page?: number; limit?: number }) {
+export function useStudents(searchQuery: Partial<Student> & { page?: number; limit?: number }) {
 
     const queryClient = useQueryClient();
 
@@ -59,3 +59,17 @@ export function useAllStudents(searchQuery: Partial<Student> & { page?: number; 
     };
 }
 
+export function useResultOfStudent(studentCode: string, searchQuery: { semester?: string; academicYear?: number }) {
+    const queryClient = useQueryClient();
+
+    const resultQuery = useQuery({
+        queryKey: ['studentResult', studentCode, searchQuery],
+        queryFn: () => getResultByStudentCode(studentCode, searchQuery),
+        placeholderData: (previousData) => previousData,
+        refetchOnWindowFocus: false,
+    });
+
+    return {
+        resultQuery,
+    };
+}
