@@ -42,9 +42,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import StudyResultPDF from "../components/PDF/StudyResultPDF";
 
 import { ExportFormData, exportToCSV, exportToExcel } from "../utils/export";
-import { ImportButtonStudent } from "../components/button/import";
-import { ExportButtonStudent } from "../components/button/export";
-import { FunctionsOutlined } from "@mui/icons-material";
+import { importStudents } from "../api/apiStudents";
 
 
 const StudentDataContext = createContext<{
@@ -1538,17 +1536,53 @@ function StudentsRemoveButton() {
     );
 }
 
-function ImportItem() {
-    const { t: tCommon } = useTranslation('common');
-    const [isOpen, setIsOpen] = useState(false);
-    return (
-        <>
-            <span className="w-full flex items-center gap-2">
-                <FileDownloadIcon className="w-4 h-4" />
-                {tCommon('import')}
-            </span>
-        </>
+export function ImportModal({ isOpen, setIsOpen, }: { isOpen: boolean; setIsOpen: (open: boolean) => void; }) {
+    const lang = useLang();
+    const { showError } = useError();
+    const [file, setFile] = useState<File | null>(null);
+    const [loading, setLoading] = useState(false);
 
+    const onSubmit = async () => {
+        if (!file) {
+            showError(lang === "en" ? "Please select a file to upload." : "Vui lòng chọn tệp để tải lên.");
+            return;
+        }
+        setLoading(true);
+        try {
+            const result = await importStudents(file);
+            alert(JSON.stringify(result, null, 2));
+        }
+        catch (error: any) {
+            showError(error.message);
+        }
+        finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Modal open={isOpen} onClose={() => setIsOpen(false)}>
+            <ModalDialog>
+                <DialogTitle>
+                    {lang === "en" ? "Import Students" : "Nhập dữ liệu sinh viên"}
+                </DialogTitle>
+                <DialogContent>
+                    <input
+                        type="file"
+                        accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button variant="outlined" onClick={() => setIsOpen(false)}>
+                        {lang === "en" ? "Cancel" : "Hủy"}
+                    </Button>
+                    <Button loading={loading} onClick={onSubmit}>
+                        {lang === "en" ? "Upload" : "Tải lên"}
+                    </Button>
+                </DialogActions>
+            </ModalDialog>
+        </Modal>
     );
 }
 
@@ -1615,6 +1649,7 @@ export function ExportModal({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen:
 
 function AddFuncMenuButton() {
     const [isExportOpen, setIsExportOpen] = useState(false);
+    const [isImportOpen, setIsImportOpen] = useState(false);
     const { t: tCommon } = useTranslation('common');
     return (
         <>
@@ -1626,12 +1661,14 @@ function AddFuncMenuButton() {
                     <MoreVertIcon />
                 </MenuButton>
                 <Menu placement="bottom-end">
-                    <MenuItem className="w-36">
-                        <ImportItem />
-                    </MenuItem>
-                    <MenuItem className="w-36" onClick={() => setIsExportOpen(true)}>
+                    <MenuItem className="w-36" onClick={() => setIsImportOpen(true)}>
                         <span className="w-full flex items-center gap-2">
                             <FileUploadIcon className="w-4 h-4" />
+                            {tCommon('import')}
+                        </span>                    </MenuItem>
+                    <MenuItem className="w-36" onClick={() => setIsExportOpen(true)}>
+                        <span className="w-full flex items-center gap-2">
+                            <FileDownloadIcon className="w-4 h-4" />
                             {tCommon('export')}
                         </span>
                     </MenuItem>
@@ -1640,6 +1677,7 @@ function AddFuncMenuButton() {
 
             {/* Modal nằm ngoài Menu nên không bị unmount khi MenuItem đóng */}
             <ExportModal isOpen={isExportOpen} setIsOpen={setIsExportOpen} />
+            <ImportModal isOpen={isImportOpen} setIsOpen={setIsImportOpen} />
         </>
     );
 }

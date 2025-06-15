@@ -336,7 +336,8 @@ function CourseDeleteButton() {
     );
 }
 
-function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
+function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course | null, isOpen: boolean, setIsOpen: Dispatch<SetStateAction<boolean>> }) {
+    if (!course) return null;
     const { t: tCourse } = useTranslation('course');
     const { t: tCommon } = useTranslation('common');
     const { register, getValues, control, reset } = useForm<Partial<Course>>();
@@ -432,7 +433,15 @@ function CourseUpdateFormModal({ course, isOpen, setIsOpen }: { course: Course, 
                                             label: course.courseCode,
                                             value: course.courseCode,
                                         }));
-                                        const initialSelectedOptions = course.prerequisiteCourseCode;
+                                        const initialSelectedOptions = course?.prerequisiteCourseCode || [];
+
+                                        useEffect(() => {
+                                            if (course?.prerequisiteCourseCode) {
+                                                field.onChange(course.prerequisiteCourseCode);
+                                            } else {
+                                                field.onChange([]);
+                                            }
+                                        }, [course?.prerequisiteCourseCode]);
                                         return (
                                             <>
                                                 <FormControl className="col-span-full">
@@ -510,6 +519,7 @@ function CourseTable() {
 
     const [selectedCourseForUpdate, setSelectedCourseForUpdate] = useState<Course | null>(null);
     const [isUpdateModelOpen, setIsUpdateModelOpen] = useState<boolean>(false);
+
     return (
         <>
             <RadioGroup
@@ -574,13 +584,13 @@ function CourseTable() {
                     </tbody>
                 </Table>
             </RadioGroup >
-            {selectedCourseForUpdate && (
-                <CourseUpdateFormModal
-                    course={selectedCourseForUpdate}
-                    isOpen={isUpdateModelOpen}
-                    setIsOpen={setIsUpdateModelOpen}
-                />
-            )}
+
+            <CourseUpdateFormModal
+                course={selectedCourseForUpdate}
+                isOpen={isUpdateModelOpen}
+                setIsOpen={setIsUpdateModelOpen}
+            />
+
         </>
 
     );

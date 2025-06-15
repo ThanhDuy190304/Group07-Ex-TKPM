@@ -1,5 +1,5 @@
 const BaseService = require("./base.service");
-const CsvImportService = require("./csv.service");
+const { importCSV, importXLSX } = require("./import.service");
 
 const { validateStudentEmail, validatePhone, validateStatusTransition } = require("../util/validator");
 const { mapSequelizeError } = require("../util/errorsMapperFromPostgres")
@@ -156,10 +156,29 @@ class StudentService extends BaseService {
     }
   }
 
+  #mapStudentRow(row) {
+    return {
+      studentCode: row.studentCode || null,
+      fullName: row.fullName || null,
+      dateOfBirth: row.dateOfBirth || null,
+      email: row.email || null,
+      phoneNumber: row.phoneNumber || null,
+      nationality: row.nationality || null,
+      facultyCode: row.facultyCode || null,
+      cohortYear: row.cohortYear || null,
+      status: row.status || null,
+      programCode: row.programCode || null,
+      gender: row.gender || null,
+    };
+  }
+
   async importFile(fileBuffer, format) {
     let students;
     if (format === 'csv') {
-      students = await CsvImportService.importStudents(fileBuffer);
+      students = await importCSV(fileBuffer, this.#mapStudentRow);
+    }
+    else if (format === 'xlsx') {
+      students = importXLSX(fileBuffer, this.#mapStudentRow);
     }
     else {
       throw new ValidationError("Format invalid", "Hệ thống không hỗ trợ định dạng này.");
@@ -168,24 +187,10 @@ class StudentService extends BaseService {
   }
 
   async #insertStudentArray(studentsData) {
-    const [faculties, programs] = await Promise.all([
-      this.Faculty.findAll(),
-      this.Program.findAll(),
-    ]);
     const results = [];
+    const errors = [];
     for (const studentData of studentsData) {
-      const transaction = await sequelize.transaction();
       try {
-        const faculty = faculties.find(f => f.facultyCode === studentData.facultyCode);
-        const program = programs.find(p => p.programCode === studentData.programCode);
-        if (!faculty) {
-          throw new ValidationError(`Faculty code not found: ${studentData.facultyCode}`,
-            `Mã khoa không tồn tại: ${studentData.facultyCode}`);
-        }
-        if (!program) {
-          throw new ValidationError(`Program code not found: ${studentData.programCode}`,
-            `Mã chương trình không tồn tại: ${studentData.facultyCode}`);
-        }
         const studentUpsertData = {
           studentCode: studentData.studentCode,
           fullName: studentData.fullName,
@@ -198,33 +203,44 @@ class StudentService extends BaseService {
           cohortYear: studentData.cohortYear,
           programCode: studentData.programCode,
           nationality: studentData.nationality,
-          emporaryResidenceAddress: studentData.temporaryResidenceAddress,
-          permanentAddress: studentData.permanentAddress,
-          mailAddress: studentData.mailAddress,
         };
-        StudentService.validateStudentData(studentUpsertData);
+
+        await this.#validateStudentData(studentUpsertData);
+
         const [student, created] = await this.model.upsert(studentUpsertData, {
-          transaction,
           conflictFields: ["student_code"],
         });
-        await transaction.commit();
+
         results.push({
           studentCode: student.studentCode,
           action: created ? "inserted" : "updated",
           success: true,
         });
+
       } catch (error) {
-        await transaction.rollback();
+        const mappedError = mapSequelizeError(error);
+        errors.push(mappedError);
+
         results.push({
           studentCode: studentData.studentCode,
           action: "failed",
-          error: error.message,
+          error: mappedError.message,
           success: false,
         });
       }
     }
+
+    if (errors.length > 0) {
+      throw new ValidationError(
+        "Some records failed to insert.",
+        "Một số dòng bị lỗi khi chèn dữ liệu.",
+        results
+      );
+    }
+
     return results;
   }
+
 
   async #getStudyResultOfStudent(studentCode, searchQuery) {
     try {
