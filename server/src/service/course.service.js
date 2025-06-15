@@ -4,7 +4,11 @@ const sequelize = require("../config/db");
 const models = initModels(sequelize);
 const { omit } = require("lodash");
 const { mapSequelizeError } = require("../util/errorsMapperFromPostgres");
-const { NotFoundError, ValidationError, DuplicateResourceError } = require("../util/errors");
+const {
+  NotFoundError,
+  ValidationError,
+  DuplicateResourceError,
+} = require("../util/errors");
 
 class CourseService extends BaseService {
   constructor(models = initModels(sequelize)) {
@@ -39,8 +43,28 @@ class CourseService extends BaseService {
         prerequisiteCourseCode: newCourseInf.prerequisiteCourseCode || [],
       });
       return {
-        course: omit(newCourse.get({ plain: true }), ["createdAt", "updatedAt"]),
+        course: omit(newCourse.get({ plain: true }), [
+          "createdAt",
+          "updatedAt",
+        ]),
       };
+    } catch (err) {
+      throw mapSequelizeError(err);
+    }
+  }
+
+  async delete(courseId) {
+    try {
+
+      if (!courseId) {
+        throw new ValidationError(
+          "Course ID is required",
+          "Yêu cầu ID khóa học"
+        );
+      }
+
+      super.delete(courseId);
+
     } catch (err) {
       throw mapSequelizeError(err);
     }
@@ -52,18 +76,27 @@ class CourseService extends BaseService {
     }
 
     if (!updateData || Object.keys(updateData).length === 0) {
-      throw new ValidationError("No data provided for update", "Không có dữ liệu để cập nhật");
+      throw new ValidationError(
+        "No data provided for update",
+        "Không có dữ liệu để cập nhật"
+      );
     }
 
     // Prevent updating courseCode
     if (updateData.courseCode) {
-      throw new ValidationError("Cannot update course code", "Không thể cập nhật mã khóa học");
+      throw new ValidationError(
+        "Cannot update course code",
+        "Không thể cập nhật mã khóa học"
+      );
     }
 
     // Fetch the course
     const course = await this.model.findByPk(courseId);
     if (!course) {
-      throw new NotFoundError("Course not found", `Khóa học không tồn tại: ${courseId}`);
+      throw new NotFoundError(
+        "Course not found",
+        `Khóa học không tồn tại: ${courseId}`
+      );
     }
 
     const updateFields = {};
@@ -77,14 +110,20 @@ class CourseService extends BaseService {
     // Update description
     if (updateData.description) {
       if (typeof updateData.description !== "string") {
-        throw new ValidationError("Description must be a string", "Mô tả phải là chuỗi");
+        throw new ValidationError(
+          "Description must be a string",
+          "Mô tả phải là chuỗi"
+        );
       }
       updateFields.description = updateData.description.trim();
     }
     // Update facultyCode
     if (updateData.facultyCode) {
       if (typeof updateData.facultyCode !== "string") {
-        throw new ValidationError("Faculty code must be a string", "Mã khoa phải là chuỗi");
+        throw new ValidationError(
+          "Faculty code must be a string",
+          "Mã khoa phải là chuỗi"
+        );
       }
       await this.#checkFacultyCode(updateData.facultyCode.trim());
       updateFields.facultyCode = updateData.facultyCode.trim();
@@ -111,7 +150,9 @@ class CourseService extends BaseService {
           through: { attributes: [] },
         },
       });
-      const hasStudentsRegistered = classes.some(cls => cls.studentCodeStudents?.length > 0);
+      const hasStudentsRegistered = classes.some(
+        (cls) => cls.studentCodeStudents?.length > 0
+      );
       if (hasStudentsRegistered) {
         throw new ValidationError(
           "Cannot update credits, students have already registered for the course",
@@ -123,26 +164,43 @@ class CourseService extends BaseService {
     // Update isAvtive
     if (updateData.isActive !== undefined) {
       if (typeof updateData.isActive !== "boolean") {
-        throw new ValidationError("isActive must be a boolean", "isActive phải là kiểu boolean");
+        throw new ValidationError(
+          "isActive must be a boolean",
+          "isActive phải là kiểu boolean"
+        );
       }
       updateFields.isActive = updateData.isActive;
     }
 
     if (Object.keys(updateFields).length === 0) {
-      throw new ValidationError("No valid fields provided for update", "Không có trường hợp lệ để cập nhật");
+      throw new ValidationError(
+        "No valid fields provided for update",
+        "Không có trường hợp lệ để cập nhật"
+      );
     }
 
     try {
-      const [affectedRows] = await this.model.update(updateFields, { where: { id: courseId } });
+      const [affectedRows] = await this.model.update(updateFields, {
+        where: { id: courseId },
+      });
       if (affectedRows === 0) {
-        throw new NotFoundError("Course not found or no changes applied", `Khóa học không tồn tại hoặc không có thay đổi: ${courseId}`);
+        throw new NotFoundError(
+          "Course not found or no changes applied",
+          `Khóa học không tồn tại hoặc không có thay đổi: ${courseId}`
+        );
       }
       const updatedCourse = await this.model.findByPk(courseId);
       if (!updatedCourse) {
-        throw new NotFoundError("Updated course not found", `Khóa học đã cập nhật không tồn tại: ${courseId}`);
+        throw new NotFoundError(
+          "Updated course not found",
+          `Khóa học đã cập nhật không tồn tại: ${courseId}`
+        );
       }
       return {
-        course: omit(updatedCourse.get({ plain: true }), ["createdAt", "updatedAt"]),
+        course: omit(updatedCourse.get({ plain: true }), [
+          "createdAt",
+          "updatedAt",
+        ]),
       };
     } catch (err) {
       throw mapSequelizeError(err);
@@ -150,21 +208,34 @@ class CourseService extends BaseService {
   }
 
   async #checkFacultyCode(facultyCode) {
-    const faculty = await this.Faculty.findOne({ where: { faculty_code: facultyCode } });
+    const faculty = await this.Faculty.findOne({
+      where: { faculty_code: facultyCode },
+    });
     if (!faculty) {
-      throw new NotFoundError("Faculty not found", `Khoa không tồn tại: ${facultyCode}`);
+      throw new NotFoundError(
+        "Faculty not found",
+        `Khoa không tồn tại: ${facultyCode}`
+      );
     }
   }
 
   async #checkPrerequisiteCourse(newCourseInf) {
-    if (newCourseInf.prerequisiteCourseCode && !Array.isArray(newCourseInf.prerequisiteCourseCode)) {
-      throw new ValidationError("Prerequisite course codes must be an array", "Mã môn tiên quyết phải là mảng");
+    if (
+      newCourseInf.prerequisiteCourseCode &&
+      !Array.isArray(newCourseInf.prerequisiteCourseCode)
+    ) {
+      throw new ValidationError(
+        "Prerequisite course codes must be an array",
+        "Mã môn tiên quyết phải là mảng"
+      );
     }
 
     if (newCourseInf.prerequisiteCourseCode?.length > 0) {
       if (
         newCourseInf.courseCode &&
-        newCourseInf.prerequisiteCourseCode.includes(newCourseInf.courseCode.trim())
+        newCourseInf.prerequisiteCourseCode.includes(
+          newCourseInf.courseCode.trim()
+        )
       ) {
         throw new ValidationError(
           "Course cannot be its own prerequisite",
@@ -176,10 +247,15 @@ class CourseService extends BaseService {
         where: { courseCode: newCourseInf.prerequisiteCourseCode },
       });
 
-      if (prerequisiteCourses.length !== newCourseInf.prerequisiteCourseCode.length) {
-        const existingCodes = prerequisiteCourses.map(course => course.courseCode);
+      if (
+        prerequisiteCourses.length !==
+        newCourseInf.prerequisiteCourseCode.length
+      ) {
+        const existingCodes = prerequisiteCourses.map(
+          (course) => course.courseCode
+        );
         const invalidCodes = newCourseInf.prerequisiteCourseCode.filter(
-          code => !existingCodes.includes(code)
+          (code) => !existingCodes.includes(code)
         );
         throw new NotFoundError(
           "Prerequisite course(s) not found",
