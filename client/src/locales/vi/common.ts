@@ -11,6 +11,8 @@ const commonVi = {
     loading: 'Đang tải dữ liệu...',
     loadError: 'Lỗi khi tải dữ liệu.',
     systemError: 'Hệ thống lỗi, vui lòng thử lại sau',
+    import: "Nhập file",
+    export: "Xuất file",
 };
 
 export default commonVi;

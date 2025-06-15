@@ -11,7 +11,9 @@ import {
 import {
     Table, Sheet, Card, CardContent, Typography, Select, Option, Input, Button,
     Modal, ModalDialog, DialogTitle, DialogContent, FormControl, FormLabel, Checkbox,
-    Tab, Tabs, TabList, TabPanel, RadioGroup, Radio, Stack
+    Tab, Tabs, TabList, TabPanel, RadioGroup, Radio, Stack, IconButton,
+    Menu, MenuItem, MenuButton, Dropdown, ListItemDecorator, ListDivider,
+    DialogActions
 } from '@mui/joy';
 
 import FemaleIcon from '@mui/icons-material/Female';
@@ -19,7 +21,9 @@ import MaleIcon from '@mui/icons-material/Male';
 import TransgenderIcon from '@mui/icons-material/Transgender';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import PermIdentityIcon from '@mui/icons-material/PermIdentity';
-
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import PhoneInput from "react-phone-input-2";
 import 'react-phone-input-2/lib/style.css';
 
@@ -27,7 +31,7 @@ import { useLang, useMultiTranslation } from "../utils/translation";
 import { useStudents, useResultOfStudent } from "../hooks/useStudents"
 import { useFaculties } from "../hooks/useFaculties";
 import { usePrograms } from "../hooks/usePrograms";
-import { Student, studentFieldKeys, StudyResult, StudyResultItem, studyResultItemFieldKeys } from "../types/student";
+import { Student, studentFieldKeys, StudyResultItem, studyResultItemFieldKeys } from "../types/student";
 import { Faculty } from "../types/faculty";
 import { Program } from "../types/program";
 import { Address, formatAddress, addressFields } from "../types/address";
@@ -37,7 +41,7 @@ import { useError } from "../context/ErrorContext";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import StudyResultPDF from "../components/PDF/StudyResultPDF";
 
-
+import { ExportFormData, exportToCSV, exportToExcel } from "../utils/export";
 import { ImportButtonStudent } from "../components/button/import";
 import { ExportButtonStudent } from "../components/button/export";
 import { FunctionsOutlined } from "@mui/icons-material";
@@ -1534,6 +1538,111 @@ function StudentsRemoveButton() {
     );
 }
 
+function ImportItem() {
+    const { t: tCommon } = useTranslation('common');
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <>
+            <span className="w-full flex items-center gap-2">
+                <FileDownloadIcon className="w-4 h-4" />
+                {tCommon('import')}
+            </span>
+        </>
+
+    );
+}
+
+export function ExportModal({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (open: boolean) => void }) {
+    const lang = useLang();
+    const { students } = useStudentsDataContext();
+    const cleanedStudents = students.map(({ id, ...rest }) => {
+        const { studentCode, ...others } = rest;
+        return {
+            studentCode,
+            ...others
+        };
+    });
+    const { register, handleSubmit, reset, control } = useForm<ExportFormData>();
+
+    const onSubmit = (form: ExportFormData) => {
+        const { fileName, typeFile } = form;
+        if (!fileName || !typeFile) return;
+
+        if (typeFile === 'csv') {
+            exportToCSV(cleanedStudents, `${fileName}.csv`);
+        } else if (typeFile === 'xlsx') {
+            exportToExcel(cleanedStudents, `${fileName}.xlsx`);
+        }
+        reset();
+        setIsOpen(false);
+    };
+
+    return (
+        <Modal open={isOpen} onClose={() => setIsOpen(false)}>
+            <ModalDialog>
+                <DialogTitle>{lang === 'en' ? 'Export Students' : 'Xuất dữ liệu sinh viên'}</DialogTitle>
+                <DialogContent>
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <FormControl required>
+                            <Input placeholder="Tên file" {...register("fileName", { required: true })} />
+                        </FormControl>
+                        <FormControl required sx={{ mt: 2 }}>
+                            <Controller
+                                name="typeFile"
+                                control={control}
+                                defaultValue="csv"
+                                render={({ field }) => (
+                                    <Select {...field} value={field.value} onChange={(_, value) => field.onChange(value)}>
+                                        <Option value="csv">CSV</Option>
+                                        <Option value="xlsx">XLSX</Option>
+                                    </Select>
+                                )}
+                            />
+
+                        </FormControl>
+                        <DialogActions sx={{ mt: 3 }}>
+                            <Button type="submit">{lang === 'en' ? 'Export' : 'Xuất'}</Button>
+                            <Button variant="soft" color="danger" onClick={() => setIsOpen(false)}>
+                                {lang === 'en' ? 'Cancel' : 'Hủy'}
+                            </Button>
+                        </DialogActions>
+                    </form>
+                </DialogContent>
+            </ModalDialog>
+        </Modal>
+    );
+}
+
+function AddFuncMenuButton() {
+    const [isExportOpen, setIsExportOpen] = useState(false);
+    const { t: tCommon } = useTranslation('common');
+    return (
+        <>
+            <Dropdown>
+                <MenuButton
+                    slots={{ root: IconButton }}
+                    slotProps={{ root: { variant: 'outlined', color: 'neutral' } }}
+                >
+                    <MoreVertIcon />
+                </MenuButton>
+                <Menu placement="bottom-end">
+                    <MenuItem className="w-36">
+                        <ImportItem />
+                    </MenuItem>
+                    <MenuItem className="w-36" onClick={() => setIsExportOpen(true)}>
+                        <span className="w-full flex items-center gap-2">
+                            <FileUploadIcon className="w-4 h-4" />
+                            {tCommon('export')}
+                        </span>
+                    </MenuItem>
+                </Menu>
+            </Dropdown>
+
+            {/* Modal nằm ngoài Menu nên không bị unmount khi MenuItem đóng */}
+            <ExportModal isOpen={isExportOpen} setIsOpen={setIsExportOpen} />
+        </>
+    );
+}
 
 function StudentPage() {
     const { i18n } = useTranslation();
@@ -1546,18 +1655,19 @@ function StudentPage() {
                 {lang === 'en' ? "Student Management" : "Quản lý sinh viên"
                 }</h2>
 
+            <section className="mt-4">
+                <Search />
+            </section>
+
             <section className="flex items-center justify-between w-full mt-4 gap-4">
                 <div className="flex items-center gap-2 flex-1 max-w-md">
                     <StudentsRemoveButton />
                     <StudentCreateFormContainer />
                 </div>
-                <ImportButtonStudent />
-                {/* <ExportButtonStudent searchQuery={searchQuery} /> */}
+                <AddFuncMenuButton />
             </section>
 
-            <section className="mt-4">
-                <Search />
-            </section>
+
 
             <section className="flex flex-col gap-6 items-center mt-6">
                 <StudentTable />

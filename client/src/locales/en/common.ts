@@ -11,6 +11,8 @@ const commonEn = {
     loading: 'Loading data...',
     loadError: 'Failed to load data.',
     systemError: 'System error, please try again later',
+    import: "Import file",
+    export: "Export file",
 };
 
 export default commonEn;

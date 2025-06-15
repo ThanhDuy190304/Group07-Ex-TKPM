@@ -63,12 +63,3 @@ export const studyResultItemFieldKeys: Record<keyof StudyResultItem, string> = {
     isPass: "isPass",
     note: "note",
 };
-
-export interface StudyResult {
-    items: StudyResultItem[];
-    gpa: number | null;
-    totalCredits: number;
-}
-
-
-
