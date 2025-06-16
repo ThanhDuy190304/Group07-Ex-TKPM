@@ -27,17 +27,16 @@ async function startServer() {
     try {
         // Chỉ xác thực kết nối, không sync
         await sequelize.authenticate();
-        console.log('✅ Đã kết nối với Supabase thành công');
+        console.log('✅ Đã kết nối với database thành công');
 
         const models = initModels(sequelize);
-        console.log(models);
         console.log("✅ Models đã được khởi tạo");
 
         app.listen(PORT, () => {
             console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
         });
     } catch (error) {
-        console.error('❌ Lỗi kết nối Supabase:', error.message);
+        console.error('❌ Lỗi kết nối:', error.message);
         process.exit(1); // Thoát nếu kết nối thất bại
     }
 }

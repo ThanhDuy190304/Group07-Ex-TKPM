@@ -90,3 +90,6 @@ storybook-static/
 
 # TypeScript cache
 *.tsbuildinfo
+
+dump_data.bat
+dump_schema.bat
