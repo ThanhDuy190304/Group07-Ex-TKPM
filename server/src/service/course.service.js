@@ -53,18 +53,20 @@ class CourseService extends BaseService {
     }
   }
 
-  async delete(courseId) {
+  async delete(courseCode) {
     try {
-
-      if (!courseId) {
+      if (!courseCode) {
         throw new ValidationError(
           "Course ID is required",
           "Yêu cầu ID khóa học"
         );
       }
 
-      super.delete(courseId);
+      await this.model.destroy({
+        where: { courseCode: courseCode },
+      });
 
+      return;
     } catch (err) {
       throw mapSequelizeError(err);
     }

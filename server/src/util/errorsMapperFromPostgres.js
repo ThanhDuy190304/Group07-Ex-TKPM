@@ -1,4 +1,4 @@
-const { ValidationError, DuplicateResourceError } = require('./errors');
+const { ValidationError, DuplicateResourceError, InternalServerError } = require('./errors');
 
 function mapSequelizeError(err) {
     if (!err || !err.name) return err;
@@ -14,7 +14,7 @@ function mapSequelizeError(err) {
         case 'SequelizeValidationError':
             return new ValidationError();
         case 'SequelizeDatabaseError':
-            return new ValidationError('Error Server', 'Lỗi cơ sở dữ liệu.');
+            return new InternalServerError('Error Server', 'Lỗi cơ sở dữ liệu.');
         default:
             return err;
     }
