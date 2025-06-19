@@ -6,7 +6,7 @@ import { getErrorMessage } from "../utils/errorMessage";
 
 export async function getClasses() {
     try {
-        const response = await api.get("/class");
+        const response = await api.get("/classes");
         return response.data?.data;
     } catch (error: any) {
         throw {
@@ -18,7 +18,7 @@ export async function getClasses() {
 
 export async function postClass(newClass: Partial<Class>) {
     try {
-        await api.post("/class", newClass);
+        await api.post("/classes", newClass);
     } catch (error: any) {
         throw {
             status: error.response.status,
@@ -28,7 +28,7 @@ export async function postClass(newClass: Partial<Class>) {
 }
 export async function postRegisterClass({ studentCode, classCode }: { studentCode: string; classCode: string }) {
     try {
-        await api.post(`/class/allocate/${classCode}/${studentCode}`);
+        await api.post(`/classes/allocate/${classCode}/${studentCode}`);
     } catch (error: any) {
         throw {
             status: error.response?.status,
@@ -39,7 +39,7 @@ export async function postRegisterClass({ studentCode, classCode }: { studentCod
 
 export async function cancelRegisterClass({ studentId, classId }: { studentId: string; classId: string }) {
     try {
-        await api.post(`/class/cancel/${classId}/${studentId}`);
+        await api.post(`/classes/cancel/${classId}/${studentId}`);
     } catch (error: any) {
         throw {
             status: error.response?.status,
@@ -51,7 +51,7 @@ export async function cancelRegisterClass({ studentId, classId }: { studentId: s
 export async function getDetailByClassCode({ classCode }: { classCode: string }) {
     try {
         console.log(classCode);
-        const response = await api.get(`/class/class-registrations/${classCode}`);
+        const response = await api.get(`/classes/class-registrations/${classCode}`);
         return response.data.data;
     } catch (error: any) {
         throw {
@@ -63,7 +63,7 @@ export async function getDetailByClassCode({ classCode }: { classCode: string })
 
 export async function getClassRegistrationPeriods() {
     try {
-        const response = await api.get("/class/class-registration-periods");
+        const response = await api.get("/classes/class-registration-periods");
         return response.data?.data;
     } catch (error: any) {
         throw {
@@ -76,7 +76,7 @@ export async function getClassRegistrationPeriods() {
 export async function postClassRegistrationPeriod(newPeriod: Partial<ClassRegistrationPeriod>) {
     try {
         console.log("period: ", newPeriod);
-        await api.post("/class/class-registration-periods", newPeriod);
+        await api.post("/classes/class-registration-periods", newPeriod);
     } catch (error: any) {
         throw {
             status: error.response.status,
@@ -87,7 +87,7 @@ export async function postClassRegistrationPeriod(newPeriod: Partial<ClassRegist
 
 export async function putClassRegistrationPeriod(id: string, updatedPeriod: Partial<ClassRegistrationPeriod>) {
     try {
-        await api.put(`/class/class-registration-periods/${id}`, updatedPeriod);
+        await api.put(`/classes/class-registration-periods/${id}`, updatedPeriod);
     } catch (error: any) {
         throw {
             status: error.response.status,

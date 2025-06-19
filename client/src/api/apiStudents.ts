@@ -6,7 +6,7 @@ export const importStudents = async (file: any) => {
     try {
         const formData = new FormData();
         formData.append("file", file);
-        const response = await api.post("/student/import", formData, {
+        const response = await api.post("/students/import", formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
             },
@@ -19,7 +19,7 @@ export const importStudents = async (file: any) => {
 
 export async function putStudent(studentId: string, updatedData: Partial<Student>) {
     try {
-        const response = await api.put(`/student/${studentId}`, updatedData);
+        const response = await api.put(`/students/${studentId}`, updatedData);
         return response.data?.data;
     } catch (error: any) {
         throw {
@@ -31,7 +31,7 @@ export async function putStudent(studentId: string, updatedData: Partial<Student
 
 export async function deleteStudent(studentId: string) {
     try {
-        await api.delete(`/student/${studentId}`);
+        await api.delete(`/students/${studentId}`);
     } catch (error: any) {
         throw {
             status: error.response.status,
@@ -42,7 +42,7 @@ export async function deleteStudent(studentId: string) {
 
 export async function postStudent(studentData: Partial<Student>) {
     try {
-        const response = await api.post("/student", studentData);
+        const response = await api.post("/students", studentData);
         return response.data?.data;
     } catch (error: any) {
         throw {
@@ -55,7 +55,7 @@ export async function postStudent(studentData: Partial<Student>) {
 export async function getAllStudents(searchQuery: Partial<Student> & { page?: number; limit?: number } = {}) {
     try {
 
-        const response = await api.get("/student", {
+        const response = await api.get("/students", {
             params: searchQuery,
         });
         return response.data?.data;
@@ -69,7 +69,7 @@ export async function getAllStudents(searchQuery: Partial<Student> & { page?: nu
 
 export async function deleteStudents(studentIds: string[]) {
     try {
-        await api.delete('/student/delete-many', {
+        await api.delete('/students/delete-many', {
             data: { studentIds },
         });
     } catch (error: any) {
@@ -82,7 +82,7 @@ export async function deleteStudents(studentIds: string[]) {
 
 export async function getResultByStudentCode(studentCode: string, searchQuery: { semester?: string; academicYear?: number } = {}) {
     try {
-        const response = await api.get(`/student/study-results/${studentCode}`, {
+        const response = await api.get(`/students/study-results/${studentCode}`, {
             params: searchQuery,
         })
         return response.data.data;

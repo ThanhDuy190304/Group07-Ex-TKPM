@@ -4,7 +4,7 @@ import { getErrorMessage } from "../utils/errorMessage";
 
 export async function getPrograms() {
     try {
-        const response = await api.get("/program");
+        const response = await api.get("/programs");
         return response.data?.data;
     } catch (error: any) {
         throw {
@@ -16,7 +16,7 @@ export async function getPrograms() {
 
 export async function postProgram(newProgram: Partial<Program>) {
     try {
-        const response = await api.post("/program", newProgram);
+        const response = await api.post("/programs", newProgram);
         return response.data?.data;
     } catch (error: any) {
         throw {
@@ -28,7 +28,7 @@ export async function postProgram(newProgram: Partial<Program>) {
 
 export async function putProgram(programId: string, updatedData: Partial<Program>) {
     try {
-        const response = await api.put(`/program/${programId}`, updatedData);
+        const response = await api.put(`/programs/${programId}`, updatedData);
         return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi cập nhật chương trình học:", error);

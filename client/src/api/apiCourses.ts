@@ -4,7 +4,7 @@ import { getErrorMessage } from "../utils/errorMessage";
 
 export async function getCourses() {
     try {
-        const response = await api.get("/course");
+        const response = await api.get("/courses");
         return response.data?.data;
     } catch (error: any) {
         throw {
@@ -16,7 +16,7 @@ export async function getCourses() {
 
 export async function postCourses(newFaculty: Partial<Course>) {
     try {
-        const response = await api.post("/course", newFaculty);
+        const response = await api.post("/courses", newFaculty);
         return response.data.data;
     } catch (error: any) {
         throw {
@@ -28,7 +28,7 @@ export async function postCourses(newFaculty: Partial<Course>) {
 
 export async function deleteCourse(courseId: string) {
     try {
-        await api.delete(`/course/${courseId}`);
+        await api.delete(`/courses/${courseId}`);
     } catch (error: any) {
         throw {
             status: error.response.status,
@@ -39,7 +39,7 @@ export async function deleteCourse(courseId: string) {
 
 export async function putCourse({ courseId, updatedCourse }: { courseId: string, updatedCourse: Partial<Course> }) {
     try {
-        await api.put(`/course/${courseId}`, updatedCourse);
+        await api.put(`/courses/${courseId}`, updatedCourse);
     } catch (error: any) {
         throw {
             status: error.response.status,

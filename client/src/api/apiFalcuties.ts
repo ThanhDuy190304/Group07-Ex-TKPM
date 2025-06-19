@@ -5,7 +5,7 @@ import { getErrorMessage } from "../utils/errorMessage";
 
 export async function getFaculties() {
     try {
-        const response = await api.get("/faculty");
+        const response = await api.get("/faculties");
         return response.data?.data;
     } catch (error: any) {
         throw {
@@ -17,7 +17,7 @@ export async function getFaculties() {
 
 export async function postFaculty(newFaculty: Partial<Faculty>) {
     try {
-        const response = await api.post("/faculty", newFaculty);
+        const response = await api.post("/faculties", newFaculty);
         return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi tạo khoa:", error);
@@ -30,7 +30,7 @@ export async function postFaculty(newFaculty: Partial<Faculty>) {
 
 export async function putFaculty(facultyId: string, updateData: Partial<Faculty>) {
     try {
-        const response = await api.put(`/faculty/${facultyId}`, updateData);
+        const response = await api.put(`/faculties/${facultyId}`, updateData);
         return response.data?.data;
     } catch (error: any) {
         console.error("Lỗi khi cập nhật khoa:", error);
