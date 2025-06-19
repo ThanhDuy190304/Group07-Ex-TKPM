@@ -6,11 +6,11 @@ const {
   DuplicateResourceError,
 } = require("../../util/errors");
 
-const { mockClassInfo, mockCreatedClass } = require("./mocks/class.mock");
-const { mockCourse } = require("./mocks/course.mock");
+const { mockClassInfo, mockCreatedClass } = require("./__mocks__/class.mock");
+const { mockCourse } = require("./__mocks__/course.mock");
 
-jest.mock("../src/config/db");
-jest.mock("../src/models/init-models", () => {
+jest.mock("../../config/db");
+jest.mock("../../models/init-models", () => {
   return jest.fn(() => ({
     Class: {
       findOne: jest.fn(),
@@ -30,7 +30,7 @@ jest.mock("../src/models/init-models", () => {
     },
   }));
 });
-jest.mock("../src/util/validator", () => ({
+jest.mock("../../util/validator", () => ({
   validateUUID: jest.fn(() => true),
 }));
 
@@ -45,34 +45,69 @@ describe("ClassService", () => {
   describe("create", () => {
     it("should create a new class successfully", async () => {
       // Arrange
+      const mockClassInfo = {
+        classCode: "21_CQ1",
+        courseCode: "FRA101",
+        academicYear: "2023-2024",
+        semester: "1",
+        maxStudents: 30,
+      };
 
+      const mockCourse = {
+        id: "course-123",
+        courseCode: "FRA101",
+        name: "French 101",
+        credits: 3,
+        facultyCode: "KHNN",
+        get: jest.fn().mockReturnValue({
+          id: "course-123",
+          courseCode: "FRA101",
+          name: "French 101",
+          credits: 3,
+          facultyCode: "KHNN",
+        }),
+      };
+
+      const mockCreatedClass = {
+        id: "class-123",
+        ...mockClassInfo,
+        get: jest.fn().mockReturnValue({
+          id: "class-123",
+          ...mockClassInfo,
+        }),
+      };
+
+      // Setup mocks
       models.Course.findOne.mockResolvedValue(mockCourse);
-      models.Class.findOne.mockResolvedValue(null);
-      models.Class.create.mockResolvedValue({
-        get: jest.fn(() => mockCreatedClass),
-      });
+      models.Class.findOne.mockResolvedValue(null); // No duplicate class
+      models.Class.create.mockResolvedValue(mockCreatedClass);
 
       // Act
       const result = await ClassService.create(mockClassInfo);
 
       // Assert
+      // Verify Course existence check
       expect(models.Course.findOne).toHaveBeenCalledWith({
         where: { courseCode: mockClassInfo.courseCode },
       });
 
+      // Verify duplicate class check
       expect(models.Class.findOne).toHaveBeenCalledWith({
         where: { classCode: mockClassInfo.classCode },
       });
 
-      expect(models.Class.create).toHaveBeenCalledWith({
-        ...mockClassInfo,
-        courseCode: mockClassInfo.courseCode,
-      });
+      // Verify class creation
+      expect(models.Class.create).toHaveBeenCalledWith(mockClassInfo);
 
+      // Verify returned data structure
       expect(result).toEqual({
         class: expect.objectContaining({
-          classCode: "21_CQ1",
-          courseCode: "FRA101",
+          id: "class-123",
+          classCode: mockClassInfo.classCode,
+          courseCode: mockClassInfo.courseCode,
+          academicYear: mockClassInfo.academicYear,
+          semester: mockClassInfo.semester,
+          maxStudents: mockClassInfo.maxStudents,
         }),
       });
     });
