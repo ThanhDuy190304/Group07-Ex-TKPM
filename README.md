@@ -85,5 +85,11 @@ npm start
 
 # 4. 📚 Development guide
 
+- [Coding Standards](documents/dev_guide/coding-standards.pdf)
+- [Overview of Architecture](documents/dev_guide/overview_of_architecture.md)
+- [Web API documentation](documents/dev_guide/api-design.pdf)
+- [Updating an existing entity](documents/dev_guide/updating_an_exisiting_entity.md)
+- [Registering New Routes](documents/dev_guide/registering_new_routes.md)
+- [Unit Testing](documents/dev_guide/unit_testing.md)
 - [Database Schema](documents/dev_guide/schema.svg)
 - [Source code organization](documents/dev_guide/source_code_organization.md)
