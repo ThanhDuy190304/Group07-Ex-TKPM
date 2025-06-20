@@ -1,4 +1,6 @@
-const classService = require("../service/class.service");
+const ClassService = require("../service/class.service");
+
+const classService = new ClassService();
 
 const getAll = async (req, res, next) => {
   try {
