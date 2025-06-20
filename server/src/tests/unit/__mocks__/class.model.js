@@ -7,6 +7,11 @@ const mockClassModel = {
   findAndCountAll: jest.fn(),
 };
 
+const mockClassRegistrationModel = {
+  destroy: jest.fn(),
+};
+
 module.exports = {
-  Class: mockClassModel
-}
+  Class: mockClassModel,
+  ClassRegistration: mockClassRegistrationModel,
+};
